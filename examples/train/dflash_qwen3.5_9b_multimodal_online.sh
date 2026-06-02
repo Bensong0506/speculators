@@ -95,7 +95,7 @@ fi
 # so vLLM and the trainer always agree.
 if [ -z "${TARGET_LAYER_IDS}" ]; then
     echo "=== Auto-computing --target-layer-ids from model config ==="
-    TARGET_LAYER_IDS=$(python - "$MODEL" "${TRUST_REMOTE_CODE}" <<'PY'
+    TARGET_LAYER_IDS=$(python3 - "$MODEL" "${TRUST_REMOTE_CODE}" <<'PY'
 import sys
 from transformers import AutoConfig
 model, trc = sys.argv[1], sys.argv[2] == "1"
@@ -112,7 +112,7 @@ fi
 # The VLM's AutoProcessor is loaded automatically; image turns are tokenized
 # with the proper <image> placeholders and an assistant loss mask is built.
 echo "=== Step 1: Preparing data ==="
-python scripts/prepare_data.py \
+python3 scripts/prepare_data.py \
     --model "$MODEL" \
     --data "$DATASET" \
     --output "$OUTPUT_DIR" \
@@ -124,7 +124,7 @@ python scripts/prepare_data.py \
 # --allowed-local-media-path lets vLLM read the local images referenced by
 # file path in the dataset. Everything after `--` is passed straight to vLLM.
 echo "=== Step 2: Launching vLLM server ==="
-CUDA_VISIBLE_DEVICES="$VLLM_GPUS" python scripts/launch_vllm.py "$MODEL" \
+CUDA_VISIBLE_DEVICES="$VLLM_GPUS" python3 scripts/launch_vllm.py "$MODEL" \
     --target-layer-ids $TARGET_LAYER_IDS \
     -- --data-parallel-size "$VLLM_DP" \
        --port "$VLLM_PORT" \
