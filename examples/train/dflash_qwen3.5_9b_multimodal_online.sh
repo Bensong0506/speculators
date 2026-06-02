@@ -31,11 +31,14 @@
 
 set -euo pipefail
 
+# Reduce CUDA memory fragmentation (the OOM trace's "reserved but unallocated").
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+
 # ===================== CONFIG — EDIT THESE ============================
 
 # --- 1) Verifier (target) multimodal model --------------------------------
 # Local path on the A800 box (or HF id). Must be a VLM, e.g. your Qwen3.5-9B.
-MODEL="/path/to/Qwen3.5-9B"
+MODEL="/home/models/Qwen3.5-9B"
 
 # Some VLM processors/configs need remote code. Set to 1 if loading fails
 # with "trust_remote_code" errors; harmless to leave on for Qwen-VL.
@@ -174,7 +177,12 @@ CUDA_VISIBLE_DEVICES="$VLLM_GPUS" python3 scripts/launch_vllm.py "$MODEL" \
     -- --data-parallel-size "$VLLM_DP" \
        --port "$VLLM_PORT" \
        --allowed-local-media-path "$MEDIA_ROOT" \
-       --trust-remote-code &
+       --trust-remote-code \
+       --max-model-len "$SEQ_LENGTH" \
+       --max-num-batched-tokens "$SEQ_LENGTH" \
+       --gpu-memory-utilization 0.85 \
+       --limit-mm-per-prompt '{"image": 1}' \
+       --enforce-eager &
 VLLM_PID=$!
 
 # Ensure vLLM is cleaned up on exit
