@@ -1,0 +1,191 @@
+#!/bin/bash
+# Online DFlash Training Script — Multimodal (Vision-Language) target
+#
+# Trains a DFlash speculator for a ~9B Qwen3.5 multimodal (VLM) verifier.
+#
+# IMPORTANT mental model:
+#   The DFlash draft model is TEXT-ONLY. It never sees pixels. Multimodal
+#   context reaches the drafter purely through the verifier's hidden states
+#   (the VLM encodes the image, and the hidden states at every position —
+#   including image-token positions — are what the drafter learns from).
+#   The draft model is sized from `verifier_config.text_config`, so a VLM
+#   "just works" as the verifier.
+#
+#   Therefore "multimodal DFlash" == normal DFlash, with three deltas:
+#     1. --model / --verifier-name-or-path points at a VLM
+#        (prepare_data + train auto-use the multimodal AutoProcessor).
+#     2. The dataset contains image+text turns.
+#     3. vLLM must be allowed to read the local images
+#        (--allowed-local-media-path) when images are referenced by file path.
+#
+# Pipeline (same 3 steps as the text DFlash example):
+#   1. prepare_data.py  — chat-template + tokenize with the VLM processor
+#   2. launch_vllm.py   — serve the VLM, extract hidden states from target layers
+#   3. train.py         — train the DFlash drafter against the live vLLM server
+#
+# Usage: edit the CONFIG block below, then:
+#   bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
+#
+# Reference tutorial (text version):
+#   docs/user_guide/tutorials/train_dflash_online.md
+
+set -euo pipefail
+
+# ===================== CONFIG — EDIT THESE ============================
+
+# --- 1) Verifier (target) multimodal model --------------------------------
+# Local path on the A800 box (or HF id). Must be a VLM, e.g. your Qwen3.5-9B.
+MODEL="/path/to/Qwen3.5-9B"
+
+# Some VLM processors/configs need remote code. Set to 1 if loading fails
+# with "trust_remote_code" errors; harmless to leave on for Qwen-VL.
+TRUST_REMOTE_CODE=1
+
+# --- 2) Multimodal dataset -------------------------------------------------
+# Option A (built-in sanity check): "sharegpt4v_coco"
+#   -> pulls Lin-Chen/ShareGPT4V text + your local COCO 2017 train images.
+#      Download: http://images.cocodataset.org/zips/train2017.zip
+#      Set COCO_DIR to the folder that CONTAINS train2017/.
+# Option B (your own data): path to a .jsonl file (see format note at bottom).
+DATASET="sharegpt4v_coco"
+export COCO_DIR="/path/to/coco"           # only used by sharegpt4v_coco
+
+# Root directory that contains ALL images referenced by the dataset.
+# vLLM will only load local images located under this path. For
+# sharegpt4v_coco this is your COCO_DIR; for custom data set it to the
+# common parent of your image files.
+MEDIA_ROOT="${COCO_DIR}"
+
+# --- 3) General training knobs --------------------------------------------
+OUTPUT_DIR="./output/dflash_qwen3.5_9b_mm"
+VLLM_PORT=8000
+MAX_SAMPLES=5000        # 5k = sanity check only. Use 100k+ for real quality.
+SEQ_LENGTH=8192         # raise if your image+text sequences are long
+EPOCHS=5
+LR=3e-4
+
+# --- 4) DFlash-specific ----------------------------------------------------
+SPECULATOR_TYPE="dflash"
+BLOCK_SIZE=8            # tokens drafted per block (one forward pass)
+MAX_ANCHORS=3072        # max anchor positions sampled per step (memory knob)
+NUM_LAYERS=5            # draft transformer layers (DFlash typically uses ~5)
+DRAFT_VOCAB_SIZE=32000  # reduced draft vocab (mapped from token_freq.pt)
+
+# Target text-decoder layers to extract hidden states from. Leave EMPTY to
+# auto-compute the repo-default "2  L/2  L-3" (L = text num_hidden_layers);
+# launch_vllm appends the final layer L automatically. The SAME ids must be
+# passed to both vLLM and train.py — this script guarantees that.
+TARGET_LAYER_IDS=""
+
+# --- 5) GPU layout on the A800 node ---------------------------------------
+# Online training runs vLLM (serving) and the trainer (FSDP) on SEPARATE GPUs.
+# Defaults assume an 8x A800 (80GB) node, split half/half.
+VLLM_GPUS="0,1,2,3"
+VLLM_DP=4               # vLLM data-parallel replicas (use TP instead if model is big)
+TRAIN_GPUS="4,5,6,7"
+NUM_TRAIN_GPUS=4
+# ===========================================================================
+
+TRC_FLAG=()
+if [ "${TRUST_REMOTE_CODE}" = "1" ]; then
+    TRC_FLAG=(--trust-remote-code)
+fi
+
+# Auto-compute TARGET_LAYER_IDS from the verifier's *text* config if unset,
+# so vLLM and the trainer always agree.
+if [ -z "${TARGET_LAYER_IDS}" ]; then
+    echo "=== Auto-computing --target-layer-ids from model config ==="
+    TARGET_LAYER_IDS=$(python - "$MODEL" "${TRUST_REMOTE_CODE}" <<'PY'
+import sys
+from transformers import AutoConfig
+model, trc = sys.argv[1], sys.argv[2] == "1"
+cfg = AutoConfig.from_pretrained(model, trust_remote_code=trc)
+cfg = getattr(cfg, "text_config", cfg)   # VLM -> text decoder
+L = cfg.num_hidden_layers
+print(2, L // 2, L - 3)
+PY
+)
+    echo "    text num_hidden_layers based -> TARGET_LAYER_IDS = ${TARGET_LAYER_IDS}"
+fi
+
+# Step 1: Prepare data ------------------------------------------------------
+# The VLM's AutoProcessor is loaded automatically; image turns are tokenized
+# with the proper <image> placeholders and an assistant loss mask is built.
+echo "=== Step 1: Preparing data ==="
+python scripts/prepare_data.py \
+    --model "$MODEL" \
+    --data "$DATASET" \
+    --output "$OUTPUT_DIR" \
+    --max-samples "$MAX_SAMPLES" \
+    --seq-length "$SEQ_LENGTH" \
+    "${TRC_FLAG[@]}"
+
+# Step 2: Launch vLLM server (verifier) in the background -------------------
+# --allowed-local-media-path lets vLLM read the local images referenced by
+# file path in the dataset. Everything after `--` is passed straight to vLLM.
+echo "=== Step 2: Launching vLLM server ==="
+CUDA_VISIBLE_DEVICES="$VLLM_GPUS" python scripts/launch_vllm.py "$MODEL" \
+    --target-layer-ids $TARGET_LAYER_IDS \
+    -- --data-parallel-size "$VLLM_DP" \
+       --port "$VLLM_PORT" \
+       --allowed-local-media-path "$MEDIA_ROOT" \
+       --trust-remote-code &
+VLLM_PID=$!
+
+# Ensure vLLM is cleaned up on exit
+cleanup() {
+    echo "Stopping vLLM server..."
+    kill "$VLLM_PID" 2>/dev/null || true
+    wait "$VLLM_PID" 2>/dev/null || true
+}
+trap cleanup EXIT
+
+echo "Waiting for vLLM server to be ready..."
+until curl -sf "http://localhost:${VLLM_PORT}/health" > /dev/null 2>&1; do
+    sleep 2
+done
+echo "vLLM server ready."
+
+# Step 3: Train the DFlash drafter against the live vLLM server -------------
+echo "=== Step 3: Training ==="
+CUDA_VISIBLE_DEVICES="$TRAIN_GPUS" torchrun \
+    --standalone --nproc_per_node "$NUM_TRAIN_GPUS" \
+    scripts/train.py \
+    --verifier-name-or-path "$MODEL" \
+    --data-path "$OUTPUT_DIR" \
+    --vllm-endpoint "http://localhost:${VLLM_PORT}/v1" \
+    --save-path "$OUTPUT_DIR/checkpoints" \
+    --draft-vocab-size "$DRAFT_VOCAB_SIZE" \
+    --epochs "$EPOCHS" \
+    --lr "$LR" \
+    --total-seq-len "$SEQ_LENGTH" \
+    --speculator-type "$SPECULATOR_TYPE" \
+    --block-size "$BLOCK_SIZE" \
+    --max-anchors "$MAX_ANCHORS" \
+    --num-layers "$NUM_LAYERS" \
+    --target-layer-ids $TARGET_LAYER_IDS \
+    --on-missing generate \
+    --on-generate delete \
+    "${TRC_FLAG[@]}"
+
+echo "Done. Checkpoints saved to $OUTPUT_DIR/checkpoints/"
+
+# ===========================================================================
+# CUSTOM MULTIMODAL DATA FORMAT (Option B)
+# ---------------------------------------------------------------------------
+# Point DATASET at a .jsonl file where each line has a "conversations" field.
+# Each turn is {"role": ..., "content": ...}; for multimodal turns, "content"
+# is a LIST of parts. Images MUST be file paths or URLs (NOT base64/inline),
+# and local paths must live under MEDIA_ROOT.
+#
+#   {"conversations": [
+#       {"role": "user", "content": [
+#           {"type": "image", "path": "/data/images/cat.jpg"},
+#           {"type": "text",  "text": "What is in this image?"}
+#       ]},
+#       {"role": "assistant", "content": "A cat sitting on a sofa."}
+#   ]}
+#
+# Then set:  DATASET="/data/my_multimodal.jsonl"   and
+#            MEDIA_ROOT="/data/images"
+# ===========================================================================
