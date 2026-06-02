@@ -31,9 +31,6 @@
 
 set -euo pipefail
 
-# Reduce CUDA memory fragmentation (the OOM trace's "reserved but unallocated").
-export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
-
 # ===================== CONFIG — EDIT THESE ============================
 
 # --- 1) Verifier (target) multimodal model --------------------------------
