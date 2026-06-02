@@ -56,6 +56,17 @@ export COCO_DIR="/path/to/coco"           # only used by sharegpt4v_coco
 # common parent of your image files.
 MEDIA_ROOT="${COCO_DIR}"
 
+# Option C (quickest start — no COCO / no HF download): use a local MMStar set.
+# Set USE_MMSTAR=1 and point MMSTAR_SRC at your MMStar data. Step 0 below
+# extracts MMStar's inline images to disk and builds a conversations jsonl,
+# then uses it as the dataset (overriding DATASET/MEDIA_ROOT above).
+# NOTE: MMStar is a ~1.5k multiple-choice EVAL benchmark (single-letter
+# answers) — ideal for verifying the multimodal pipeline runs end to end, but
+# NOT a real training set. Use large, full-response data for real quality.
+USE_MMSTAR=1
+MMSTAR_SRC="/home/models/MMStar"   # local dir (save_to_disk/parquet) or "Lin-Chen/MMStar"
+MMSTAR_SPLIT="val"
+
 # --- 3) General training knobs --------------------------------------------
 OUTPUT_DIR="./output/dflash_qwen3.5_9b_mm"
 VLLM_PORT=8000
@@ -106,6 +117,29 @@ print(2, L // 2, L - 3)
 PY
 )
     echo "    text num_hidden_layers based -> TARGET_LAYER_IDS = ${TARGET_LAYER_IDS}"
+fi
+
+# Step 0 (optional): build a multimodal jsonl from a local MMStar dataset ---
+# MMStar stores images inline, but the online pipeline needs on-disk image
+# files, so we extract images + emit a `conversations` jsonl and point the
+# pipeline at it. Uses absolute paths so vLLM's --allowed-local-media-path
+# matches. Idempotent: skips conversion if the jsonl already exists.
+if [ "${USE_MMSTAR}" = "1" ]; then
+    echo "=== Step 0: Preparing MMStar (extract images -> jsonl) ==="
+    MMSTAR_JSONL="$(pwd)/data/mmstar/mmstar.jsonl"
+    MMSTAR_IMG_DIR="$(pwd)/data/mmstar/images"
+    if [ -f "$MMSTAR_JSONL" ]; then
+        echo "    reuse existing $MMSTAR_JSONL"
+    else
+        python3 scripts/mmstar_to_jsonl.py \
+            --mmstar "$MMSTAR_SRC" \
+            --split "$MMSTAR_SPLIT" \
+            --out-jsonl "$MMSTAR_JSONL" \
+            --image-dir "$MMSTAR_IMG_DIR" \
+            --max-samples "$MAX_SAMPLES"
+    fi
+    DATASET="$MMSTAR_JSONL"
+    MEDIA_ROOT="$MMSTAR_IMG_DIR"
 fi
 
 # Step 1: Prepare data ------------------------------------------------------
