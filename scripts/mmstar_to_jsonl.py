@@ -16,6 +16,12 @@ Supports TWO input forms:
       id like `Lin-Chen/MMStar`) whose `image` column holds INLINE images. Those
       are extracted to --image-dir as jpgs and then referenced by path.
 
+By default the multiple-choice items are rewritten to OPEN-ENDED form: the
+"Options: A: .. B: .." list is stripped from the question and the letter answer
+is replaced by the full text of the chosen option. This gives the draft model a
+natural, multi-token target instead of a single letter. Pass --no-open-ended to
+keep the raw multiple-choice question + letter answer.
+
 Output (one JSON object per line) is the `conversations` format that
 prepare_data.py expects (its `load_raw_dataset` reads .json/.jsonl and the
 preprocessing reads the `conversations` column):
@@ -23,13 +29,12 @@ preprocessing reads the `conversations` column):
     {"conversations": [
         {"role": "user", "content": [
             {"type": "image", "path": "/abs/img.jpg"},
-            {"type": "text",  "text": "<question, with options>"}]},
-        {"role": "assistant", "content": "A"}]}
+            {"type": "text",  "text": "<question>"}]},
+        {"role": "assistant", "content": "<answer>"}]}
 
-Caveat: MMStar is a ~1.5k multiple-choice EVAL benchmark with single-letter
-answers. Great for SMOKE-TESTING that the multimodal pipeline runs end to end,
-but NOT a real training set (tiny; ~1 trainable token/sample). For real quality
-use large data with full-length assistant responses (or regenerate responses).
+Caveat: MMStar is a ~1.5k EVAL benchmark; even open-ended, answers are short
+(one option's worth of text). Good for SMOKE-TESTING the multimodal pipeline,
+but for real speculator quality use large data with full-length responses.
 
 Usage (your pre-extracted dump):
     python3 scripts/mmstar_to_jsonl.py \
@@ -42,7 +47,36 @@ from __future__ import annotations
 import argparse
 import io
 import json
+import re
 from pathlib import Path
+
+# Split the question stem from the trailing "Options: ..." block.
+_OPTIONS_SPLIT_RE = re.compile(r"\n?\s*options?\s*[:：]\s*", re.IGNORECASE)
+# Match each "<LETTER>: <text>" option, ending at the next ", <LETTER>:" or EOS.
+# Restricting the label to a single A-H avoids matching letters/periods that
+# appear inside the option text itself (e.g. "...water.").
+_OPT_RE = re.compile(r"([A-H])\s*[:.．、]\s*(.+?)(?=,\s*[A-H]\s*[:.．、]|$)", re.DOTALL)
+
+
+def _to_open_ended(question: str, answer: str) -> tuple[str, str]:
+    """Turn a multiple-choice MMStar item into an open question + full answer.
+
+    'What is X?\\nOptions: A: foo, B: bar' + 'B'  ->  ('What is X?', 'bar').
+    Falls back to the original (question, answer) if it can't parse cleanly.
+    """
+    parts = _OPTIONS_SPLIT_RE.split(question, maxsplit=1)
+    if len(parts) < 2:
+        return question.strip(), answer.strip()
+    stem = parts[0].strip()
+    options = {
+        m.group(1).upper(): m.group(2).strip().rstrip(",").strip()
+        for m in _OPT_RE.finditer(parts[1])
+    }
+    key = next((c for c in answer.upper() if c in "ABCDEFGH"), "")
+    full = options.get(key)
+    if stem and full:
+        return stem, full
+    return question.strip(), answer.strip()
 
 
 def _load_flat_json(path: Path) -> list[dict]:
@@ -138,7 +172,23 @@ def main():  # noqa: C901
     ap.add_argument("--image-key", default="image")
     ap.add_argument("--question-key", default="question")
     ap.add_argument("--answer-key", default="answer")
+    ap.add_argument(
+        "--no-open-ended",
+        dest="open_ended",
+        action="store_false",
+        default=True,
+        help="Keep raw multiple-choice questions + letter answers "
+        "(default: rewrite to open-ended question + full-text answer).",
+    )
     args = ap.parse_args()
+
+    def emit(f, img_path: str, question: str, answer: str) -> None:
+        if args.open_ended:
+            question, answer = _to_open_ended(question, answer)
+        f.write(
+            json.dumps(_make_conv(img_path, question, answer), ensure_ascii=False)
+            + "\n"
+        )
 
     src = Path(args.mmstar)
     is_flat_json = src.is_file() and src.suffix in (".json", ".jsonl")
@@ -166,14 +216,11 @@ def main():  # noqa: C901
                     img_path = (src.parent / img).resolve()
                 if not img_path.exists():
                     missing += 1
-                question = str(r.get(args.question_key) or "").strip()
-                answer = str(r.get(args.answer_key) or "").strip()
-                f.write(
-                    json.dumps(
-                        _make_conv(str(img_path), question, answer),
-                        ensure_ascii=False,
-                    )
-                    + "\n"
+                emit(
+                    f,
+                    str(img_path),
+                    str(r.get(args.question_key) or "").strip(),
+                    str(r.get(args.answer_key) or "").strip(),
                 )
                 written += 1
         else:
@@ -201,18 +248,15 @@ def main():  # noqa: C901
                 idx = ex.get("index", ex.get("id", i))
                 img_path = (img_dir / f"mmstar_{idx}.jpg").resolve()
                 pil.save(img_path, "JPEG", quality=95)
-                question = str(ex.get(args.question_key) or "").strip()
-                answer = str(ex.get(args.answer_key) or "").strip()
-                f.write(
-                    json.dumps(
-                        _make_conv(str(img_path), question, answer),
-                        ensure_ascii=False,
-                    )
-                    + "\n"
+                emit(
+                    f,
+                    str(img_path),
+                    str(ex.get(args.question_key) or "").strip(),
+                    str(ex.get(args.answer_key) or "").strip(),
                 )
                 written += 1
 
-    print(f"Wrote {written} samples -> {out}")
+    print(f"Wrote {written} samples -> {out}  (open_ended={args.open_ended})")
     if missing:
         print(
             f"WARNING: {missing} image path(s) in {src} do not exist on disk. "
