@@ -64,8 +64,14 @@ MEDIA_ROOT="${COCO_DIR}"
 # answers) — ideal for verifying the multimodal pipeline runs end to end, but
 # NOT a real training set. Use large, full-response data for real quality.
 USE_MMSTAR=1
-MMSTAR_SRC="/home/models/MMStar"   # local dir (save_to_disk/parquet) or "Lin-Chen/MMStar"
+# A JSON/JSONL of records with image FILE PATHS (a pre-extracted dump), or a HF
+# MMStar dataset dir/parquet/id (inline images get extracted automatically).
+MMSTAR_SRC="/home/wenxuan/mmstar/mmstar_answers.json"
 MMSTAR_SPLIT="val"
+# Folder vLLM is allowed to read images from (must be a prefix of the image
+# paths). For the json-with-paths case set it to your images dir; leave EMPTY
+# for the HF-extract case (the extraction dir is used instead).
+MMSTAR_MEDIA_ROOT="/home/wenxuan/mmstar/images"
 
 # --- 3) General training knobs --------------------------------------------
 OUTPUT_DIR="./output/dflash_qwen3.5_9b_mm"
@@ -119,17 +125,18 @@ PY
     echo "    text num_hidden_layers based -> TARGET_LAYER_IDS = ${TARGET_LAYER_IDS}"
 fi
 
-# Step 0 (optional): build a multimodal jsonl from a local MMStar dataset ---
-# MMStar stores images inline, but the online pipeline needs on-disk image
-# files, so we extract images + emit a `conversations` jsonl and point the
-# pipeline at it. Uses absolute paths so vLLM's --allowed-local-media-path
-# matches. Idempotent: skips conversion if the jsonl already exists.
+# Step 0 (optional): build a `conversations` jsonl from a local MMStar set ---
+# Form (1): MMSTAR_SRC is a json/jsonl whose records already point at image
+#           files on disk -> referenced in place (no copy).
+# Form (2): MMSTAR_SRC is a HF dataset with inline images -> extracted to
+#           MMSTAR_IMG_DIR.
+# Idempotent: skips conversion if the jsonl already exists.
 if [ "${USE_MMSTAR}" = "1" ]; then
-    echo "=== Step 0: Preparing MMStar (extract images -> jsonl) ==="
+    echo "=== Step 0: Preparing MMStar (-> conversations jsonl) ==="
     MMSTAR_JSONL="$(pwd)/data/mmstar/mmstar.jsonl"
-    MMSTAR_IMG_DIR="$(pwd)/data/mmstar/images"
+    MMSTAR_IMG_DIR="$(pwd)/data/mmstar/images"   # only used when extracting from HF
     if [ -f "$MMSTAR_JSONL" ]; then
-        echo "    reuse existing $MMSTAR_JSONL"
+        echo "    reuse existing $MMSTAR_JSONL  (rm it to regenerate)"
     else
         python3 scripts/mmstar_to_jsonl.py \
             --mmstar "$MMSTAR_SRC" \
@@ -139,7 +146,11 @@ if [ "${USE_MMSTAR}" = "1" ]; then
             --max-samples "$MAX_SAMPLES"
     fi
     DATASET="$MMSTAR_JSONL"
-    MEDIA_ROOT="$MMSTAR_IMG_DIR"
+    if [ -n "${MMSTAR_MEDIA_ROOT}" ]; then
+        MEDIA_ROOT="$MMSTAR_MEDIA_ROOT"   # json-with-paths: your images dir
+    else
+        MEDIA_ROOT="$MMSTAR_IMG_DIR"      # HF-extract: the extraction dir
+    fi
 fi
 
 # Step 1: Prepare data ------------------------------------------------------
