@@ -1,0 +1,29 @@
+我的mmstar是修改过了，他有一个/images文件夹里面有所有的图片，然后还有一个/home/wenxuan/mmstar/mmstar_answers.json  
+
+[
+  {
+    "id": 0,
+    "answer": "A",
+    "question": "Which option describe the object relationship in the image correctly?\nOptions: A: The suitcase is on the book., B: The suitcase is beneath the cat., C: The suitcase is beneath the bed., D: The suitcase is beneath the book.",
+    "image": "/home/wenxuan/mmstar/images/mmstar_000000.jpg",
+    "category": "coarse perception",
+    "l2_category": "image scene and topic",
+    "meta_info": {
+      "image_path": "images/0.jpg",
+      "source": "MMBench",
+      "split": "val"
+    }
+  },
+  {
+    "id": 1,
+    "answer": "B",
+    "question": "What is the main feature in the background of the image?\nOptions: A: A park bench near the water., B: A couple sitting on a bench., C: A body of water and the Golden Gate Bridge., D: A mountain in the distance.",
+    "image": "/home/wenxuan/mmstar/images/mmstar_000001.jpg",
+    "category": "coarse perception",
+    "l2_category": "image scene and topic",
+    "meta_info": {
+      "image_path": "images/1.jpg",
+      "source": "SEEDBench_IMG",
+      "split": "val"
+    }   他大概涨这个样子请修改了一下你的preparedata去match这个数据格式
+
