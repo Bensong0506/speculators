@@ -1,29 +1,87 @@
-我的mmstar是修改过了，他有一个/images文件夹里面有所有的图片，然后还有一个/home/wenxuan/mmstar/mmstar_answers.json  
-
-[
-  {
-    "id": 0,
-    "answer": "A",
-    "question": "Which option describe the object relationship in the image correctly?\nOptions: A: The suitcase is on the book., B: The suitcase is beneath the cat., C: The suitcase is beneath the bed., D: The suitcase is beneath the book.",
-    "image": "/home/wenxuan/mmstar/images/mmstar_000000.jpg",
-    "category": "coarse perception",
-    "l2_category": "image scene and topic",
-    "meta_info": {
-      "image_path": "images/0.jpg",
-      "source": "MMBench",
-      "split": "val"
-    }
-  },
-  {
-    "id": 1,
-    "answer": "B",
-    "question": "What is the main feature in the background of the image?\nOptions: A: A park bench near the water., B: A couple sitting on a bench., C: A body of water and the Golden Gate Bridge., D: A mountain in the distance.",
-    "image": "/home/wenxuan/mmstar/images/mmstar_000001.jpg",
-    "category": "coarse perception",
-    "l2_category": "image scene and topic",
-    "meta_info": {
-      "image_path": "images/1.jpg",
-      "source": "SEEDBench_IMG",
-      "split": "val"
-    }   他大概涨这个样子请修改了一下你的preparedata去match这个数据格式
-
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962] torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 12.00 GiB. GPU 2 has a total capacity of 79.32 GiB of which 3.71 GiB is free. Process 72658 has 75.59 GiB memory in use. Of the allocated memory 50.78 GiB is allocated by PyTorch, and 24.28 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962] Traceback (most recent call last):
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 957, in worker_busy_loop
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]     output = func(*args, **kwargs)
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]              ^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]   File "/usr/local/lib/python3.12/dist-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]     return func(*args, **kwargs)
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]            ^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu_worker.py", line 396, in determine_available_memory
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]     self.model_runner.profile_run()
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu_model_runner.py", line 6164, in profile_run
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]     hidden_states, last_hidden_states = self._dummy_run(
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]                                         ^^^^^^^^^^^^^^^^
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]   File "/usr/local/lib/python3.12/dist-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]     return func(*args, **kwargs)
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]            ^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu_model_runner.py", line 5824, in _dummy_run
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]     outputs = self.model(
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]               ^^^^^^^^^^^
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]   File "/usr/local/lib/python3.12/dist-packages/vllm/compilation/cuda_graph.py", line 254, in __call__
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]     return self.runnable(*args, **kwargs)
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]     return self._call_impl(*args, **kwargs)
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]     return forward_call(*args, **kwargs)
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]   File "/usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/qwen3_5.py", line 660, in forward
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]     hidden_states = self.language_model.model(
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]   File "/usr/local/lib/python3.12/dist-packages/vllm/compilation/decorators.py", line 670, in __call__
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]     output = self.aot_compiled_fn(self, *args, **kwargs)
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]   File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/aot_compile.py", line 224, in __call__
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]     return self.fn(*args, **kwargs)
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]            ^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]   File "/usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/qwen3_next.py", line 505, in forward
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]     def forward(
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]   File "/usr/local/lib/python3.12/dist-packages/vllm/compilation/caching.py", line 217, in __call__
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]     return self.optimized_call(*args, **kwargs)
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]   File "<string>", line 448, in execution_fn
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]   File "/usr/local/lib/python3.12/dist-packages/vllm/compilation/cuda_graph.py", line 254, in __call__
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]     return self.runnable(*args, **kwargs)
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]   File "/usr/local/lib/python3.12/dist-packages/vllm/compilation/piecewise_backend.py", line 380, in __call__
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]     return range_entry.runnable(*args)
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]   File "/usr/local/lib/python3.12/dist-packages/torch/_inductor/standalone_compile.py", line 122, in __call__
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]     return self._compiled_fn(*args)
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]            ^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]   File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/eval_frame.py", line 1263, in _fn
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]     return fn(*args, **kwargs)
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]            ^^^^^^^^^^^^^^^^^^^
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]   File "/usr/local/lib/python3.12/dist-packages/torch/_functorch/aot_autograd.py", line 1200, in forward
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]     return compiled_fn(full_args)
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]            ^^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]   File "/usr/local/lib/python3.12/dist-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 580, in runtime_wrapper
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]     all_outs = call_func_at_runtime_with_args(
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]   File "/usr/local/lib/python3.12/dist-packages/torch/_functorch/_aot_autograd/utils.py", line 138, in call_func_at_runtime_with_args
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]     out = normalize_as_list(f(args))
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]                             ^^^^^^^
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]   File "/usr/local/lib/python3.12/dist-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 2298, in __call__
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]     return self.compiled_fn(*args, **kwargs)
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]   File "/usr/local/lib/python3.12/dist-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 783, in wrapper
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]     return compiled_fn(runtime_args)
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]            ^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]   File "/usr/local/lib/python3.12/dist-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 1011, in inner_fn
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]     outs = compiled_fn(args)
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]            ^^^^^^^^^^^^^^^^^
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]   File "/usr/local/lib/python3.12/dist-packages/torch/_inductor/output_code.py", line 656, in __call__
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]     return self.current_callable(inputs)
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]   File "/usr/local/lib/python3.12/dist-packages/torch/_inductor/utils.py", line 3401, in run
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]     out = model(new_inputs)
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]           ^^^^^^^^^^^^^^^^^
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]   File "/root/.cache/vllm/torch_compile_cache/torch_aot_compile/f09f8b506bf3ed9d144b0aa65af81b58ffd29f8880e4d4f6673433acfb88d6f6/inductor_cache/nr/cnrd2ebzql25hu3a6logpo4orpiagjsoeozhmkpc4smxcrkuqjja.py", line 777, in call
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]     buf5 = empty_strided_cuda((s18, 24576), (24576, 1), torch.bfloat16)
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962] torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 12.00 GiB. GPU 2 has a total capacity of 79.32 GiB of which 3.71 GiB is free. Process 72658 has 75.59 GiB memory in use. Of the allocated memory 50.78 GiB is allocated by PyTorch, and 24.28 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)
+(Worker pid=7206) ERROR 06-02 12:03:59 [multiproc_executor.py:962] 
+(Worker pid=7206) INFO 06-02 12:03:59 [multiproc_executor.py:872] WorkerProc shutting down.
+/usr/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 4 leaked shared_memory objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
