@@ -72,6 +72,28 @@ def load_mmstar(src: str, split: str):
     return ds
 
 
+def to_pil(img):
+    """Coerce a datasets image cell to a PIL.Image.
+
+    Handles both a decoded PIL image and the raw `{"bytes": ..., "path": ...}`
+    form you get when loading parquet without the Image feature applied.
+    """
+    import io  # noqa: PLC0415
+
+    from PIL import Image  # noqa: PLC0415
+
+    if img is None:
+        return None
+    if hasattr(img, "convert"):  # already a PIL image
+        return img
+    if isinstance(img, dict):
+        if img.get("bytes"):
+            return Image.open(io.BytesIO(img["bytes"]))
+        if img.get("path"):
+            return Image.open(img["path"])
+    raise TypeError(f"Unsupported image cell type: {type(img)}")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument(
@@ -121,10 +143,10 @@ def main():
     written = 0
     with out.open("w", encoding="utf-8") as f:
         for i, ex in enumerate(ds):
-            img = ex.get(args.image_key)
+            img = to_pil(ex.get(args.image_key))
             if img is None:
                 continue
-            if getattr(img, "mode", None) != "RGB":
+            if img.mode != "RGB":
                 img = img.convert("RGB")
             idx = ex.get("index", i)
             img_path = (img_dir / f"mmstar_{idx}.jpg").absolute()
