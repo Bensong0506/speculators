@@ -60,7 +60,8 @@ ALLAVA_ROOT=/home/wenxuan/ALLaVA-4V bash examples/train/extract_allava_images.sh
 ### 1b. Warm-start from the open-source DFlash — RECOMMENDED (not from scratch)
 `FINETUNE_FROM` auto-reads the checkpoint's `config.json` and matches block_size /
 num_layers / draft_arch / aux target-layer-ids / mask_token_id / FULL vocab (and
-uses `--no-include-last-layer`, lower LR, a separate `..._ft` dir). Step 0
+uses a lower LR plus a separate `..._ft` dir). vLLM still appends the verifier's
+final text layer for `verifier_last_hidden_states`. Step 0
 auto-converts ALLaVA → a conversations jsonl (`scripts/llava_to_jsonl.py`).
 ```bash
 FINETUNE_FROM=/home/models/Qwen3.5-9B-DFlash \

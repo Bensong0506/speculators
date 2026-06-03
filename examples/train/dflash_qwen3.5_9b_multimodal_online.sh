@@ -141,7 +141,6 @@ fi
 # FULL vocab). Weights are LOADED only if it's a *speculators*-format checkpoint
 # (has speculators_model_type). A raw DFlash ckpt (e.g. z-lab's) can't be loaded
 # by this repo's from_pretrained, so we keep the recipe and train FROM SCRATCH.
-INCLUDE_LAST_FLAG=()
 FROM_FLAG=()
 if [ -n "$FINETUNE_FROM" ]; then
     echo "=== Aligning recipe to $FINETUNE_FROM/config.json ==="
@@ -163,7 +162,6 @@ PY
     DRAFT_VOCAB_SIZE=""                          # match pretrained: FULL vocab (no mapping)
     LR="$LR_FT"                                  # lower LR
     OUTPUT_DIR="${OUTPUT_DIR}_ft"                # separate dir
-    INCLUDE_LAST_FLAG=(--no-include-last-layer)  # aux layers == target_layer_ids exactly
     echo "    -> block_size=$BLOCK_SIZE num_layers=$NUM_LAYERS draft_arch=$DRAFT_ARCH"
     echo "    -> target_layer_ids='$TARGET_LAYER_IDS' mask_token_id='$MASK_TOKEN_ID' (full vocab, lr=$LR)"
     if [ "${SPEC_FORMAT:-0}" = "1" ]; then
@@ -257,7 +255,6 @@ python3 scripts/prepare_data.py \
 echo "=== Step 2: Launching vLLM server ==="
 CUDA_VISIBLE_DEVICES="$VLLM_GPUS" python3 scripts/launch_vllm.py "$MODEL" \
     --target-layer-ids $TARGET_LAYER_IDS \
-    "${INCLUDE_LAST_FLAG[@]}" \
     -- --data-parallel-size "$VLLM_DP" \
        --port "$VLLM_PORT" \
        --allowed-local-media-path "$MEDIA_ROOT" \
