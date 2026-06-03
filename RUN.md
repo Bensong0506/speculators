@@ -76,6 +76,25 @@ RUN_MODE=dflash DFLASH_SPEC=5 \
 Other modes: `RUN_MODE=baseline` (no spec) / `RUN_MODE=mtp MTP_SPEC=3`.
 If vLLM rejects `--attention-backend`: `export VLLM_ATTENTION_BACKEND=FLASH_ATTN` first.
 
+### Sanity-check with the published z-lab draft (instead of ours)
+
+The z-lab draft is block-16, so use `DFLASH_SPEC=15`. Download it (small), then
+reuse the same launcher:
+
+```bash
+export HF_ENDPOINT=https://hf-mirror.com    # intranet mirror
+huggingface-cli download z-lab/Qwen3.5-9B-DFlash --local-dir /home/models/Qwen3.5-9B-DFlash
+RUN_MODE=dflash DFLASH_SPEC=15 \
+  DFLASH_DRAFT_PATH=/home/models/Qwen3.5-9B-DFlash \
+  CUDA_VISIBLE_DEVICES=0 \
+  bash examples/serve/run_qwen35_9b_gpu.sh
+```
+
+This is exactly the z-lab card's command (target + dflash draft + flash_attn +
+max-num-batched-tokens 32768), just via the launcher with local paths. For 27B:
+download `Qwen/Qwen3.5-27B` + `z-lab/Qwen3.5-27B-DFlash`, set `MODEL_PATH` to the
+27B, and use `TP=2` (54 GB bf16 won't leave much room on one 80 GB card).
+
 ---
 
 ## 3. Eval — throughput + acceptance (baseline vs dflash = speedup)
