@@ -77,6 +77,15 @@ FINETUNE_FROM=/home/models/Qwen3.5-9B-DFlash \
 (From scratch instead: drop `FINETUNE_FROM`. MMStar smoke test:
 `USE_ALLAVA=0 USE_MMSTAR=1 bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh`.)
 
+**TRUE warm-start (inherit z-lab's weights, not just its recipe):** the raw z-lab
+checkpoint isn't speculators-format, so `FINETUNE_FROM` on it only copies the
+recipe and trains from scratch. Convert it once, then point `FINETUNE_FROM` at the
+converted dir (weights then load):
+```bash
+bash examples/train/convert_zlab_dflash.sh        # -> /home/models/Qwen3.5-9B-DFlash-spec
+# then in 1b's command use:  FINETUNE_FROM=/home/models/Qwen3.5-9B-DFlash-spec
+```
+
 ### 1c. Watch training (loss + per-position acceptance)
 ```bash
 bash examples/train/view_tensorboard.sh
