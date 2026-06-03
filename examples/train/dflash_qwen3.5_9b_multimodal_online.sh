@@ -188,7 +188,7 @@ fi
 if [ "${USE_ALLAVA}" = "1" ]; then
     echo "=== Step 0: Converting ALLaVA-4V -> conversations jsonl ==="
     ALLAVA_JSONL="$(pwd)/data/allava/allava.jsonl"
-    if [ -f "$ALLAVA_JSONL" ]; then
+    if [ -s "$ALLAVA_JSONL" ]; then
         echo "    reuse existing $ALLAVA_JSONL  (rm it to regenerate)"
     else
         IN_ARGS=()
@@ -205,7 +205,7 @@ elif [ "${USE_MMSTAR}" = "1" ]; then
     echo "=== Step 0: Preparing MMStar (-> conversations jsonl) ==="
     MMSTAR_JSONL="$(pwd)/data/mmstar/mmstar.jsonl"
     MMSTAR_IMG_DIR="$(pwd)/data/mmstar/images"   # only used when extracting from HF
-    if [ -f "$MMSTAR_JSONL" ]; then
+    if [ -s "$MMSTAR_JSONL" ]; then
         echo "    reuse existing $MMSTAR_JSONL  (rm it to regenerate)"
     else
         python3 scripts/mmstar_to_jsonl.py \
