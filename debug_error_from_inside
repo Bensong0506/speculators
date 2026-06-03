@@ -1,42 +1,56 @@
-[transformers] DFlashDraftModel LOAD REPORT from: /home/models/Qwen3.5-9B-DFlash-spec/
-Key                     | Status  | 
-------------------------+---------+-
-verifier_lm_head.weight | MISSING | 
-
-Notes:
-- MISSING:      those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-[transformers] DFlashDraftModel LOAD REPORT from: /home/models/Qwen3.5-9B-DFlash-spec/
-Key                     | Status  | 
-------------------------+---------+-
-verifier_lm_head.weight | MISSING | 
-
-Notes:
-- MISSING:      those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-[transformers] DFlashDraftModel LOAD REPORT from: /home/models/Qwen3.5-9B-DFlash-spec/
-Key                     | Status  | 
-------------------------+---------+-
-verifier_lm_head.weight | MISSING | 
-
-Notes:
-- MISSING:      those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-[transformers] DFlashDraftModel LOAD REPORT from: /home/models/Qwen3.5-9B-DFlash-spec/
-Key                     | Status  | 
-------------------------+---------+-
-verifier_lm_head.weight | MISSING | 
-
-Notes:
-- MISSING:      those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-06-03 10:00:20.496 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/models/Qwen3.5-9B
-2026-06-03 10:00:20.496 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/models/Qwen3.5-9B
-2026-06-03 10:00:20.496 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/models/Qwen3.5-9B
-2026-06-03 10:00:20.496 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/models/Qwen3.5-9B
-2026-06-03 10:00:20.497 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/models/Qwen3.5-9B
-2026-06-03 10:00:20.497 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/models/Qwen3.5-9B
-2026-06-03 10:00:20.497 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/models/Qwen3.5-9B
-2026-06-03 10:00:20.497 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/models/Qwen3.5-9B
-2026-06-03 10:00:20.497 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/models/Qwen3.5-9B
-2026-06-03 10:00:20.497 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/models/Qwen3.5-9B
-2026-06-03 10:00:20.498 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/models/Qwen3.5-9B
-2026-06-03 10:00:20.498 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/models/Qwen3.5-9B
-[10:00:26] INFO     No previous checkpoint found. Starting from scratch.                                                            trainer.py:92
-[10:00:35] INFO     Training epoch 1/5 started                                                                          
+(ApiServer_3 pid=49209) INFO:     127.0.0.1:52410 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+(ApiServer_0 pid=49206) INFO:     127.0.0.1:52618 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+(ApiServer_2 pid=49208) INFO:     127.0.0.1:52810 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+(ApiServer_0 pid=49206) INFO:     127.0.0.1:52726 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+(ApiServer_2 pid=49208) INFO:     127.0.0.1:52810 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+(ApiServer_3 pid=49209) INFO:     127.0.0.1:52580 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+(ApiServer_3 pid=49209) INFO:     127.0.0.1:52642 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+(ApiServer_2 pid=49208) INFO:     127.0.0.1:52702 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+(ApiServer_2 pid=49208) INFO:     127.0.0.1:52634 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+(ApiServer_0 pid=49206) INFO:     127.0.0.1:52794 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+(ApiServer_0 pid=49206) INFO:     127.0.0.1:52356 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+(ApiServer_1 pid=49207) INFO:     127.0.0.1:52606 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[rank3]: Traceback (most recent call last):
+[rank3]:   File "/home/wenxuan/speculators/scripts/train.py", line 782, in <module>
+[rank3]:     main(args)
+[rank3]:   File "/home/wenxuan/speculators/scripts/train.py", line 435, in main
+[rank3]:     trainer.run_training()
+[rank3]:   File "/home/wenxuan/speculators/src/speculators/train/graceful_shutdown.py", line 118, in wrapper
+[rank3]:     return fn(self, *args, **kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/wenxuan/speculators/src/speculators/train/trainer.py", line 340, in run_training
+[rank3]:     self.train_epoch(epoch)
+[rank3]:   File "/home/wenxuan/speculators/src/speculators/train/trainer.py", line 209, in train_epoch
+[rank3]:     _draft_tokens, loss, metrics = self.model(
+[rank3]:                                    ^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+[rank3]:     return self._call_impl(*args, **kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1885, in _call_impl
+[rank3]:     return inner()
+[rank3]:            ^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1833, in inner
+[rank3]:     result = forward_call(*args, **kwargs)
+[rank3]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/eval_frame.py", line 1024, in compile_wrapper
+[rank3]:     return fn(*args, **kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/wenxuan/speculators/src/speculators/models/dflash/core.py", line 259, in forward
+[rank3]:     self._build_attention_mask(loss_mask, lengths, device)
+[rank3]:   File "/home/wenxuan/speculators/src/speculators/models/dflash/core.py", line 278, in torch_dynamo_resume_in_forward_at_259
+[rank3]:     mask_position_ids = get_base_indices_for_anchored_blocks(
+[rank3]:   File "/home/wenxuan/speculators/src/speculators/models/dflash/core.py", line 288, in torch_dynamo_resume_in_forward_at_278
+[rank3]:     anchored_block_indices = get_base_indices_for_anchored_blocks(
+[rank3]:   File "/home/wenxuan/speculators/src/speculators/models/dflash/core.py", line 314, in torch_dynamo_resume_in_forward_at_288
+[rank3]:     logits = self.lm_head(self.norm(noise_embedding))
+[rank3]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+[rank3]:     return self._call_impl(*args, **kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+[rank3]:     return forward_call(*args, **kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/linear.py", line 134, in forward
+[rank3]:     return F.linear(input, self.weight, self.bias)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 22.73 GiB. GPU 3 has a total capacity of 79.32 GiB of which 8.20 GiB is free. Process 3941095 has 71.08 GiB memory in use. Of the allocated memory 69.51 GiB is allocated by PyTorch, and 673.04 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)
