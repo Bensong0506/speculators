@@ -89,6 +89,9 @@ SEQ_LENGTH="${SEQ_LENGTH:-8192}"    # Feeds prepare_data, vLLM --max-model-len /
                                     # --max-num-batched-tokens, and trainer
                                     # --total-seq-len. Raise only if you have
                                     # enough memory; long-image samples may drop.
+PREPROCESS_SEQ_LENGTH="${PREPROCESS_SEQ_LENGTH:-7680}"  # Conservative filter
+                                                        # before vLLM expands MM
+                                                        # inputs into prompt tokens.
 EPOCHS=5
 LR=3e-4
 
@@ -240,13 +243,15 @@ fi
 # The VLM's AutoProcessor is loaded automatically; image turns are tokenized
 # with the proper <image> placeholders and an assistant loss mask is built.
 echo "=== Step 1: Preparing data ==="
+echo "    vLLM/training max length: $SEQ_LENGTH"
+echo "    preprocessing keep length: $PREPROCESS_SEQ_LENGTH"
 python3 scripts/prepare_data.py \
     --model "$MODEL" \
     --data "$DATASET" \
     --output "$OUTPUT_DIR" \
     --overwrite \
     --max-samples "$MAX_SAMPLES" \
-    --seq-length "$SEQ_LENGTH" \
+    --seq-length "$PREPROCESS_SEQ_LENGTH" \
     "${TRC_FLAG[@]}"
 
 # Step 2: Launch vLLM server (verifier) in the background -------------------
