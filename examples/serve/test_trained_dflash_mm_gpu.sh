@@ -19,6 +19,7 @@ DRAFT="${DRAFT:-/home/wenxuan/speculators/output/dflash_qwen3.5_9b_mm/checkpoint
 NUM_SPEC_TOKENS="${NUM_SPEC_TOKENS:-7}"           # trained block_size=8 -> 7
 MM_MEDIA_DIR="${MM_MEDIA_DIR:-/home/wenxuan/mmstar/images}"   # must contain images
 MAX_IMAGES="${MAX_IMAGES:-40}"
+MAX_MODEL_LEN="${MAX_MODEL_LEN:-32768}"   # must be <= max-num-batched-tokens (chunked prefill is off)
 CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}"
 PORT="${PORT:-8100}"
 SERVED="${SERVED:-qwen3.5-9b}"
@@ -53,6 +54,7 @@ exec vllm serve "$MODEL_PATH" \
   --limit-mm-per-prompt "{\"image\":$MAX_IMAGES}" \
   --trust-remote-code \
   --dtype bfloat16 \
+  --max-model-len "$MAX_MODEL_LEN" \
   --max-num-batched-tokens 32768 \
   --no-enable-chunked-prefill \
   --port "$PORT"
