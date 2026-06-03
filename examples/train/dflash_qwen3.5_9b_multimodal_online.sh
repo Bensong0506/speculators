@@ -85,11 +85,11 @@ ALLAVA_IMAGE_ROOT="${ALLAVA_IMAGE_ROOT:-/data/ALLaVA-4V}"
 OUTPUT_DIR="./output/dflash_qwen3.5_9b_mm"
 VLLM_PORT=8000
 MAX_SAMPLES=5000        # 5k = sanity check only. Use 100k+ for real quality.
-SEQ_LENGTH="${SEQ_LENGTH:-8192}"    # Feeds prepare_data, vLLM --max-model-len /
+SEQ_LENGTH="${SEQ_LENGTH:-4096}"    # Feeds vLLM --max-model-len /
                                     # --max-num-batched-tokens, and trainer
                                     # --total-seq-len. Raise only if you have
                                     # enough memory; long-image samples may drop.
-PREPROCESS_SEQ_LENGTH="${PREPROCESS_SEQ_LENGTH:-7680}"  # Conservative filter
+PREPROCESS_SEQ_LENGTH="${PREPROCESS_SEQ_LENGTH:-3584}"  # Conservative filter
                                                         # before vLLM expands MM
                                                         # inputs into prompt tokens.
 EPOCHS=5
@@ -106,7 +106,7 @@ LOG_DIR="${LOG_DIR:-./train_logs}"
 # --- 4) DFlash-specific ----------------------------------------------------
 SPECULATOR_TYPE="dflash"
 BLOCK_SIZE=8            # tokens drafted per block (one forward pass)
-MAX_ANCHORS=3072        # max anchor positions sampled per step (memory knob)
+MAX_ANCHORS="${MAX_ANCHORS:-512}"  # max anchor positions sampled per step (memory knob)
 NUM_LAYERS=5            # draft transformer layers (DFlash typically uses ~5)
 DRAFT_VOCAB_SIZE=32000  # reduced draft vocab; auto-cleared (full vocab) when warm-starting
 

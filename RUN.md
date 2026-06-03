@@ -70,9 +70,10 @@ FINETUNE_FROM=/home/models/Qwen3.5-9B-DFlash \
   MAX_SAMPLES=100000 EPOCHS=2 \
   bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
 # -> ./output/dflash_qwen3.5_9b_mm_ft/checkpoints/checkpoint_best
-# Default hard token limit is SEQ_LENGTH=8192 to avoid OOM.
-# Preprocessing keeps only PREPROCESS_SEQ_LENGTH=7680 tokens by default, leaving
-# margin for vLLM's multimodal prompt expansion.
+# Default hard token limit is SEQ_LENGTH=4096 to avoid OOM.
+# Preprocessing keeps only PREPROCESS_SEQ_LENGTH=3584 tokens by default, leaving
+# margin for vLLM's multimodal prompt expansion. DFlash training also defaults
+# to MAX_ANCHORS=512 because full-vocab block-16 logits are large.
 # the run prints "Warm-start: aligning ..." -> eyeball block_size=16 / 5 layers /
 #   qwen3 / aux=[1,8,15,22,29] / mask=248070 / full vocab before it continues.
 # NOTE: MAX_SAMPLES caps TOTAL in input order (Caption first) — raise it (e.g. 300000)
