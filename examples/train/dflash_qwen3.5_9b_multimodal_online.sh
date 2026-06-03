@@ -85,7 +85,11 @@ ALLAVA_IMAGE_ROOT="${ALLAVA_IMAGE_ROOT:-/data/ALLaVA-4V}"
 OUTPUT_DIR="./output/dflash_qwen3.5_9b_mm"
 VLLM_PORT=8000
 MAX_SAMPLES=5000        # 5k = sanity check only. Use 100k+ for real quality.
-SEQ_LENGTH=8192         # raise if your image+text sequences are long
+SEQ_LENGTH="${SEQ_LENGTH:-16384}"   # ALLaVA high-res images expand to 8k-16k image
+                                    # tokens; 8192 overflows many. Feeds prepare_data,
+                                    # vLLM --max-model-len/--max-num-batched-tokens, and
+                                    # --total-seq-len. Raise more if needed (costs memory);
+                                    # a few extreme images may still drop (handled gracefully).
 EPOCHS=5
 LR=3e-4
 
