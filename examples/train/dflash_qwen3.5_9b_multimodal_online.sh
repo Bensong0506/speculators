@@ -132,12 +132,15 @@ if [ "${TRUST_REMOTE_CODE}" = "1" ]; then
     TRC_FLAG=(--trust-remote-code)
 fi
 
-# Warm-start alignment: if FINETUNE_FROM is set, match the pretrained checkpoint
-# exactly (mismatched block_size / aux layers / vocab => weights won't load or
-# acceptance collapses). Reads everything from the checkpoint's config.json.
+# If FINETUNE_FROM is set, read the checkpoint's config.json to match its DFlash
+# recipe (block_size / num_layers / draft_arch / aux target-layer-ids / mask /
+# FULL vocab). Weights are LOADED only if it's a *speculators*-format checkpoint
+# (has speculators_model_type). A raw DFlash ckpt (e.g. z-lab's) can't be loaded
+# by this repo's from_pretrained, so we keep the recipe and train FROM SCRATCH.
 INCLUDE_LAST_FLAG=()
+FROM_FLAG=()
 if [ -n "$FINETUNE_FROM" ]; then
-    echo "=== Warm-start: aligning to $FINETUNE_FROM/config.json ==="
+    echo "=== Aligning recipe to $FINETUNE_FROM/config.json ==="
     [ -f "$FINETUNE_FROM/config.json" ] || { echo "[fatal] $FINETUNE_FROM/config.json not found"; exit 1; }
     eval "$(python3 - "$FINETUNE_FROM/config.json" <<'PY'
 import json, sys
@@ -150,18 +153,27 @@ print(f'NUM_LAYERS={c.get("num_hidden_layers") or len(c.get("layer_types", [])) 
 print(f'DRAFT_ARCH={c.get("model_type", "qwen3")}')
 print('TARGET_LAYER_IDS="%s"' % " ".join(str(x) for x in tli))
 print(f'MASK_TOKEN_ID={mt}' if mt is not None else 'MASK_TOKEN_ID=')
+print(f'SPEC_FORMAT={1 if "speculators_model_type" in c else 0}')
 PY
 )"
-    DRAFT_VOCAB_SIZE=""                          # pretrained uses FULL vocab (no mapping)
-    LR="$LR_FT"                                  # lower LR for fine-tuning
-    OUTPUT_DIR="${OUTPUT_DIR}_ft"                # separate dir (avoid stale vocab maps)
+    DRAFT_VOCAB_SIZE=""                          # match pretrained: FULL vocab (no mapping)
+    LR="$LR_FT"                                  # lower LR
+    OUTPUT_DIR="${OUTPUT_DIR}_ft"                # separate dir
     INCLUDE_LAST_FLAG=(--no-include-last-layer)  # aux layers == target_layer_ids exactly
     echo "    -> block_size=$BLOCK_SIZE num_layers=$NUM_LAYERS draft_arch=$DRAFT_ARCH"
     echo "    -> target_layer_ids='$TARGET_LAYER_IDS' mask_token_id='$MASK_TOKEN_ID' (full vocab, lr=$LR)"
+    if [ "${SPEC_FORMAT:-0}" = "1" ]; then
+        FROM_FLAG=(--from-pretrained "$FINETUNE_FROM")
+        echo "    -> speculators-format checkpoint: LOADING its weights (true warm-start)"
+    else
+        echo "    -> NOTE: $FINETUNE_FROM is NOT a speculators-format checkpoint"
+        echo "       (no speculators_model_type) -> this repo can't load its weights."
+        echo "       Training FROM SCRATCH with this recipe (full vocab / block_size=$BLOCK_SIZE"
+        echo "       / $DRAFT_ARCH / aux=[$TARGET_LAYER_IDS]). See me about a converter for true warm-start."
+    fi
 fi
 
 # Conditional trainer flags (mirror the TRC_FLAG pattern; empty arrays are no-ops)
-FROM_FLAG=();      [ -n "$FINETUNE_FROM" ]     && FROM_FLAG=(--from-pretrained "$FINETUNE_FROM")
 VOCAB_FLAG=();     [ -n "$DRAFT_VOCAB_SIZE" ]  && VOCAB_FLAG=(--draft-vocab-size "$DRAFT_VOCAB_SIZE")
 DRAFTARCH_FLAG=(); [ -n "${DRAFT_ARCH:-}" ]    && DRAFTARCH_FLAG=(--draft-arch "$DRAFT_ARCH")
 MASK_FLAG=();      [ -n "${MASK_TOKEN_ID:-}" ] && MASK_FLAG=(--mask-token-id "$MASK_TOKEN_ID")
