@@ -1,19 +1,53 @@
-(APIServer pid=19549) INFO:     Application startup complete.
-(EngineCore pid=19825) WARNING 06-03 06:21:34 [jit_monitor.py:103] Triton kernel JIT compilation during inference: _zero_kv_blocks_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
-(EngineCore pid=19825) WARNING 06-03 06:21:34 [jit_monitor.py:103] Triton kernel JIT compilation during inference: _compute_slot_mapping_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
-(EngineCore pid=19825) WARNING 06-03 06:21:34 [jit_monitor.py:103] Triton kernel JIT compilation during inference: _bilinear_pos_embed_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
-(EngineCore pid=19825) WARNING 06-03 06:21:34 [jit_monitor.py:103] Triton kernel JIT compilation during inference: _causal_conv1d_fwd_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
-(EngineCore pid=19825) WARNING 06-03 06:21:34 [jit_monitor.py:103] Triton kernel JIT compilation during inference: _fused_post_conv_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
-(EngineCore pid=19825) WARNING 06-03 06:21:34 [jit_monitor.py:103] Triton kernel JIT compilation during inference: _triton_mrope_forward. This causes a latency spike; consider extending warmup to cover this shape/config.
-(EngineCore pid=19825) WARNING 06-03 06:21:34 [jit_monitor.py:103] Triton kernel JIT compilation during inference: eagle_prepare_next_token_padded_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
-(EngineCore pid=19825) WARNING 06-03 06:21:34 [jit_monitor.py:103] Triton kernel JIT compilation during inference: copy_and_expand_dflash_inputs_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
-(EngineCore pid=19825) WARNING 06-03 06:21:35 [jit_monitor.py:103] Triton kernel JIT compilation during inference: _causal_conv1d_update_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
-(EngineCore pid=19825) WARNING 06-03 06:21:36 [jit_monitor.py:103] Triton kernel JIT compilation during inference: fused_sigmoid_gating_delta_rule_update_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
-(EngineCore pid=19825) WARNING 06-03 06:21:36 [jit_monitor.py:103] Triton kernel JIT compilation during inference: layer_norm_fwd_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
-(EngineCore pid=19825) WARNING 06-03 06:21:37 [jit_monitor.py:103] Triton kernel JIT compilation during inference: eagle_prepare_inputs_padded_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
-(APIServer pid=19549) INFO 06-03 06:21:41 [loggers.py:271] Engine 000: Avg prompt throughput: 20.7 tokens/s, Avg generation throughput: 10.0 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 1.1%, Prefix cache hit rate: 0.0%, MM cache hit rate: 0.0%
-(APIServer pid=19549) INFO 06-03 06:21:41 [metrics.py:101] SpecDecoding metrics: Mean acceptance length: 1.02, Accepted throughput: 0.00 tokens/s, Drafted throughput: 0.96 tokens/s, Accepted: 2 tokens, Drafted: 679 tokens, Per-position acceptance rate: 0.021, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, Avg Draft acceptance rate: 0.3%
-(APIServer pid=19549) INFO:     127.0.0.1:54930 - "POST /v1/chat/completions HTTP/1.1" 200 OK
-(APIServer pid=19549) INFO 06-03 06:21:51 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 2.8 tokens/s, Running: 0 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.0%, Prefix cache hit rate: 0.0%, MM cache hit rate: 0.0%
-(APIServer pid=19549) INFO 06-03 06:21:51 [metrics.py:101] SpecDecoding metrics: Mean acceptance length: 1.00, Accepted throughput: 0.00 tokens/s, Drafted throughput: 19.60 tokens/s, Accepted: 0 tokens, Drafted: 196 tokens, Per-position acceptance rate: 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, Avg Draft acceptance rate: 0.0%
-(APIServer pid=19549) INFO 06-03 06:22:01 [loggers.py:271] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 0.0 tokens/s, Running: 0 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.0%, Prefix cache hit rate: 0.0%, MM cache hit rate: 0.0%
+root@devserver-bms-af631bb3:/home/models/Qwen3.5-9B-DFlash# cat config.json 
+{
+  "architectures": [
+    "DFlashDraftModel"
+  ],
+  "attention_bias": false,
+  "attention_dropout": 0.0,
+  "auto_map": {
+    "AutoModel": "dflash.DFlashDraftModel"
+  },
+  "block_size": 16,
+  "dflash_config": {
+    "mask_token_id": 248070,
+    "target_layer_ids": [
+      1,
+      8,
+      15,
+      22,
+      29
+    ]
+  },
+  "dtype": "bfloat16",
+  "eos_token_id": 248044,
+  "head_dim": 128,
+  "hidden_act": "silu",
+  "hidden_size": 4096,
+  "initializer_range": 0.02,
+  "intermediate_size": 12288,
+  "layer_types": [
+    "full_attention",
+    "full_attention",
+    "full_attention",
+    "full_attention",
+    "full_attention"
+  ],
+  "max_position_embeddings": 262144,
+  "max_window_layers": 5,
+  "model_type": "qwen3",
+  "num_attention_heads": 32,
+  "num_hidden_layers": 5,
+  "num_key_value_heads": 8,
+  "num_target_layers": 32,
+  "pad_token_id": 248044,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000000,
+  "sliding_window": null,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.57.1",
+  "use_cache": true,
+  "use_sliding_window": false,
+  "vocab_size": 248320
+}
