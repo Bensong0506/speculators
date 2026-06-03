@@ -19,3 +19,10 @@ rough image count: 1522
 
 === first record of the first json (format + image path) ===
 file: /home/wenxuan/ALLaVA-4V/allava_laion/ALLaVA-Caption-LAION-4V.json
+keys : ['id', 'image', 'conversations', 'url', 'caption', 'llava-1.5-7b-PPL']
+image: allava_laion/images/72328992.jpeg
+turn0: {'from': 'human', 'value': '<image>\nCan you transform the visual elements of the image into words?'}
+
+Then set, e.g.:
+  ALLAVA_INPUTS="<json1> <json2>"   ALLAVA_IMAGE_ROOT="<dir containing allava_laion/ or images/>"
+root@devserver-bms-af631bb3:/home/wenxuan/speculators# 
