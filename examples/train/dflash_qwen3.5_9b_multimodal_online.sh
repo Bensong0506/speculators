@@ -258,6 +258,9 @@ python3 scripts/prepare_data.py \
 # --allowed-local-media-path lets vLLM read the local images referenced by
 # file path in the dataset. Everything after `--` is passed straight to vLLM.
 echo "=== Step 2: Launching vLLM server ==="
+filter_vllm_access_logs() {
+    grep -v -E '^\(ApiServer_[^)]*\) INFO: .*"(POST /v1/chat/completions|GET /health) HTTP/1\.1" 200 OK$'
+}
 CUDA_VISIBLE_DEVICES="$VLLM_GPUS" python3 scripts/launch_vllm.py "$MODEL" \
     --target-layer-ids $TARGET_LAYER_IDS \
     -- --data-parallel-size "$VLLM_DP" \
@@ -268,8 +271,9 @@ CUDA_VISIBLE_DEVICES="$VLLM_GPUS" python3 scripts/launch_vllm.py "$MODEL" \
        --max-num-batched-tokens "$SEQ_LENGTH" \
        --gpu-memory-utilization 0.85 \
        --limit-mm-per-prompt '{"image": 1}' \
-       --disable-log-requests \
-       --enforce-eager &
+       --enforce-eager \
+       > >(filter_vllm_access_logs) \
+       2> >(filter_vllm_access_logs >&2) &
 VLLM_PID=$!
 
 # Ensure vLLM is cleaned up on exit
