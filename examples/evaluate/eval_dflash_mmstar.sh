@@ -69,8 +69,16 @@ for _ in $(seq 1 120); do
         echo "ERROR: vLLM server died during startup. Last 40 log lines:"
         tail -n 40 "$SERVER_LOG"
         echo
-        echo "If it mentions an unknown 'dflash' method, your vLLM lacks DFlash"
-        echo "inference support (needs vLLM PR #38300) — upgrade vLLM to evaluate."
+        if grep -qiE "M-?RoPE|does not support multimodal" "$SERVER_LOG"; then
+            echo "DIAGNOSIS: your vLLM does NOT support speculative decoding for"
+            echo "multimodal (M-RoPE) verifiers like Qwen-VL yet. This is a vLLM"
+            echo "limitation (vLLM issue #42005), NOT a problem with your trained"
+            echo "speculator. Judge quality with the training-time val acceptance"
+            echo "metrics (val/full_acc, val/position_k_acc); the end-to-end serving"
+            echo "speedup eval needs a vLLM build that adds M-RoPE to the spec path."
+        elif grep -qiE "unknown.*dflash|method.*dflash" "$SERVER_LOG"; then
+            echo "DIAGNOSIS: your vLLM lacks DFlash inference support (vLLM PR #38300)."
+        fi
         exit 1
     fi
     sleep 5
