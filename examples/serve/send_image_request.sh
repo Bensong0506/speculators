@@ -17,11 +17,12 @@ SERVED="${SERVED:-qwen3.5-9b}"                 # must equal --served-model-name
 IMAGE="${IMAGE:-/home/wenxuan/mmstar/images/mmstar_000000.jpg}"  # must be under --allowed-local-media-path
 PROMPT="${PROMPT:-描述这张图}"
 MAX_TOKENS="${MAX_TOKENS:-128}"
+TEMPERATURE="${TEMPERATURE:-0}"     # greedy → fair speculative-acceptance read
 
-echo "[req] model=$SERVED  image=$IMAGE  prompt=$PROMPT"
+echo "[req] model=$SERVED  image=$IMAGE  prompt=$PROMPT  temperature=$TEMPERATURE"
 echo
 
 curl -sS "http://localhost:${PORT}/v1/chat/completions" \
   -H 'Content-Type: application/json' \
-  -d "{\"model\":\"${SERVED}\",\"messages\":[{\"role\":\"user\",\"content\":[{\"type\":\"image_url\",\"image_url\":{\"url\":\"file://${IMAGE}\"}},{\"type\":\"text\",\"text\":\"${PROMPT}\"}]}],\"max_tokens\":${MAX_TOKENS}}"
+  -d "{\"model\":\"${SERVED}\",\"temperature\":${TEMPERATURE},\"messages\":[{\"role\":\"user\",\"content\":[{\"type\":\"image_url\",\"image_url\":{\"url\":\"file://${IMAGE}\"}},{\"type\":\"text\",\"text\":\"${PROMPT}\"}]}],\"max_tokens\":${MAX_TOKENS}}"
 echo
