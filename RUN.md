@@ -60,9 +60,15 @@ bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
 
 ## 2. Serve on GPU (verifier + OUR trained draft)
 
-**Quickest test** — serve our trained draft and print a ready-to-paste curl:
+**Quickest test (text)** — serve our trained draft and print a ready-to-paste curl:
 ```bash
 bash examples/serve/test_trained_dflash_gpu.sh
+```
+
+**Multimodal (image) test** on stock vLLM 0.22.0 — patch the M-RoPE guard, then serve:
+```bash
+bash examples/serve/patch_vllm_mrope_guard.sh
+bash examples/serve/test_trained_dflash_mm_gpu.sh   # prints an image curl to run
 ```
 
 Full launcher (modes baseline/mtp/dflash, multimodal flags):
