@@ -46,14 +46,24 @@ Confirmed on vLLM **0.22.0**: `vllm/v1/spec_decode/llm_base_proposer.py` calls
 
 ## 1. Train the DFlash speculator (multimodal, online)
 
-Edit the CONFIG block at the top of the script if paths differ (MODEL,
-MMSTAR_SRC, MMSTAR_MEDIA_ROOT, GPU layout), then:
+Default data source is **ALLaVA-4V** (`USE_ALLAVA=1`). Set its paths + raise
+`MAX_SAMPLES`, then run — Step 0 auto-converts ALLaVA → a conversations jsonl via
+`scripts/llava_to_jsonl.py` (parses `<image>`, resolves image paths).
 
 ```bash
 cd /home/wenxuan/speculators
-bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
+ALLAVA_INPUTS="/data/ALLaVA-4V/allava_laion/ALLaVA-Caption-LAION-4V.json /data/ALLaVA-4V/allava_laion/ALLaVA-Instruct-LAION-4V.json" \
+  ALLAVA_IMAGE_ROOT=/data/ALLaVA-4V \
+  MAX_SAMPLES=100000 \
+  bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
 # -> checkpoints in ./output/dflash_qwen3.5_9b_mm/checkpoints/checkpoint_best
-# (to regenerate the MMStar jsonl after data changes: rm -f data/mmstar/mmstar.jsonl)
+# regenerate the converted jsonl after changing data:  rm -f data/allava/allava.jsonl
+```
+(MMStar smoke test instead: `USE_ALLAVA=0 USE_MMSTAR=1 bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh`.)
+
+Convert ALLaVA on its own (without training) if you want to inspect it first:
+```bash
+python3 scripts/llava_to_jsonl.py --in <ALLaVA.json> --image-root /data/ALLaVA-4V --out-jsonl data/allava/allava.jsonl
 ```
 
 **Watch training (loss + per-position acceptance curves)** — logged to `./train_logs`

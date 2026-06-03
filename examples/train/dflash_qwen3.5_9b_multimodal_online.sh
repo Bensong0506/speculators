@@ -63,7 +63,7 @@ MEDIA_ROOT="${COCO_DIR}"
 # NOTE: MMStar is a ~1.5k multiple-choice EVAL benchmark (single-letter
 # answers) — ideal for verifying the multimodal pipeline runs end to end, but
 # NOT a real training set. Use large, full-response data for real quality.
-USE_MMSTAR=1
+USE_MMSTAR="${USE_MMSTAR:-0}"   # smoke test only; set 1 (and USE_ALLAVA=0) to use it
 # A JSON/JSONL of records with image FILE PATHS (a pre-extracted dump), or a HF
 # MMStar dataset dir/parquet/id (inline images get extracted automatically).
 MMSTAR_SRC="/home/wenxuan/mmstar/mmstar_answers.json"
@@ -72,6 +72,14 @@ MMSTAR_SPLIT="val"
 # paths). For the json-with-paths case set it to your images dir; leave EMPTY
 # for the HF-extract case (the extraction dir is used instead).
 MMSTAR_MEDIA_ROOT="/home/wenxuan/mmstar/images"
+
+# Option D (REAL training): ALLaVA-4V (or any LLaVA-style json). Step 0 converts
+# it to a conversations jsonl via scripts/llava_to_jsonl.py. Set the paths below.
+USE_ALLAVA="${USE_ALLAVA:-1}"
+# One or more ALLaVA json files, space-separated (caption + instruct subsets):
+ALLAVA_INPUTS="${ALLAVA_INPUTS:-/data/ALLaVA-4V/allava_laion/ALLaVA-Caption-LAION-4V.json /data/ALLaVA-4V/allava_laion/ALLaVA-Instruct-LAION-4V.json}"
+# Dir that contains allava_laion/ , allava_vflan/ (where images.zip was extracted):
+ALLAVA_IMAGE_ROOT="${ALLAVA_IMAGE_ROOT:-/data/ALLaVA-4V}"
 
 # --- 3) General training knobs --------------------------------------------
 OUTPUT_DIR="./output/dflash_qwen3.5_9b_mm"
@@ -133,13 +141,25 @@ PY
     echo "    text num_hidden_layers based -> TARGET_LAYER_IDS = ${TARGET_LAYER_IDS}"
 fi
 
-# Step 0 (optional): build a `conversations` jsonl from a local MMStar set ---
-# Form (1): MMSTAR_SRC is a json/jsonl whose records already point at image
-#           files on disk -> referenced in place (no copy).
-# Form (2): MMSTAR_SRC is a HF dataset with inline images -> extracted to
-#           MMSTAR_IMG_DIR.
-# Idempotent: skips conversion if the jsonl already exists.
-if [ "${USE_MMSTAR}" = "1" ]; then
+# Step 0 (optional): build a `conversations` jsonl from the chosen data source.
+# Idempotent: skips conversion if the target jsonl already exists (rm it to redo).
+if [ "${USE_ALLAVA}" = "1" ]; then
+    echo "=== Step 0: Converting ALLaVA-4V -> conversations jsonl ==="
+    ALLAVA_JSONL="$(pwd)/data/allava/allava.jsonl"
+    if [ -f "$ALLAVA_JSONL" ]; then
+        echo "    reuse existing $ALLAVA_JSONL  (rm it to regenerate)"
+    else
+        IN_ARGS=()
+        for j in $ALLAVA_INPUTS; do IN_ARGS+=(--in "$j"); done
+        python3 scripts/llava_to_jsonl.py \
+            "${IN_ARGS[@]}" \
+            --image-root "$ALLAVA_IMAGE_ROOT" \
+            --out-jsonl "$ALLAVA_JSONL" \
+            --max-samples "$MAX_SAMPLES"
+    fi
+    DATASET="$ALLAVA_JSONL"
+    MEDIA_ROOT="$ALLAVA_IMAGE_ROOT"
+elif [ "${USE_MMSTAR}" = "1" ]; then
     echo "=== Step 0: Preparing MMStar (-> conversations jsonl) ==="
     MMSTAR_JSONL="$(pwd)/data/mmstar/mmstar.jsonl"
     MMSTAR_IMG_DIR="$(pwd)/data/mmstar/images"   # only used when extracting from HF
