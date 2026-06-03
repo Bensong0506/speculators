@@ -1,153 +1,201 @@
-#!/bin/bash
-# Qwen3.5-9B single-case launcher
-#
-# 支持三种模式：
-#   RUN_MODE=baseline
-#   RUN_MODE=mtp
-#   RUN_MODE=dflash
-#
-# 示例：
-#   RUN_MODE=baseline bash run_qwen35_9b_onecase.sh
-#   RUN_MODE=mtp MTP_SPEC=3 bash run_qwen35_9b_onecase.sh
-#   RUN_MODE=dflash DFLASH_SPEC=5 bash run_qwen35_9b_onecase.sh
-#
-# 默认不开图模式：
-#   DFlash 使用 cudagraph_mode=NONE
+root@devserver-bms-af631bb3:/home/wenxuan/speculators# bash examples/serve/test_trained_dflash_gpu.sh 
+== checkpoint files ==
+lrwxrwxrwx 1 root root 1 Jun  2 12:22 /home/wenxuan/speculators/output/dflash_qwen3.5_9b_mm/checkpoints/checkpoint_best -> 4
 
-set -eo pipefail
+== once the server is UP, run this in another terminal ==
+curl http://localhost:8100/v1/chat/completions -H 'Content-Type: application/json' -d '{"model":"/home/models/Qwen3.5-9B","messages":[{"role":"user","content":"用一句话介绍北京"}],"max_tokens":128}'
 
-cd "$(dirname "$0")"
-
-# Ascend set_env.sh 可能访问未定义变量，source 前不要开 set -u
-set +u
-source /home/wenxuan/env.sh
-set -u
-
-# ===== 强制 9B 配置，覆盖 env.sh 里的默认值 =====
-export MODEL_PATH="${MODEL_PATH_9B:-/home/model/Qwen3.5-9B/}"
-export DFLASH_DRAFT_PATH="${DFLASH_DRAFT_PATH_9B:-/home/model/Qwen3.5-9B-DFlash/}"
-export SERVED_MODEL_NAME="${SERVED_MODEL_NAME_9B:-qwen3.5-9b}"
-
-export ASCEND_RT_VISIBLE_DEVICES="${ASCEND_RT_VISIBLE_DEVICES_9B:-4}"
-export TP="${TP_9B:-1}"
-export VLLM_PORT="${VLLM_PORT_9B:-8100}"
-
-# ===== 源码路径 =====
-export VLLM_SRC_DIR="${VLLM_SRC_DIR:-/home/wenxuan/2012/vllm}"
-export VLLM_ASCEND_DFLASH_DIR="${VLLM_ASCEND_DFLASH_DIR:-/home/wenxuan/2012/vllm-ascend}"
-export PYTHONPATH="${VLLM_SRC_DIR}:${VLLM_ASCEND_DFLASH_DIR}:${PYTHONPATH:-}"
-export MM_MEDIA_DIR="${MM_MEDIA_DIR:-/home/wenxuan/multimodel_test}"
-# ===== 运行模式 =====
-RUN_MODE="${RUN_MODE:-baseline}"     # baseline | mtp | dflash
-
-# ===== spec 参数 =====
-MTP_SPEC="${MTP_SPEC:-3}"
-DFLASH_SPEC="${DFLASH_SPEC:-5}"
-
-# ===== 推理参数 =====
-MAX_MODEL_LEN="${MAX_MODEL_LEN:-32768}"
-MAX_NUM_SEQS="${MAX_NUM_SEQS:-1}"
-MAX_NUM_BATCHED_TOKENS="${MAX_NUM_BATCHED_TOKENS:-32768}"
-GPU_MEMORY_UTIL="${GPU_MEMORY_UTIL:-0.9}"
-MAX_IMAGES="${MAX_IMAGES:-40}"
-
-# DFlash 默认不开图
-DFLASH_GRAPH_MODE="${DFLASH_GRAPH_MODE:-NONE}"
-
-case "$RUN_MODE" in
-  baseline|mtp|dflash)
-    ;;
-  *)
-    echo "[fatal] RUN_MODE 只能是 baseline / mtp / dflash，当前: $RUN_MODE"
-    exit 1
-    ;;
-esac
-
-echo "================================"
-echo "vLLM serve Qwen3.5-9B single case"
-echo "  mode:          $RUN_MODE"
-echo "  target:        $MODEL_PATH"
-echo "  draft:         $DFLASH_DRAFT_PATH"
-echo "  served-as:     $SERVED_MODEL_NAME"
-echo "  port:          $VLLM_PORT"
-echo "  TP:            $TP"
-echo "  devices:       $ASCEND_RT_VISIBLE_DEVICES"
-echo "  max_model_len: $MAX_MODEL_LEN"
-echo "  max_num_seqs:  $MAX_NUM_SEQS"
-echo "  mtp spec:      $MTP_SPEC"
-echo "  dflash spec:   $DFLASH_SPEC"
-echo "  dflash graph:  $DFLASH_GRAPH_MODE"
-echo "  vllm src:      $VLLM_SRC_DIR"
-echo "  ascend dir:    $VLLM_ASCEND_DFLASH_DIR"
-echo "================================"
-
-npu-smi info | head -20 || true
-
-[ -d "$MODEL_PATH" ] \
-  || { echo "[fatal] MODEL_PATH 不存在: $MODEL_PATH"; exit 1; }
-
-if [ "$RUN_MODE" = "dflash" ]; then
-  [ -d "$DFLASH_DRAFT_PATH" ] \
-    || { echo "[fatal] DFLASH_DRAFT_PATH 不存在: $DFLASH_DRAFT_PATH"; exit 1; }
-fi
-
-python3 - <<'PY'
-import os
-import pathlib
-import vllm
-import vllm_ascend
-
-vllm_src = pathlib.Path(os.environ["VLLM_SRC_DIR"]).resolve()
-ascend_src = pathlib.Path(os.environ["VLLM_ASCEND_DFLASH_DIR"]).resolve()
-
-vllm_file = pathlib.Path(vllm.__file__).resolve()
-ascend_file = pathlib.Path(vllm_ascend.__file__).resolve()
-
-print(f"[check] vllm        = {vllm_file}")
-print(f"[check] vllm_ascend = {ascend_file}")
-
-assert str(vllm_file).startswith(str(vllm_src)), vllm_file
-assert str(ascend_file).startswith(str(ascend_src)), ascend_file
-
-print("[ok] import path check passed")
-PY
-
-ARGS=(
-  vllm serve "$MODEL_PATH"
-  --served-model-name "$SERVED_MODEL_NAME"
-  --tensor-parallel-size "$TP"
-  --gpu-memory-utilization "$GPU_MEMORY_UTIL"
-  --block-size 128
-  --max-num-seqs "$MAX_NUM_SEQS"
-  --max-model-len "$MAX_MODEL_LEN"
-  --max-num-batched-tokens "$MAX_NUM_BATCHED_TOKENS"
-  --allowed-local-media-path "$MM_MEDIA_DIR"
-  --limit-mm-per-prompt "{\"image\":$MAX_IMAGES}"
-  --trust-remote-code
-  --dtype bfloat16
-  --no-enable-chunked-prefill
-  --generation-config vllm
-  --host 0.0.0.0
-  --port "$VLLM_PORT"
-)
-
-if [ "$RUN_MODE" = "mtp" ]; then
-  ARGS+=(
-    --speculative-config "{\"method\":\"qwen3_5_mtp\",\"num_speculative_tokens\":$MTP_SPEC,\"enforce_eager\":true}"
-  )
-fi
-
-if [ "$RUN_MODE" = "dflash" ]; then
-  ARGS+=(
-    --speculative-config "{\"method\":\"dflash\",\"model\":\"$DFLASH_DRAFT_PATH\",\"num_speculative_tokens\":$DFLASH_SPEC}"
-    --compilation-config "{\"cudagraph_mode\":\"$DFLASH_GRAPH_MODE\"}"
-  )
-fi
-
-echo
-echo "[cmd]"
-printf ' %q' "${ARGS[@]}"
-echo
-echo
-
-exec "${ARGS[@]}"
+== starting vLLM (target=/home/models/Qwen3.5-9B  +  our dflash draft=/home/wenxuan/speculators/output/dflash_qwen3.5_9b_mm/checkpoints/checkpoint_best) ==
+(APIServer pid=17743) INFO 06-03 04:05:14 [utils.py:344] 
+(APIServer pid=17743) INFO 06-03 04:05:14 [utils.py:344]        █     █     █▄   ▄█
+(APIServer pid=17743) INFO 06-03 04:05:14 [utils.py:344]  ▄▄ ▄█ █     █     █ ▀▄▀ █  version 0.22.0
+(APIServer pid=17743) INFO 06-03 04:05:14 [utils.py:344]   █▄█▀ █     █     █     █  model   /home/models/Qwen3.5-9B
+(APIServer pid=17743) INFO 06-03 04:05:14 [utils.py:344]    ▀▀  ▀▀▀▀▀ ▀▀▀▀▀ ▀     ▀
+(APIServer pid=17743) INFO 06-03 04:05:14 [utils.py:344] 
+(APIServer pid=17743) INFO 06-03 04:05:14 [utils.py:278] non-default args: {'model_tag': '/home/models/Qwen3.5-9B', 'port': 8100, 'model': '/home/models/Qwen3.5-9B', 'attention_backend': 'flash_attn', 'max_num_batched_tokens': 32768, 'speculative_config': {'method': 'dflash', 'model': '/home/wenxuan/speculators/output/dflash_qwen3.5_9b_mm/checkpoints/checkpoint_best', 'num_speculative_tokens': 7}}
+(APIServer pid=17743) WARNING 06-03 04:05:14 [envs.py:2057] Unknown vLLM environment variable detected: VLLM_BUILD_URL
+(APIServer pid=17743) WARNING 06-03 04:05:14 [envs.py:2057] Unknown vLLM environment variable detected: VLLM_IMAGE_TAG
+(APIServer pid=17743) WARNING 06-03 04:05:14 [envs.py:2057] Unknown vLLM environment variable detected: VLLM_BUILD_PIPELINE
+(APIServer pid=17743) WARNING 06-03 04:05:14 [envs.py:2057] Unknown vLLM environment variable detected: VLLM_BUILD_COMMIT
+(APIServer pid=17743) INFO 06-03 04:05:14 [model.py:617] Resolved architecture: Qwen3_5ForConditionalGeneration
+(APIServer pid=17743) INFO 06-03 04:05:14 [model.py:1752] Using max model len 262144
+(APIServer pid=17743) [transformers] Unrecognized keys in `rope_parameters` for 'rope_type'='default': {'mrope_section', 'mrope_interleaved'}
+(APIServer pid=17743) [transformers] Unrecognized keys in `rope_parameters` for 'rope_type'='default': {'mrope_section', 'mrope_interleaved'}
+(APIServer pid=17743) [transformers] Unrecognized keys in `rope_parameters` for 'rope_type'='default': {'mrope_section', 'mrope_interleaved'}
+(APIServer pid=17743) INFO 06-03 04:05:14 [model.py:617] Resolved architecture: DFlashDraftModel
+(APIServer pid=17743) INFO 06-03 04:05:14 [model.py:1752] Using max model len 262144
+(APIServer pid=17743) INFO 06-03 04:05:14 [scheduler.py:239] Chunked prefill is enabled with max_num_batched_tokens=32768.
+(APIServer pid=17743) INFO 06-03 04:05:14 [vllm.py:977] Asynchronous scheduling is enabled.
+(APIServer pid=17743) INFO 06-03 04:05:14 [kernel.py:270] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'])
+(APIServer pid=17743) [transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
+(APIServer pid=17743) [transformers] The `use_fast` parameter is deprecated and will be removed in a future version. Use `backend="torchvision"` instead of `use_fast=True`, or `backend="pil"` instead of `use_fast=False`.
+(EngineCore pid=17950) INFO 06-03 04:05:32 [core.py:112] Initializing a V1 LLM engine (v0.22.0) with config: model='/home/models/Qwen3.5-9B', speculative_config=SpeculativeConfig(method='dflash', model='/home/wenxuan/speculators/output/dflash_qwen3.5_9b_mm/checkpoints/checkpoint_best', num_spec_tokens=7), tokenizer='/home/models/Qwen3.5-9B', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, tokenizer_revision=None, trust_remote_code=False, dtype=torch.bfloat16, max_seq_len=262144, download_dir=None, load_format=auto, tensor_parallel_size=1, pipeline_parallel_size=1, data_parallel_size=1, decode_context_parallel_size=1, dcp_comm_backend=ag_rs, disable_custom_all_reduce=False, quantization=None, quantization_config=None, enforce_eager=False, enable_return_routed_experts=False, kv_cache_dtype=auto, device_config=cuda, structured_outputs_config=StructuredOutputsConfig(backend='auto', disable_any_whitespace=False, disable_additional_properties=False, reasoning_parser='', reasoning_parser_plugin='', enable_in_reasoning=False), observability_config=ObservabilityConfig(show_hidden_metrics_for_version=None, otlp_traces_endpoint=None, collect_detailed_traces=None, kv_cache_metrics=False, kv_cache_metrics_sample=0.01, cudagraph_metrics=False, enable_layerwise_nvtx_tracing=False, enable_mfu_metrics=False, enable_mm_processor_stats=False, enable_logging_iteration_details=False), seed=0, served_model_name=/home/models/Qwen3.5-9B, enable_prefix_caching=False, enable_chunked_prefill=True, pooler_config=None, compilation_config={'mode': <CompilationMode.VLLM_COMPILE: 3>, 'debug_dump_path': None, 'cache_dir': '', 'compile_cache_save_format': 'binary', 'backend': 'inductor', 'custom_ops': ['none'], 'ir_enable_torch_wrap': True, 'splitting_ops': ['vllm::unified_attention_with_output', 'vllm::unified_mla_attention_with_output', 'vllm::mamba_mixer2', 'vllm::mamba_mixer', 'vllm::short_conv', 'vllm::linear_attention', 'vllm::plamo2_mamba_mixer', 'vllm::qwen_gdn_attention_core', 'vllm::gdn_attention_core_xpu', 'vllm::olmo_hybrid_gdn_full_forward', 'vllm::kda_attention', 'vllm::sparse_attn_indexer', 'vllm::rocm_aiter_sparse_attn_indexer', 'vllm::deepseek_v4_attention', 'vllm::unified_kv_cache_update', 'vllm::unified_mla_kv_cache_update'], 'compile_mm_encoder': False, 'cudagraph_mm_encoder': False, 'encoder_cudagraph_token_budgets': [], 'encoder_cudagraph_max_vision_items_per_batch': 0, 'encoder_cudagraph_max_frames_per_batch': None, 'compile_sizes': [], 'compile_ranges_endpoints': [32768], 'inductor_compile_config': {'enable_auto_functionalized_v2': False, 'size_asserts': False, 'alignment_asserts': False, 'scalar_asserts': False, 'combo_kernels': True, 'benchmark_combo_kernel': True}, 'inductor_passes': {}, 'cudagraph_mode': <CUDAGraphMode.FULL_AND_PIECEWISE: (2, 1)>, 'cudagraph_num_of_warmups': 1, 'cudagraph_capture_sizes': [1, 2, 4, 8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 136, 144, 152, 160, 168, 176, 184, 192, 200, 208, 216, 224, 232, 240, 248, 256, 272, 288, 304, 320, 336, 352, 368, 384, 400, 416, 432, 448, 464, 480, 496, 512], 'cudagraph_copy_inputs': False, 'cudagraph_specialize_lora': True, 'use_inductor_graph_partition': False, 'pass_config': {'fuse_norm_quant': False, 'fuse_act_quant': False, 'fuse_attn_quant': False, 'enable_sp': False, 'fuse_gemm_comms': False, 'fuse_allreduce_rms': False, 'fuse_rope_kvcache_cat_mla': False, 'fuse_act_padding': False}, 'max_cudagraph_capture_size': 512, 'dynamic_shapes_config': {'type': <DynamicShapesType.BACKED: 'backed'>, 'evaluate_guards': False, 'assume_32_bit_indexing': False}, 'local_cache_dir': None, 'fast_moe_cold_start': False, 'static_all_moe_layers': []}, kernel_config=KernelConfig(ir_op_priority=IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native']), enable_flashinfer_autotune=True, moe_backend='auto', linear_backend='auto')
+(EngineCore pid=17950) [transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
+(EngineCore pid=17950) INFO 06-03 04:05:35 [parallel_state.py:1422] world_size=1 rank=0 local_rank=0 distributed_init_method=tcp://10.155.70.107:46773 backend=nccl
+(EngineCore pid=17950) INFO 06-03 04:05:35 [parallel_state.py:1735] rank 0 in world size 1 is assigned as DP rank 0, PP rank 0, PCP rank 0, TP rank 0, EP rank N/A, EPLB rank N/A
+(EngineCore pid=17950) INFO 06-03 04:05:35 [topk_topp_sampler.py:45] Using FlashInfer for top-p & top-k sampling.
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165] EngineCore failed to start.
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165] Traceback (most recent call last):
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 1139, in run_engine_core
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]     engine_core = EngineCoreProc(*args, engine_index=dp_rank, **kwargs)
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]     return func(*args, **kwargs)
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 905, in __init__
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]     super().__init__(
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 121, in __init__
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]     self.model_executor = executor_class(vllm_config)
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]     return func(*args, **kwargs)
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/abstract.py", line 109, in __init__
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]     self._init_executor()
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/uniproc_executor.py", line 60, in _init_executor
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]     self.driver_worker.init_device()
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/worker_base.py", line 325, in init_device
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]     self.worker.init_device()  # type: ignore
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]     ^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]     return func(*args, **kwargs)
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu_worker.py", line 327, in init_device
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]     self.model_runner = GPUModelRunnerV1(self.vllm_config, self.device)
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu_model_runner.py", line 585, in __init__
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]     self.drafter = DFlashProposer(self.vllm_config, self.device, self)
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/spec_decode/dflash.py", line 30, in __init__
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]     super().__init__(
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/spec_decode/llm_base_proposer.py", line 198, in __init__
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]     self._raise_if_mrope()
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/spec_decode/llm_base_proposer.py", line 311, in _raise_if_mrope
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165]     raise NotImplementedError(
+(EngineCore pid=17950) ERROR 06-03 04:05:35 [core.py:1165] NotImplementedError: Speculative Decoding with draft models or parallel drafting does not support M-RoPE yet
+(EngineCore pid=17950) Process EngineCore:
+(EngineCore pid=17950) Traceback (most recent call last):
+(EngineCore pid=17950)   File "/usr/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+(EngineCore pid=17950)     self.run()
+(EngineCore pid=17950)   File "/usr/lib/python3.12/multiprocessing/process.py", line 108, in run
+(EngineCore pid=17950)     self._target(*self._args, **self._kwargs)
+(EngineCore pid=17950)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 1169, in run_engine_core
+(EngineCore pid=17950)     raise e
+(EngineCore pid=17950)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 1139, in run_engine_core
+(EngineCore pid=17950)     engine_core = EngineCoreProc(*args, engine_index=dp_rank, **kwargs)
+(EngineCore pid=17950)                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=17950)   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore pid=17950)     return func(*args, **kwargs)
+(EngineCore pid=17950)            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=17950)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 905, in __init__
+(EngineCore pid=17950)     super().__init__(
+(EngineCore pid=17950)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 121, in __init__
+(EngineCore pid=17950)     self.model_executor = executor_class(vllm_config)
+(EngineCore pid=17950)                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=17950)   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore pid=17950)     return func(*args, **kwargs)
+(EngineCore pid=17950)            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=17950)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/abstract.py", line 109, in __init__
+(EngineCore pid=17950)     self._init_executor()
+(EngineCore pid=17950)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/uniproc_executor.py", line 60, in _init_executor
+(EngineCore pid=17950)     self.driver_worker.init_device()
+(EngineCore pid=17950)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/worker_base.py", line 325, in init_device
+(EngineCore pid=17950)     self.worker.init_device()  # type: ignore
+(EngineCore pid=17950)     ^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=17950)   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore pid=17950)     return func(*args, **kwargs)
+(EngineCore pid=17950)            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=17950)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu_worker.py", line 327, in init_device
+(EngineCore pid=17950)     self.model_runner = GPUModelRunnerV1(self.vllm_config, self.device)
+(EngineCore pid=17950)                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=17950)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu_model_runner.py", line 585, in __init__
+(EngineCore pid=17950)     self.drafter = DFlashProposer(self.vllm_config, self.device, self)
+(EngineCore pid=17950)                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=17950)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/spec_decode/dflash.py", line 30, in __init__
+(EngineCore pid=17950)     super().__init__(
+(EngineCore pid=17950)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/spec_decode/llm_base_proposer.py", line 198, in __init__
+(EngineCore pid=17950)     self._raise_if_mrope()
+(EngineCore pid=17950)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/spec_decode/llm_base_proposer.py", line 311, in _raise_if_mrope
+(EngineCore pid=17950)     raise NotImplementedError(
+(EngineCore pid=17950) NotImplementedError: Speculative Decoding with draft models or parallel drafting does not support M-RoPE yet
+[rank0]:[W603 04:05:36.127924651 ProcessGroupNCCL.cpp:1575] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+(APIServer pid=17743) Traceback (most recent call last):
+(APIServer pid=17743)   File "/usr/local/bin/vllm", line 10, in <module>
+(APIServer pid=17743)     sys.exit(main())
+(APIServer pid=17743)              ^^^^^^
+(APIServer pid=17743)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/cli/main.py", line 92, in main
+(APIServer pid=17743)     args.dispatch_function(args)
+(APIServer pid=17743)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/cli/serve.py", line 148, in cmd
+(APIServer pid=17743)     uvloop.run(run_server(args))
+(APIServer pid=17743)   File "/usr/local/lib/python3.12/dist-packages/uvloop/__init__.py", line 96, in run
+(APIServer pid=17743)     return __asyncio.run(
+(APIServer pid=17743)            ^^^^^^^^^^^^^^
+(APIServer pid=17743)   File "/usr/lib/python3.12/asyncio/runners.py", line 195, in run
+(APIServer pid=17743)     return runner.run(main)
+(APIServer pid=17743)            ^^^^^^^^^^^^^^^^
+(APIServer pid=17743)   File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+(APIServer pid=17743)     return self._loop.run_until_complete(task)
+(APIServer pid=17743)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=17743)   File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+(APIServer pid=17743)   File "/usr/local/lib/python3.12/dist-packages/uvloop/__init__.py", line 48, in wrapper
+(APIServer pid=17743)     return await main
+(APIServer pid=17743)            ^^^^^^^^^^
+(APIServer pid=17743)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/api_server.py", line 678, in run_server
+(APIServer pid=17743)     await run_server_worker(listen_address, sock, args, **uvicorn_kwargs)
+(APIServer pid=17743)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/api_server.py", line 692, in run_server_worker
+(APIServer pid=17743)     async with build_async_engine_client(
+(APIServer pid=17743)                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=17743)   File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+(APIServer pid=17743)     return await anext(self.gen)
+(APIServer pid=17743)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=17743)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/api_server.py", line 100, in build_async_engine_client
+(APIServer pid=17743)     async with build_async_engine_client_from_engine_args(
+(APIServer pid=17743)                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=17743)   File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+(APIServer pid=17743)     return await anext(self.gen)
+(APIServer pid=17743)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=17743)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/api_server.py", line 136, in build_async_engine_client_from_engine_args
+(APIServer pid=17743)     async_llm = AsyncLLM.from_vllm_config(
+(APIServer pid=17743)                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=17743)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/async_llm.py", line 217, in from_vllm_config
+(APIServer pid=17743)     return cls(
+(APIServer pid=17743)            ^^^^
+(APIServer pid=17743)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/async_llm.py", line 146, in __init__
+(APIServer pid=17743)     self.engine_core = EngineCoreClient.make_async_mp_client(
+(APIServer pid=17743)                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=17743)   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(APIServer pid=17743)     return func(*args, **kwargs)
+(APIServer pid=17743)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=17743)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core_client.py", line 131, in make_async_mp_client
+(APIServer pid=17743)     return AsyncMPClient(*client_args)
+(APIServer pid=17743)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=17743)   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(APIServer pid=17743)     return func(*args, **kwargs)
+(APIServer pid=17743)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=17743)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core_client.py", line 932, in __init__
+(APIServer pid=17743)     super().__init__(
+(APIServer pid=17743)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core_client.py", line 567, in __init__
+(APIServer pid=17743)     with launch_core_engines(
+(APIServer pid=17743)          ^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=17743)   File "/usr/lib/python3.12/contextlib.py", line 144, in __exit__
+(APIServer pid=17743)     next(self.gen)
+(APIServer pid=17743)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/utils.py", line 1150, in launch_core_engines
+(APIServer pid=17743)     wait_for_engine_startup(
+(APIServer pid=17743)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/utils.py", line 1209, in wait_for_engine_startup
+(APIServer pid=17743)     raise RuntimeError(
+(APIServer pid=17743) RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
+root@devserver-bms-af631bb3:/home/wenxuan/speculators# ^C
+root@devserver-bms-af631bb3:/home/wenxuan/speculators# ^C
+root@devserver-bms-af631bb3:/home/wenxuan/speculators# ^C
+root@devserver-bms-af631bb3:/home/wenxuan/speculators# pip show vllm
+Name: vllm
+Version: 0.22.0
+Summary: A high-throughput and memory-efficient inference and serving engine for LLMs
+Home-page: https://github.com/vllm-project/vllm
+Author: vLLM Team
+Author-email: 
+License-Expression: Apache-2.0
+Location: /usr/local/lib/python3.12/dist-packages
+Requires: aiohttp, anthropic, apache-tvm-ffi, blake3, cachetools, cbor2, cloudpickle, compressed-tensors, depyf, diskcache, einops, fastapi, fastsafetensors, filelock, flashinfer-cubin, flashinfer-python, gguf, humming-kernels, ijson, lark, llguidance, lm-format-enforcer, mcp, mistral_common, model-hosting-container-standards, msgspec, ninja, numba, numpy, nvidia-cudnn-frontend, nvidia-cutlass-dsl, openai, openai-harmony, opencv-python-headless, opentelemetry-api, opentelemetry-exporter-otlp, opentelemetry-sdk, opentelemetry-semantic-conventions-ai, outlines_core, partial-json-parser, pillow, prometheus-fastapi-instrumentator, prometheus_client, protobuf, psutil, py-cpuinfo, pybase64, pydantic, python-json-logger, pyyaml, pyzmq, quack-kernels, regex, requests, safetensors, sentencepiece, setproctitle, setuptools, six, tiktoken, tilelang, tokenizers, tokenspeed-mla, torch, torchaudio, torchvision, tqdm, transformers, typing_extensions, watchfiles, xgrammar
+Required-by: 
+root@devserver-bms-af631bb3:/home/wenxuan/speculators# 
