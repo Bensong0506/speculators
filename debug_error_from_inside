@@ -1,24 +1,66 @@
-(base) root@devserver-bms-af631bb3:/home/wenxuan/speculators# ALLAVA_ROOT=/home/wenxuan/ALLaVA-4V/ bash examples/train/extract_allava_images.sh 
-[allava_laion] 10 zip chunks found -> target images dir: /home/wenxuan/ALLaVA-4V//allava_laion/images
-   sample entry: images/0.jpeg
-   extracting into: /home/wenxuan/ALLaVA-4V//allava_laion
-   [1/10] images_0.zip
-   [2/10] images_1.zip
-   [3/10] images_2.zip
-   [4/10] images_3.zip
-   [5/10] images_4.zip
-   [6/10] images_5.zip
-   [7/10] images_6.zip
-   [8/10] images_7.zip
-   [9/10] images_8.zip
-   [10/10] images_9.zip
-[allava_laion] done -> /home/wenxuan/ALLaVA-4V//allava_laion/images  (images now: 484529)
-[allava_vflan] no image_chunks/ — skip
-
-=== Sanity check: do the json image paths resolve now? ===
---- probing ALLaVA-Caption-LAION-4V.json ---
-Wrote 200 samples -> /tmp/allava_probe.jsonl
---- probing ALLaVA-Caption-VFLAN-4V.json ---
-Wrote 200 samples -> /tmp/allava_probe.jsonl
-WARNING: 200 image path(s) missing on disk under /home/wenxuan/ALLaVA-4V — check --image-root / that images.zip is extracted.
-(look at the 'missing' counts above — 0 missing = images resolved, ready to train)
+root@devserver-bms-af631bb3:/home/wenxuan/speculators# ^C
+root@devserver-bms-af631bb3:/home/wenxuan/speculators# ^C
+root@devserver-bms-af631bb3:/home/wenxuan/speculators# FINETUNE_FROM=/home/models/Qwen3.5-9B-DFlash \
+  ALLAVA_INPUTS="/home/wenxuan/ALLaVA-4V/allava_laion/ALLaVA-Caption-LAION-4V.json /home/wenxuan/ALLaVA-4V/allava_laion/ALLaVA-Instruct-LAION-4V.json" \
+  ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V \
+  MAX_SAMPLES=100000 EPOCHS=2 \
+  bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
+=== Warm-start: aligning to /home/models/Qwen3.5-9B-DFlash/config.json ===
+    -> block_size=16 num_layers=5 draft_arch=qwen3
+    -> target_layer_ids='1 8 15 22 29' mask_token_id='248070' (full vocab, lr=1e-4)
+=== Step 0: Converting ALLaVA-4V -> conversations jsonl ===
+    reuse existing /home/wenxuan/speculators/data/allava/allava.jsonl  (rm it to regenerate)
+=== Step 1: Preparing data ===
+2026-06-03 08:19:46,858 - __main__ - INFO - ━━━━━━━━━━━━━━━━━━
+2026-06-03 08:19:46,858 - __main__ - INFO -   Preparing data
+2026-06-03 08:19:46,858 - __main__ - INFO - ━━━━━━━━━━━━━━━━━━
+2026-06-03 08:19:46,858 - __main__ - INFO -   Target Model │ /home/models/Qwen3.5-9B
+2026-06-03 08:19:46,858 - __main__ - INFO -   Dataset      │ ['/home/wenxuan/speculators/data/allava/allava.jsonl']
+2026-06-03 08:19:46,858 - __main__ - INFO -   Output Dir   │ ./output/dflash_qwen3.5_9b_mm_ft
+2026-06-03 08:19:46,858 - speculators.data_generation.preprocessing - INFO - ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2026-06-03 08:19:46,858 - speculators.data_generation.preprocessing - INFO -   Starting dataset preprocessing
+2026-06-03 08:19:46,858 - speculators.data_generation.preprocessing - INFO - ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2026-06-03 08:19:46,858 - speculators.data_generation.preprocessing - INFO - 
+▸ Loading processor
+2026-06-03 08:19:47,561 - speculators.data_generation.preprocessing - INFO - 
+▸ Processing /home/wenxuan/speculators/data/allava/allava.jsonl
+Traceback (most recent call last):
+  File "/home/wenxuan/speculators/scripts/prepare_data.py", line 201, in <module>
+    main()
+  File "/home/wenxuan/speculators/scripts/prepare_data.py", line 181, in main
+    dataset, _ = load_and_preprocess_dataset(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/wenxuan/speculators/src/speculators/data_generation/preprocessing.py", line 716, in load_and_preprocess_dataset
+    raw_dataset, normalize_fn = load_raw_dataset(train_data_path)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/wenxuan/speculators/src/speculators/data_generation/preprocessing.py", line 617, in load_raw_dataset
+    return load_dataset("json", data_files=train_data_path, split="train"), None
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/datasets/load.py", line 1708, in load_dataset
+    builder_instance.download_and_prepare(
+  File "/usr/local/lib/python3.12/dist-packages/datasets/builder.py", line 884, in download_and_prepare
+    self._download_and_prepare(
+  File "/usr/local/lib/python3.12/dist-packages/datasets/builder.py", line 925, in _download_and_prepare
+    split_generators: list[SplitGenerator] = self._split_generators(dl_manager, **split_generators_kwargs)
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/datasets/packaged_modules/json/json.py", line 91, in _split_generators
+    pa_table = next(iter(self._generate_tables(**splits[0].gen_kwargs, allow_full_read=False)))[1]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+StopIteration
+��━━━━━━━━━━━━━━━━━━━━━━━━━━━━━me/wenxuan/speculators# 2026-06-03 08:19:46,858 - speculators.data_generation.preprocessing - INFO - ━━━━�
+2026-06-03 08:19:46,858 - speculators.data_generation.preprocessing - INFO -   Starting dataset preprocessing
+�━━━━━━━━━━━8:19:46,858 - speculators.data_generation.preprocessing - INFO - ━━━━━━━━━━━━━━━━━━━━━━━
+2026-06-03 08:19:46,858 - speculators.data_generation.preprocessing - INFO - 
+▸ Loading processor
+2026-06-03 08:19:47,561 - speculators.data_generation.preprocessing - INFO - 
+▸ Processing /home/wenxuan/speculators/data/allava/allava.jsonl
+Traceback (most recent call last):
+  File "/home/wenxuan/speculators/scripts/prepare_data.py", line 201, in <module>
+    main()
+  File "/home/wenxuan/speculators/scripts/prepare_data.py", line 181, in main
+    dataset, _ = load_and_preprocess_dataset(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+StopIteration^C^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[1]in _split_generatorsdataset
+root@devserver-bms-af631bb3:/home/wenxuan/speculators# ^C
+root@devserver-bms-af631bb3:/home/wenxuan/speculators# ^C
+root@devserver-bms-af631bb3:/home/wenxuan/speculators# 
