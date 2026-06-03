@@ -102,7 +102,15 @@ SPECULATOR_TYPE="dflash"
 BLOCK_SIZE=8            # tokens drafted per block (one forward pass)
 MAX_ANCHORS=3072        # max anchor positions sampled per step (memory knob)
 NUM_LAYERS=5            # draft transformer layers (DFlash typically uses ~5)
-DRAFT_VOCAB_SIZE=32000  # reduced draft vocab (mapped from token_freq.pt)
+DRAFT_VOCAB_SIZE=32000  # reduced draft vocab; auto-cleared (full vocab) when warm-starting
+
+# --- Warm-start (continue-training) from a pretrained DFlash --------------
+# Point at a DFlash checkpoint dir (e.g. /home/models/Qwen3.5-9B-DFlash) to
+# FINE-TUNE it instead of training from scratch. The block below reads its
+# config.json and auto-matches block_size / num_layers / draft_arch / aux
+# target-layer-ids / mask_token_id / FULL vocab. Empty = train from scratch.
+FINETUNE_FROM="${FINETUNE_FROM:-}"
+LR_FT="${LR_FT:-1e-4}"   # lower LR used when warm-starting (vs 3e-4 from scratch)
 
 # Target text-decoder layers to extract hidden states from. Leave EMPTY to
 # auto-compute the repo-default "2  L/2  L-3" (L = text num_hidden_layers);
@@ -123,6 +131,40 @@ TRC_FLAG=()
 if [ "${TRUST_REMOTE_CODE}" = "1" ]; then
     TRC_FLAG=(--trust-remote-code)
 fi
+
+# Warm-start alignment: if FINETUNE_FROM is set, match the pretrained checkpoint
+# exactly (mismatched block_size / aux layers / vocab => weights won't load or
+# acceptance collapses). Reads everything from the checkpoint's config.json.
+INCLUDE_LAST_FLAG=()
+if [ -n "$FINETUNE_FROM" ]; then
+    echo "=== Warm-start: aligning to $FINETUNE_FROM/config.json ==="
+    [ -f "$FINETUNE_FROM/config.json" ] || { echo "[fatal] $FINETUNE_FROM/config.json not found"; exit 1; }
+    eval "$(python3 - "$FINETUNE_FROM/config.json" <<'PY'
+import json, sys
+c = json.load(open(sys.argv[1]))
+df = c.get("dflash_config", {})
+tli = df.get("target_layer_ids") or c.get("aux_hidden_state_layer_ids") or []
+mt = df.get("mask_token_id", c.get("mask_token_id"))
+print(f'BLOCK_SIZE={c.get("block_size", 16)}')
+print(f'NUM_LAYERS={c.get("num_hidden_layers") or len(c.get("layer_types", [])) or 5}')
+print(f'DRAFT_ARCH={c.get("model_type", "qwen3")}')
+print('TARGET_LAYER_IDS="%s"' % " ".join(str(x) for x in tli))
+print(f'MASK_TOKEN_ID={mt}' if mt is not None else 'MASK_TOKEN_ID=')
+PY
+)"
+    DRAFT_VOCAB_SIZE=""                          # pretrained uses FULL vocab (no mapping)
+    LR="$LR_FT"                                  # lower LR for fine-tuning
+    OUTPUT_DIR="${OUTPUT_DIR}_ft"                # separate dir (avoid stale vocab maps)
+    INCLUDE_LAST_FLAG=(--no-include-last-layer)  # aux layers == target_layer_ids exactly
+    echo "    -> block_size=$BLOCK_SIZE num_layers=$NUM_LAYERS draft_arch=$DRAFT_ARCH"
+    echo "    -> target_layer_ids='$TARGET_LAYER_IDS' mask_token_id='$MASK_TOKEN_ID' (full vocab, lr=$LR)"
+fi
+
+# Conditional trainer flags (mirror the TRC_FLAG pattern; empty arrays are no-ops)
+FROM_FLAG=();      [ -n "$FINETUNE_FROM" ]     && FROM_FLAG=(--from-pretrained "$FINETUNE_FROM")
+VOCAB_FLAG=();     [ -n "$DRAFT_VOCAB_SIZE" ]  && VOCAB_FLAG=(--draft-vocab-size "$DRAFT_VOCAB_SIZE")
+DRAFTARCH_FLAG=(); [ -n "${DRAFT_ARCH:-}" ]    && DRAFTARCH_FLAG=(--draft-arch "$DRAFT_ARCH")
+MASK_FLAG=();      [ -n "${MASK_TOKEN_ID:-}" ] && MASK_FLAG=(--mask-token-id "$MASK_TOKEN_ID")
 
 # Auto-compute TARGET_LAYER_IDS from the verifier's *text* config if unset,
 # so vLLM and the trainer always agree.
@@ -199,6 +241,7 @@ python3 scripts/prepare_data.py \
 echo "=== Step 2: Launching vLLM server ==="
 CUDA_VISIBLE_DEVICES="$VLLM_GPUS" python3 scripts/launch_vllm.py "$MODEL" \
     --target-layer-ids $TARGET_LAYER_IDS \
+    "${INCLUDE_LAST_FLAG[@]}" \
     -- --data-parallel-size "$VLLM_DP" \
        --port "$VLLM_PORT" \
        --allowed-local-media-path "$MEDIA_ROOT" \
@@ -233,7 +276,10 @@ CUDA_VISIBLE_DEVICES="$TRAIN_GPUS" torchrun \
     --data-path "$OUTPUT_DIR" \
     --vllm-endpoint "http://localhost:${VLLM_PORT}/v1" \
     --save-path "$OUTPUT_DIR/checkpoints" \
-    --draft-vocab-size "$DRAFT_VOCAB_SIZE" \
+    "${VOCAB_FLAG[@]}" \
+    "${FROM_FLAG[@]}" \
+    "${DRAFTARCH_FLAG[@]}" \
+    "${MASK_FLAG[@]}" \
     --epochs "$EPOCHS" \
     --lr "$LR" \
     --total-seq-len "$SEQ_LENGTH" \

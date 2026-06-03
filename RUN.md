@@ -61,6 +61,18 @@ ALLAVA_INPUTS="/data/ALLaVA-4V/allava_laion/ALLaVA-Caption-LAION-4V.json /data/A
 ```
 (MMStar smoke test instead: `USE_ALLAVA=0 USE_MMSTAR=1 bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh`.)
 
+**RECOMMENDED — warm-start from the open-source DFlash** (continue-train, not from
+scratch). `FINETUNE_FROM` auto-reads the checkpoint's `config.json` and matches
+block_size / num_layers / draft_arch / aux target-layer-ids / mask_token_id /
+FULL vocab (and uses `--no-include-last-layer`, lower LR, a separate `..._ft` dir):
+```bash
+FINETUNE_FROM=/home/models/Qwen3.5-9B-DFlash \
+  ALLAVA_INPUTS="/data/ALLaVA-4V/allava_laion/ALLaVA-Caption-LAION-4V.json /data/ALLaVA-4V/allava_laion/ALLaVA-Instruct-LAION-4V.json" \
+  ALLAVA_IMAGE_ROOT=/data/ALLaVA-4V  MAX_SAMPLES=100000  EPOCHS=2 \
+  bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
+# -> ./output/dflash_qwen3.5_9b_mm_ft/checkpoints/checkpoint_best
+```
+
 Convert ALLaVA on its own (without training) if you want to inspect it first:
 ```bash
 python3 scripts/llava_to_jsonl.py --in <ALLaVA.json> --image-root /data/ALLaVA-4V --out-jsonl data/allava/allava.jsonl
