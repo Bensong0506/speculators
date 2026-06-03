@@ -4,9 +4,11 @@ Single source of truth for running this on the intranet. `git pull`, then copy a
 block and run it. The assistant keeps this file in sync with every script change.
 
 Paths assume the proven layout — override the env vars if yours differ:
-- target model: `/home/models/Qwen3.5-9B`
-- repo clone:   `/home/wenxuan/speculators`
-- MMStar:       `/home/wenxuan/mmstar/mmstar_answers.json` + `/home/wenxuan/mmstar/images`
+- target model:      `/home/models/Qwen3.5-9B`
+- open-source draft: `/home/models/Qwen3.5-9B-DFlash`  (warm-start base)
+- repo clone:        `/home/wenxuan/speculators`
+- ALLaVA-4V:         `/home/wenxuan/ALLaVA-4V`  (LAION images extracted; VFLAN has none → LAION jsons only)
+- MMStar:            `/home/wenxuan/mmstar/...`  (smoke test only)
 
 ---
 
@@ -46,46 +48,41 @@ Confirmed on vLLM **0.22.0**: `vllm/v1/spec_decode/llm_base_proposer.py` calls
 
 ## 1. Train the DFlash speculator (multimodal, online)
 
-Default data source is **ALLaVA-4V** (`USE_ALLAVA=1`). Set its paths + raise
-`MAX_SAMPLES`, then run — Step 0 auto-converts ALLaVA → a conversations jsonl via
-`scripts/llava_to_jsonl.py` (parses `<image>`, resolves image paths).
-
+### 1a. One-time: extract the ALLaVA images (they ship as zip chunks)
 ```bash
 cd /home/wenxuan/speculators
-ALLAVA_INPUTS="/data/ALLaVA-4V/allava_laion/ALLaVA-Caption-LAION-4V.json /data/ALLaVA-4V/allava_laion/ALLaVA-Instruct-LAION-4V.json" \
-  ALLAVA_IMAGE_ROOT=/data/ALLaVA-4V \
-  MAX_SAMPLES=100000 \
-  bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
-# -> checkpoints in ./output/dflash_qwen3.5_9b_mm/checkpoints/checkpoint_best
-# regenerate the converted jsonl after changing data:  rm -f data/allava/allava.jsonl
+ALLAVA_ROOT=/home/wenxuan/ALLaVA-4V bash examples/train/extract_allava_images.sh
+# LAION -> allava_laion/images/ (~484k imgs; probe at the end should say 0 missing).
+# VFLAN has no image_chunks here -> use the LAION jsons only.
+# (lost the paths? `bash examples/train/find_allava.sh` locates jsons/images.)
 ```
-(MMStar smoke test instead: `USE_ALLAVA=0 USE_MMSTAR=1 bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh`.)
 
-**RECOMMENDED — warm-start from the open-source DFlash** (continue-train, not from
-scratch). `FINETUNE_FROM` auto-reads the checkpoint's `config.json` and matches
-block_size / num_layers / draft_arch / aux target-layer-ids / mask_token_id /
-FULL vocab (and uses `--no-include-last-layer`, lower LR, a separate `..._ft` dir):
+### 1b. Warm-start from the open-source DFlash — RECOMMENDED (not from scratch)
+`FINETUNE_FROM` auto-reads the checkpoint's `config.json` and matches block_size /
+num_layers / draft_arch / aux target-layer-ids / mask_token_id / FULL vocab (and
+uses `--no-include-last-layer`, lower LR, a separate `..._ft` dir). Step 0
+auto-converts ALLaVA → a conversations jsonl (`scripts/llava_to_jsonl.py`).
 ```bash
 FINETUNE_FROM=/home/models/Qwen3.5-9B-DFlash \
-  ALLAVA_INPUTS="/data/ALLaVA-4V/allava_laion/ALLaVA-Caption-LAION-4V.json /data/ALLaVA-4V/allava_laion/ALLaVA-Instruct-LAION-4V.json" \
-  ALLAVA_IMAGE_ROOT=/data/ALLaVA-4V  MAX_SAMPLES=100000  EPOCHS=2 \
+  ALLAVA_INPUTS="/home/wenxuan/ALLaVA-4V/allava_laion/ALLaVA-Caption-LAION-4V.json /home/wenxuan/ALLaVA-4V/allava_laion/ALLaVA-Instruct-LAION-4V.json" \
+  ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V \
+  MAX_SAMPLES=100000 EPOCHS=2 \
   bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
 # -> ./output/dflash_qwen3.5_9b_mm_ft/checkpoints/checkpoint_best
+# the run prints "Warm-start: aligning ..." -> eyeball block_size=16 / 5 layers /
+#   qwen3 / aux=[1,8,15,22,29] / mask=248070 / full vocab before it continues.
+# NOTE: MAX_SAMPLES caps TOTAL in input order (Caption first) — raise it (e.g. 300000)
+#   to mix in Instruct. Re-convert after changing data: rm -f data/allava/allava.jsonl
 ```
+(From scratch instead: drop `FINETUNE_FROM`. MMStar smoke test:
+`USE_ALLAVA=0 USE_MMSTAR=1 bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh`.)
 
-Convert ALLaVA on its own (without training) if you want to inspect it first:
-```bash
-python3 scripts/llava_to_jsonl.py --in <ALLaVA.json> --image-root /data/ALLaVA-4V --out-jsonl data/allava/allava.jsonl
-```
-
-**Watch training (loss + per-position acceptance curves)** — logged to `./train_logs`
-by default (`LOGGER=tensorboard`). In a second terminal on the training box:
+### 1c. Watch training (loss + per-position acceptance)
 ```bash
 bash examples/train/view_tensorboard.sh
 # from your laptop:  ssh -N -L 6006:localhost:6006 <user>@<gpu-box>  -> http://localhost:6006
 ```
-Prefer wandb? `LOGGER=wandb bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh`
-(needs wandb.ai reachable; otherwise prefix `WANDB_MODE=offline` and `wandb sync` later).
+Prefer wandb? `LOGGER=wandb ...` (needs wandb.ai; else prefix `WANDB_MODE=offline` + `wandb sync`).
 First time: `pip install tensorboard` (or `wandb`).
 
 ---
@@ -168,7 +165,12 @@ RUN_MODE=dflash   ... bash examples/serve/run_qwen35_9b_gpu.sh   # then eval -> 
 
 | What | Path |
 |---|---|
-| Train (multimodal DFlash, online) | `examples/train/dflash_qwen3.5_9b_multimodal_online.sh` |
+| Train (multimodal DFlash, online + warm-start) | `examples/train/dflash_qwen3.5_9b_multimodal_online.sh` |
+| ALLaVA/LLaVA → conversations jsonl | `scripts/llava_to_jsonl.py` |
+| ALLaVA image extractor · finder | `examples/train/extract_allava_images.sh` · `examples/train/find_allava.sh` |
 | MMStar → conversations jsonl | `scripts/mmstar_to_jsonl.py` |
-| Serve on GPU | `examples/serve/run_qwen35_9b_gpu.sh` |
+| Training curves (TensorBoard) | `examples/train/view_tensorboard.sh` |
+| Serve on GPU (baseline/mtp/dflash) | `examples/serve/run_qwen35_9b_gpu.sh` |
+| Quick serve test (text · image) | `examples/serve/test_trained_dflash_gpu.sh` · `examples/serve/test_trained_dflash_mm_gpu.sh` |
+| vLLM 0.22 M-RoPE guard patch · send image req | `examples/serve/patch_vllm_mrope_guard.sh` · `examples/serve/send_image_request.sh` |
 | Eval client (throughput + acceptance) | `examples/evaluate/eval_qwen35_9b.sh` + `examples/evaluate/bench_mm_speculative.py` |
