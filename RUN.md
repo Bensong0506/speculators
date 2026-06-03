@@ -63,6 +63,12 @@ bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
 
 ## 2. Serve on GPU (verifier + OUR trained draft)
 
+**Quickest test** — serve our trained draft and print a ready-to-paste curl:
+```bash
+bash examples/serve/test_trained_dflash_gpu.sh
+```
+
+Full launcher (modes baseline/mtp/dflash, multimodal flags):
 ```bash
 cd /home/wenxuan/speculators
 RUN_MODE=dflash DFLASH_SPEC=5 \
