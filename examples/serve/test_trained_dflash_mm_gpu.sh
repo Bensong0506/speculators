@@ -48,7 +48,7 @@ echo "== starting vLLM (multimodal, target + our dflash draft) =="
 exec vllm serve "$MODEL_PATH" \
   --served-model-name "$SERVED" \
   --speculative-config "{\"method\":\"dflash\",\"model\":\"$DRAFT\",\"num_speculative_tokens\":$NUM_SPEC_TOKENS}" \
-  --compilation-config "{\"cudagraph_mode\":\"NONE\"}" \
+  --enforce-eager \
   --attention-backend flash_attn \
   --allowed-local-media-path "$MM_MEDIA_DIR" \
   --limit-mm-per-prompt "{\"image\":$MAX_IMAGES}" \
