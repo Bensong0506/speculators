@@ -268,6 +268,7 @@ CUDA_VISIBLE_DEVICES="$VLLM_GPUS" python3 scripts/launch_vllm.py "$MODEL" \
        --max-num-batched-tokens "$SEQ_LENGTH" \
        --gpu-memory-utilization 0.85 \
        --limit-mm-per-prompt '{"image": 1}' \
+       --disable-log-requests \
        --enforce-eager &
 VLLM_PID=$!
 
