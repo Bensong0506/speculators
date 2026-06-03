@@ -68,7 +68,12 @@ bash examples/serve/test_trained_dflash_gpu.sh
 **Multimodal (image) test** on stock vLLM 0.22.0 — patch the M-RoPE guard, then serve:
 ```bash
 bash examples/serve/patch_vllm_mrope_guard.sh
-bash examples/serve/test_trained_dflash_mm_gpu.sh   # prints an image curl to run
+bash examples/serve/test_trained_dflash_mm_gpu.sh   # serves (uses --enforce-eager)
+```
+Once it prints "Application startup complete", send an image request from a SECOND terminal:
+```bash
+bash examples/serve/send_image_request.sh
+# override: IMAGE=/abs/img.jpg PROMPT="这是什么" bash examples/serve/send_image_request.sh
 ```
 
 Full launcher (modes baseline/mtp/dflash, multimodal flags):
