@@ -23,6 +23,28 @@ python3 -m pip install -e . --no-deps --no-build-isolation
 uv pip install -U vllm --torch-backend=auto --extra-index-url https://wheels.vllm.ai/nightly
 ```
 
+### If serving DFlash multimodal errors with `... does not support M-RoPE yet`
+
+It means THIS box's vLLM build lacks the DFlash drafter's M-RoPE position
+handling (`get_mrope_input_positions`). DFlash multimodal IS supported — the
+code just isn't in this build. Check what you have:
+
+```bash
+python3 -c "import vllm; print(vllm.__version__, vllm.__file__)"
+# where the NotImplementedError guard lives (empty grep = build already has the fix):
+grep -rn "does not support M-RoPE" "$(python3 -c 'import vllm,os;print(os.path.dirname(vllm.__file__))')" || echo "guard not found -> build likely OK"
+```
+
+Fix, best option first:
+1. **Use the same vLLM source you run on NPU** (`/home/wenxuan/2012/vllm`) on the
+   GPU box. The DFlash model + M-RoPE handling live in base `vllm` (vllm-ascend
+   is only the NPU backend), so that checkout already has the fix — build/install
+   it for CUDA (no vllm-ascend needed).
+2. **Upstream nightly** (the install line above) — has the DFlash M-RoPE support merged.
+3. **Patch in place**: add a `get_mrope_input_positions` text fallback (T=H=W=arange)
+   to the DFlash drafter class. Ask the assistant for the exact patch with your
+   `vllm.__version__` + the file path from the grep above.
+
 ---
 
 ## 1. Train the DFlash speculator (multimodal, online)
