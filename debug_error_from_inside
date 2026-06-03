@@ -1,28 +1,24 @@
-root@devserver-bms-af631bb3:/home/wenxuan/speculators# bash examples/train/find_allava.sh 
-Searching under: /home/wenxuan
+(base) root@devserver-bms-af631bb3:/home/wenxuan/speculators# ALLAVA_ROOT=/home/wenxuan/ALLaVA-4V/ bash examples/train/extract_allava_images.sh 
+[allava_laion] 10 zip chunks found -> target images dir: /home/wenxuan/ALLaVA-4V//allava_laion/images
+   sample entry: images/0.jpeg
+   extracting into: /home/wenxuan/ALLaVA-4V//allava_laion
+   [1/10] images_0.zip
+   [2/10] images_1.zip
+   [3/10] images_2.zip
+   [4/10] images_3.zip
+   [5/10] images_4.zip
+   [6/10] images_5.zip
+   [7/10] images_6.zip
+   [8/10] images_7.zip
+   [9/10] images_8.zip
+   [10/10] images_9.zip
+[allava_laion] done -> /home/wenxuan/ALLaVA-4V//allava_laion/images  (images now: 484529)
+[allava_vflan] no image_chunks/ — skip
 
-=== ALLaVA json files (-> ALLAVA_INPUTS) ===
-/home/wenxuan/ALLaVA-4V/allava_laion/ALLaVA-Caption-LAION-4V.json
-/home/wenxuan/ALLaVA-4V/allava_laion/ALLaVA-Instruct-LAION-4V.json
-/home/wenxuan/ALLaVA-4V/allava_vflan/ALLaVA-Caption-VFLAN-4V.json
-/home/wenxuan/ALLaVA-4V/allava_vflan/ALLaVA-Instruct-VFLAN-4V.json
-
-=== image dirs (their parent -> ALLAVA_IMAGE_ROOT) ===
-/home/wenxuan/ALLaVA-4V/allava_laion
-/home/wenxuan/ALLaVA-4V/allava_vflan
-/home/wenxuan/SpecForge/tests/test_modeling/test_target/test_sglang_backend/images
-/home/wenxuan/mmstar/images
-
-=== sample image present? (must be downloaded, not just the json) ===
-/home/wenxuan/SpecForge/assets/acknowledgements.png
-rough image count: 1522
-
-=== first record of the first json (format + image path) ===
-file: /home/wenxuan/ALLaVA-4V/allava_laion/ALLaVA-Caption-LAION-4V.json
-keys : ['id', 'image', 'conversations', 'url', 'caption', 'llava-1.5-7b-PPL']
-image: allava_laion/images/72328992.jpeg
-turn0: {'from': 'human', 'value': '<image>\nCan you transform the visual elements of the image into words?'}
-
-Then set, e.g.:
-  ALLAVA_INPUTS="<json1> <json2>"   ALLAVA_IMAGE_ROOT="<dir containing allava_laion/ or images/>"
-root@devserver-bms-af631bb3:/home/wenxuan/speculators# 
+=== Sanity check: do the json image paths resolve now? ===
+--- probing ALLaVA-Caption-LAION-4V.json ---
+Wrote 200 samples -> /tmp/allava_probe.jsonl
+--- probing ALLaVA-Caption-VFLAN-4V.json ---
+Wrote 200 samples -> /tmp/allava_probe.jsonl
+WARNING: 200 image path(s) missing on disk under /home/wenxuan/ALLaVA-4V — check --image-root / that images.zip is extracted.
+(look at the 'missing' counts above — 0 missing = images resolved, ready to train)
