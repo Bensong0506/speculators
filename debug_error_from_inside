@@ -1,2 +1,153 @@
-(EngineCore pid=17038) NotImplementedError: Speculative Decoding with draft models or parallel drafting does not support M-RoPE yet
-[rank0]:[W603 01:47:21.168867776 ProcessGroupNCCL.cpp:1575] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+#!/bin/bash
+# Qwen3.5-9B single-case launcher
+#
+# 支持三种模式：
+#   RUN_MODE=baseline
+#   RUN_MODE=mtp
+#   RUN_MODE=dflash
+#
+# 示例：
+#   RUN_MODE=baseline bash run_qwen35_9b_onecase.sh
+#   RUN_MODE=mtp MTP_SPEC=3 bash run_qwen35_9b_onecase.sh
+#   RUN_MODE=dflash DFLASH_SPEC=5 bash run_qwen35_9b_onecase.sh
+#
+# 默认不开图模式：
+#   DFlash 使用 cudagraph_mode=NONE
+
+set -eo pipefail
+
+cd "$(dirname "$0")"
+
+# Ascend set_env.sh 可能访问未定义变量，source 前不要开 set -u
+set +u
+source /home/wenxuan/env.sh
+set -u
+
+# ===== 强制 9B 配置，覆盖 env.sh 里的默认值 =====
+export MODEL_PATH="${MODEL_PATH_9B:-/home/model/Qwen3.5-9B/}"
+export DFLASH_DRAFT_PATH="${DFLASH_DRAFT_PATH_9B:-/home/model/Qwen3.5-9B-DFlash/}"
+export SERVED_MODEL_NAME="${SERVED_MODEL_NAME_9B:-qwen3.5-9b}"
+
+export ASCEND_RT_VISIBLE_DEVICES="${ASCEND_RT_VISIBLE_DEVICES_9B:-4}"
+export TP="${TP_9B:-1}"
+export VLLM_PORT="${VLLM_PORT_9B:-8100}"
+
+# ===== 源码路径 =====
+export VLLM_SRC_DIR="${VLLM_SRC_DIR:-/home/wenxuan/2012/vllm}"
+export VLLM_ASCEND_DFLASH_DIR="${VLLM_ASCEND_DFLASH_DIR:-/home/wenxuan/2012/vllm-ascend}"
+export PYTHONPATH="${VLLM_SRC_DIR}:${VLLM_ASCEND_DFLASH_DIR}:${PYTHONPATH:-}"
+export MM_MEDIA_DIR="${MM_MEDIA_DIR:-/home/wenxuan/multimodel_test}"
+# ===== 运行模式 =====
+RUN_MODE="${RUN_MODE:-baseline}"     # baseline | mtp | dflash
+
+# ===== spec 参数 =====
+MTP_SPEC="${MTP_SPEC:-3}"
+DFLASH_SPEC="${DFLASH_SPEC:-5}"
+
+# ===== 推理参数 =====
+MAX_MODEL_LEN="${MAX_MODEL_LEN:-32768}"
+MAX_NUM_SEQS="${MAX_NUM_SEQS:-1}"
+MAX_NUM_BATCHED_TOKENS="${MAX_NUM_BATCHED_TOKENS:-32768}"
+GPU_MEMORY_UTIL="${GPU_MEMORY_UTIL:-0.9}"
+MAX_IMAGES="${MAX_IMAGES:-40}"
+
+# DFlash 默认不开图
+DFLASH_GRAPH_MODE="${DFLASH_GRAPH_MODE:-NONE}"
+
+case "$RUN_MODE" in
+  baseline|mtp|dflash)
+    ;;
+  *)
+    echo "[fatal] RUN_MODE 只能是 baseline / mtp / dflash，当前: $RUN_MODE"
+    exit 1
+    ;;
+esac
+
+echo "================================"
+echo "vLLM serve Qwen3.5-9B single case"
+echo "  mode:          $RUN_MODE"
+echo "  target:        $MODEL_PATH"
+echo "  draft:         $DFLASH_DRAFT_PATH"
+echo "  served-as:     $SERVED_MODEL_NAME"
+echo "  port:          $VLLM_PORT"
+echo "  TP:            $TP"
+echo "  devices:       $ASCEND_RT_VISIBLE_DEVICES"
+echo "  max_model_len: $MAX_MODEL_LEN"
+echo "  max_num_seqs:  $MAX_NUM_SEQS"
+echo "  mtp spec:      $MTP_SPEC"
+echo "  dflash spec:   $DFLASH_SPEC"
+echo "  dflash graph:  $DFLASH_GRAPH_MODE"
+echo "  vllm src:      $VLLM_SRC_DIR"
+echo "  ascend dir:    $VLLM_ASCEND_DFLASH_DIR"
+echo "================================"
+
+npu-smi info | head -20 || true
+
+[ -d "$MODEL_PATH" ] \
+  || { echo "[fatal] MODEL_PATH 不存在: $MODEL_PATH"; exit 1; }
+
+if [ "$RUN_MODE" = "dflash" ]; then
+  [ -d "$DFLASH_DRAFT_PATH" ] \
+    || { echo "[fatal] DFLASH_DRAFT_PATH 不存在: $DFLASH_DRAFT_PATH"; exit 1; }
+fi
+
+python3 - <<'PY'
+import os
+import pathlib
+import vllm
+import vllm_ascend
+
+vllm_src = pathlib.Path(os.environ["VLLM_SRC_DIR"]).resolve()
+ascend_src = pathlib.Path(os.environ["VLLM_ASCEND_DFLASH_DIR"]).resolve()
+
+vllm_file = pathlib.Path(vllm.__file__).resolve()
+ascend_file = pathlib.Path(vllm_ascend.__file__).resolve()
+
+print(f"[check] vllm        = {vllm_file}")
+print(f"[check] vllm_ascend = {ascend_file}")
+
+assert str(vllm_file).startswith(str(vllm_src)), vllm_file
+assert str(ascend_file).startswith(str(ascend_src)), ascend_file
+
+print("[ok] import path check passed")
+PY
+
+ARGS=(
+  vllm serve "$MODEL_PATH"
+  --served-model-name "$SERVED_MODEL_NAME"
+  --tensor-parallel-size "$TP"
+  --gpu-memory-utilization "$GPU_MEMORY_UTIL"
+  --block-size 128
+  --max-num-seqs "$MAX_NUM_SEQS"
+  --max-model-len "$MAX_MODEL_LEN"
+  --max-num-batched-tokens "$MAX_NUM_BATCHED_TOKENS"
+  --allowed-local-media-path "$MM_MEDIA_DIR"
+  --limit-mm-per-prompt "{\"image\":$MAX_IMAGES}"
+  --trust-remote-code
+  --dtype bfloat16
+  --no-enable-chunked-prefill
+  --generation-config vllm
+  --host 0.0.0.0
+  --port "$VLLM_PORT"
+)
+
+if [ "$RUN_MODE" = "mtp" ]; then
+  ARGS+=(
+    --speculative-config "{\"method\":\"qwen3_5_mtp\",\"num_speculative_tokens\":$MTP_SPEC,\"enforce_eager\":true}"
+  )
+fi
+
+if [ "$RUN_MODE" = "dflash" ]; then
+  ARGS+=(
+    --speculative-config "{\"method\":\"dflash\",\"model\":\"$DFLASH_DRAFT_PATH\",\"num_speculative_tokens\":$DFLASH_SPEC}"
+    --compilation-config "{\"cudagraph_mode\":\"$DFLASH_GRAPH_MODE\"}"
+  )
+fi
+
+echo
+echo "[cmd]"
+printf ' %q' "${ARGS[@]}"
+echo
+echo
+
+exec "${ARGS[@]}"
