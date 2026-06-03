@@ -81,6 +81,14 @@ SEQ_LENGTH=8192         # raise if your image+text sequences are long
 EPOCHS=5
 LR=3e-4
 
+# --- Experiment tracking (loss / acceptance curves) -----------------------
+# tensorboard = local, intranet-friendly (view via SSH tunnel — see RUN.md /
+# examples/train/view_tensorboard.sh). Use LOGGER=wandb if this box can reach
+# wandb.ai (otherwise: WANDB_MODE=offline LOGGER=wandb ... then `wandb sync`).
+LOGGER="${LOGGER:-tensorboard}"
+RUN_NAME="${RUN_NAME:-dflash_qwen3.5_9b_mm}"
+LOG_DIR="${LOG_DIR:-./train_logs}"
+
 # --- 4) DFlash-specific ----------------------------------------------------
 SPECULATOR_TYPE="dflash"
 BLOCK_SIZE=8            # tokens drafted per block (one forward pass)
@@ -214,6 +222,9 @@ CUDA_VISIBLE_DEVICES="$TRAIN_GPUS" torchrun \
     --max-anchors "$MAX_ANCHORS" \
     --num-layers "$NUM_LAYERS" \
     --target-layer-ids $TARGET_LAYER_IDS \
+    --logger "$LOGGER" \
+    --run-name "$RUN_NAME" \
+    --log-dir "$LOG_DIR" \
     --on-missing generate \
     --on-generate delete \
     "${TRC_FLAG[@]}"

@@ -56,6 +56,16 @@ bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
 # (to regenerate the MMStar jsonl after data changes: rm -f data/mmstar/mmstar.jsonl)
 ```
 
+**Watch training (loss + per-position acceptance curves)** — logged to `./train_logs`
+by default (`LOGGER=tensorboard`). In a second terminal on the training box:
+```bash
+bash examples/train/view_tensorboard.sh
+# from your laptop:  ssh -N -L 6006:localhost:6006 <user>@<gpu-box>  -> http://localhost:6006
+```
+Prefer wandb? `LOGGER=wandb bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh`
+(needs wandb.ai reachable; otherwise prefix `WANDB_MODE=offline` and `wandb sync` later).
+First time: `pip install tensorboard` (or `wandb`).
+
 ---
 
 ## 2. Serve on GPU (verifier + OUR trained draft)
