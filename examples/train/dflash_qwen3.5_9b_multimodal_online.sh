@@ -187,7 +187,7 @@ fi
 # Idempotent: skips conversion if the target jsonl already exists (rm it to redo).
 if [ "${USE_ALLAVA}" = "1" ]; then
     echo "=== Step 0: Converting ALLaVA-4V -> conversations jsonl ==="
-    ALLAVA_JSONL="$(pwd)/data/allava/allava.jsonl"
+    ALLAVA_JSONL="$(pwd)/data/allava/allava_${MAX_SAMPLES}.jsonl"  # name carries the count so changing MAX_SAMPLES regenerates
     if [ -s "$ALLAVA_JSONL" ]; then
         echo "    reuse existing $ALLAVA_JSONL  (rm it to regenerate)"
     else
@@ -203,7 +203,7 @@ if [ "${USE_ALLAVA}" = "1" ]; then
     MEDIA_ROOT="$ALLAVA_IMAGE_ROOT"
 elif [ "${USE_MMSTAR}" = "1" ]; then
     echo "=== Step 0: Preparing MMStar (-> conversations jsonl) ==="
-    MMSTAR_JSONL="$(pwd)/data/mmstar/mmstar.jsonl"
+    MMSTAR_JSONL="$(pwd)/data/mmstar/mmstar_${MAX_SAMPLES}.jsonl"
     MMSTAR_IMG_DIR="$(pwd)/data/mmstar/images"   # only used when extracting from HF
     if [ -s "$MMSTAR_JSONL" ]; then
         echo "    reuse existing $MMSTAR_JSONL  (rm it to regenerate)"
