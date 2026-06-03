@@ -699,6 +699,37 @@ def test_preprocess_batch_uses_hf_assistant_mask():
     assert torch.any(results["loss_mask"][0] == 1)
 
 
+def test_preprocess_batch_filters_over_max_length_hf_mask_path():
+    """Test that HF assistant mask outputs longer than max_length are dropped."""
+
+    class FakeProcessor:
+        def apply_chat_template(self, *args, **kwargs):
+            return {
+                "input_ids": [1, 2, 3, 4],
+                "assistant_masks": [0, 1, 1, 1],
+            }
+
+    examples = {
+        "conversations": [
+            [
+                {"role": "user", "content": "Hello"},
+                {"role": "assistant", "content": "Hi there!"},
+            ]
+        ]
+    }
+
+    results = _preprocess_batch(
+        examples,
+        FakeProcessor(),  # type: ignore[arg-type]
+        max_length=3,
+        assistant_pattern=None,
+    )
+
+    assert results["input_ids"] == []
+    assert results["loss_mask"] == []
+    assert results["seq_len"] == []
+
+
 @pytest.mark.sanity
 def test_preprocess_batch_falls_back_to_regex():
     """Test that preprocessing falls back to regex-based detection

@@ -244,6 +244,7 @@ python3 scripts/prepare_data.py \
     --model "$MODEL" \
     --data "$DATASET" \
     --output "$OUTPUT_DIR" \
+    --overwrite \
     --max-samples "$MAX_SAMPLES" \
     --seq-length "$SEQ_LENGTH" \
     "${TRC_FLAG[@]}"

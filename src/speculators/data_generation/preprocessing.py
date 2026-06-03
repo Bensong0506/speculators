@@ -528,6 +528,13 @@ def _preprocess_batch(
             f"Shape mismatch: input_ids={len(input_ids)}, loss_mask={len(loss_mask)}"
         )
 
+        if len(input_ids) > max_length:
+            log.warning(
+                f"Dropping conversation {idx}: tokenized length {len(input_ids)} "
+                f"exceeds max_length={max_length}"
+            )
+            continue
+
         # Filtering samples out with too few valid tokens
         if minimum_valid_tokens is not None:
             num_valid_tokens = int(loss_mask.sum().item())
