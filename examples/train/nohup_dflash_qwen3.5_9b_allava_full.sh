@@ -1,6 +1,6 @@
 #!/bin/bash
 # Detached long-run launcher for Qwen3.5-9B multimodal DFlash on ALLaVA LAION.
-# Defaults to a 10k-sample ALLaVA smoke run before scaling to the full 937,340 rows.
+# Defaults to a 10k-sample ALLaVA warm-start run from a downloaded DFlash model.
 
 set -euo pipefail
 
@@ -9,16 +9,20 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$REPO_ROOT"
 
 STAMP="$(date +%Y%m%d_%H%M%S)"
-RUN_NAME="${RUN_NAME:-dflash_qwen35_9b_allava_10k_scratch_fullvocab_5aux_${STAMP}}"
+RUN_NAME="${RUN_NAME:-dflash_qwen35_9b_allava_10k_continue_dflash_${STAMP}}"
 NOHUP_LOG_DIR="${NOHUP_LOG_DIR:-$REPO_ROOT/run_logs}"
 NOHUP_LOG_PATH="${NOHUP_LOG_PATH:-$NOHUP_LOG_DIR/${RUN_NAME}.nohup.log}"
 PID_PATH="${PID_PATH:-$NOHUP_LOG_DIR/${RUN_NAME}.pid}"
 mkdir -p "$NOHUP_LOG_DIR"
 
 export MODEL="${MODEL:-/home/models/Qwen3.5-9B}"
-export FINETUNE_FROM="${FINETUNE_FROM:-}"
+export RAW_DFLASH_FROM="${RAW_DFLASH_FROM:-/home/models/Qwen3.5-9B-DFlash}"
+export FINETUNE_FROM="${FINETUNE_FROM:-$RAW_DFLASH_FROM}"
+export CONVERTED_DFLASH_OUT="${CONVERTED_DFLASH_OUT:-./output/pretrained/qwen3.5_9b_dflash_speculators}"
+export AUTO_CONVERT_DFLASH="${AUTO_CONVERT_DFLASH:-1}"
+export REQUIRE_PRETRAINED_WEIGHTS="${REQUIRE_PRETRAINED_WEIGHTS:-1}"
 export OUTPUT_DIR="${OUTPUT_DIR:-./output/dflash_qwen3.5_9b_mm_10k}"
-export SAVE_PATH="${SAVE_PATH:-./output/dflash_qwen3.5_9b_mm_10k_scratch_fullvocab_5aux/${RUN_NAME}/checkpoints}"
+export SAVE_PATH="${SAVE_PATH:-./output/dflash_qwen3.5_9b_mm_10k_continue_dflash/${RUN_NAME}/checkpoints}"
 export ALLAVA_IMAGE_ROOT="${ALLAVA_IMAGE_ROOT:-/home/wenxuan/ALLaVA-4V}"
 export ALLAVA_INPUTS="${ALLAVA_INPUTS:-$ALLAVA_IMAGE_ROOT/allava_laion/ALLaVA-Caption-LAION-4V.json $ALLAVA_IMAGE_ROOT/allava_laion/ALLaVA-Instruct-LAION-4V.json}"
 
@@ -54,7 +58,11 @@ echo "  max_samples: $MAX_SAMPLES"
 echo "  epochs: $EPOCHS"
 echo "  checkpoint_freq: $CHECKPOINT_FREQ"
 echo "  lr: $LR"
-echo "  finetune_from: ${FINETUNE_FROM:-scratch}"
+echo "  raw_dflash_from: ${RAW_DFLASH_FROM:-unset}"
+echo "  finetune_from: $FINETUNE_FROM"
+echo "  converted_dflash_out: ${CONVERTED_DFLASH_OUT:-unset}"
+echo "  auto_convert_dflash: $AUTO_CONVERT_DFLASH"
+echo "  require_pretrained_weights: $REQUIRE_PRETRAINED_WEIGHTS"
 echo "  block_size: $BLOCK_SIZE"
 echo "  num_spec: $((BLOCK_SIZE - 1))"
 echo "  max_anchors: $MAX_ANCHORS"

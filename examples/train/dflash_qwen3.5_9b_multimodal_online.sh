@@ -86,6 +86,9 @@ OUTPUT_DIR="${OUTPUT_DIR:-./output/dflash_qwen3.5_9b_mm}"
 SAVE_PATH="${SAVE_PATH:-}"
 VLLM_PORT="${VLLM_PORT:-8000}"
 NO_RESUME_FROM_CHECKPOINT="${NO_RESUME_FROM_CHECKPOINT:-0}"
+AUTO_CONVERT_DFLASH="${AUTO_CONVERT_DFLASH:-0}"
+CONVERTED_DFLASH_OUT="${CONVERTED_DFLASH_OUT:-}"
+REQUIRE_PRETRAINED_WEIGHTS="${REQUIRE_PRETRAINED_WEIGHTS:-0}"
 MAX_SAMPLES="${MAX_SAMPLES:-5000}"  # 5k = sanity check only. Use 100k+ for real quality.
 SEQ_LENGTH="${SEQ_LENGTH:-4096}"    # Feeds vLLM --max-model-len /
                                     # --max-num-batched-tokens, and trainer
@@ -163,6 +166,29 @@ fi
 FROM_FLAG=()
 REQUESTED_BLOCK_SIZE="${BLOCK_SIZE:-}"
 if [ -n "$FINETUNE_FROM" ]; then
+    [ -f "$FINETUNE_FROM/config.json" ] || { echo "[fatal] $FINETUNE_FROM/config.json not found"; exit 1; }
+    INITIAL_SPEC_FORMAT=$(python3 - "$FINETUNE_FROM/config.json" <<'PY'
+import json, sys
+c = json.load(open(sys.argv[1]))
+print(1 if "speculators_model_type" in c else 0)
+PY
+)
+    if [ "$INITIAL_SPEC_FORMAT" != "1" ] && [ "$AUTO_CONVERT_DFLASH" = "1" ]; then
+        CONVERTED_DFLASH_OUT="${CONVERTED_DFLASH_OUT:-${FINETUNE_FROM%/}-speculators}"
+        echo "=== Converting raw DFlash checkpoint for warm-start ==="
+        echo "    raw: $FINETUNE_FROM"
+        echo "    out: $CONVERTED_DFLASH_OUT"
+        if [ -f "$CONVERTED_DFLASH_OUT/config.json" ]; then
+            echo "    reuse existing converted checkpoint"
+        else
+            python3 scripts/convert_zlab_dflash_to_speculators.py \
+                --src "$FINETUNE_FROM" \
+                --verifier "$MODEL" \
+                --out "$CONVERTED_DFLASH_OUT"
+        fi
+        FINETUNE_FROM="$CONVERTED_DFLASH_OUT"
+    fi
+
     echo "=== Aligning recipe to $FINETUNE_FROM/config.json ==="
     [ -f "$FINETUNE_FROM/config.json" ] || { echo "[fatal] $FINETUNE_FROM/config.json not found"; exit 1; }
     eval "$(python3 - "$FINETUNE_FROM/config.json" <<'PY'
@@ -188,7 +214,9 @@ PY
     fi
     DRAFT_VOCAB_SIZE=""                          # match pretrained: FULL vocab (no mapping)
     LR="$LR_FT"                                  # lower LR
-    OUTPUT_DIR="${OUTPUT_DIR}_ft"                # separate dir
+    if [ -z "$SAVE_PATH" ]; then
+        OUTPUT_DIR="${OUTPUT_DIR}_ft"            # separate dir when save path is not explicit
+    fi
     echo "    -> $BLOCK_SIZE_NOTE"
     echo "    -> num_layers=$NUM_LAYERS draft_arch=$DRAFT_ARCH"
     echo "    -> target_layer_ids='$TARGET_LAYER_IDS' mask_token_id='$MASK_TOKEN_ID' (full vocab, lr=$LR)"
@@ -200,6 +228,11 @@ PY
         echo "       (no speculators_model_type) -> this repo can't load its weights."
         echo "       Training FROM SCRATCH with this recipe (full vocab / block_size=$BLOCK_SIZE"
         echo "       / $DRAFT_ARCH / aux=[$TARGET_LAYER_IDS]). See me about a converter for true warm-start."
+        if [ "$REQUIRE_PRETRAINED_WEIGHTS" = "1" ]; then
+            echo "[fatal] REQUIRE_PRETRAINED_WEIGHTS=1 but $FINETUNE_FROM is not speculators-format."
+            echo "        Set AUTO_CONVERT_DFLASH=1 or point FINETUNE_FROM at a converted checkpoint."
+            exit 1
+        fi
     fi
 fi
 
@@ -266,6 +299,8 @@ echo "    dflash draft vocab: ${DRAFT_VOCAB_SIZE:-full}"
 echo "    checkpoint_freq: $CHECKPOINT_FREQ"
 echo "    save_path: $SAVE_PATH"
 echo "    no_resume_from_checkpoint: $NO_RESUME_FROM_CHECKPOINT"
+echo "    auto_convert_dflash: $AUTO_CONVERT_DFLASH"
+echo "    require_pretrained_weights: $REQUIRE_PRETRAINED_WEIGHTS"
 echo "    force_eager_training: $FORCE_EAGER"
 echo "    dflash_compile_training: $DFLASH_COMPILE"
 echo "    target_layer_ids: $TARGET_LAYER_IDS"
