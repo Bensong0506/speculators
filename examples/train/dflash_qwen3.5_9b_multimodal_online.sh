@@ -306,13 +306,20 @@ echo "    dflash_compile_training: $DFLASH_COMPILE"
 echo "    target_layer_ids: $TARGET_LAYER_IDS"
 
 # Step 0 (optional): build a `conversations` jsonl from the chosen data source.
-# Idempotent: skips conversion if the target jsonl already exists (rm it to redo).
+# Idempotent: skips conversion only when the source/image-root fingerprint matches.
 if [ "${USE_ALLAVA}" = "1" ]; then
     echo "=== Step 0: Converting ALLaVA-4V -> conversations jsonl ==="
     ALLAVA_JSONL="$(pwd)/data/allava/allava_${MAX_SAMPLES}.jsonl"  # name carries the count so changing MAX_SAMPLES regenerates
-    if [ -s "$ALLAVA_JSONL" ]; then
-        echo "    reuse existing $ALLAVA_JSONL  (rm it to regenerate)"
-    else
+    ALLAVA_FINGERPRINT="${ALLAVA_JSONL}.fingerprint.json"
+    CURRENT_ALLAVA_FINGERPRINT=$(python3 - "$ALLAVA_IMAGE_ROOT" "$MAX_SAMPLES" $ALLAVA_INPUTS <<'PY'
+import json, sys
+keys = ("image_root", "max_samples")
+payload = dict(zip(keys, sys.argv[1:3]))
+payload["inputs"] = sys.argv[3:]
+print(json.dumps(payload, sort_keys=True, indent=2))
+PY
+)
+    build_allava_jsonl() {
         IN_ARGS=()
         for j in $ALLAVA_INPUTS; do IN_ARGS+=(--in "$j"); done
         python3 scripts/llava_to_jsonl.py \
@@ -320,6 +327,16 @@ if [ "${USE_ALLAVA}" = "1" ]; then
             --image-root "$ALLAVA_IMAGE_ROOT" \
             --out-jsonl "$ALLAVA_JSONL" \
             --max-samples "$MAX_SAMPLES"
+        printf '%s\n' "$CURRENT_ALLAVA_FINGERPRINT" > "$ALLAVA_FINGERPRINT"
+    }
+    if [ -s "$ALLAVA_JSONL" ] && [ -f "$ALLAVA_FINGERPRINT" ] \
+        && printf '%s\n' "$CURRENT_ALLAVA_FINGERPRINT" | cmp -s - "$ALLAVA_FINGERPRINT"; then
+        echo "    reuse existing $ALLAVA_JSONL"
+    else
+        if [ -s "$ALLAVA_JSONL" ]; then
+            echo "    ALLaVA source/root changed or fingerprint missing -> rebuilding $ALLAVA_JSONL"
+        fi
+        build_allava_jsonl
     fi
     DATASET="$ALLAVA_JSONL"
     MEDIA_ROOT="$ALLAVA_IMAGE_ROOT"
