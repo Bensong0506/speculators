@@ -73,9 +73,9 @@ FINETUNE_FROM=/home/models/Qwen3.5-9B-DFlash \
 # Default hard token limit is SEQ_LENGTH=4096 to avoid OOM.
 # Preprocessing keeps only PREPROCESS_SEQ_LENGTH=3584 tokens by default, leaving
 # margin for vLLM's multimodal prompt expansion. DFlash training also defaults
-# to MAX_ANCHORS=512 because full-vocab block-16 logits are large.
+# to MAX_ANCHORS=128 because full-vocab block-16 logits are large.
 # The launcher prints a "Resolved training limits" block before preprocessing;
-# if MAX_ANCHORS is accidentally overridden above 512 in full-vocab block-16 mode,
+# if MAX_ANCHORS is accidentally overridden above 128 in full-vocab block-16 mode,
 # it now exits immediately instead of running until CUDA OOM.
 # Full stdout/stderr is also saved by default under ./run_logs/*.log; override with
 # RUN_LOG_PATH=/abs/train.log or disable with LOG_TO_FILE=0.
@@ -110,7 +110,7 @@ and writes `run_logs/<run_name>.nohup.log` plus a PID file:
 bash examples/train/nohup_dflash_qwen3.5_9b_allava_full.sh
 tail -f run_logs/dflash_qwen35_9b_allava_full_*.nohup.log
 ```
-Defaults: `MAX_SAMPLES=937340 EPOCHS=1000 CHECKPOINT_FREQ=50 LOGGER=wandb`.
+Defaults: `MAX_SAMPLES=937340 EPOCHS=1000 CHECKPOINT_FREQ=5 MAX_ANCHORS=128 LOGGER=wandb`.
 
 ### 1d. Watch training (loss + per-position acceptance)
 ```bash

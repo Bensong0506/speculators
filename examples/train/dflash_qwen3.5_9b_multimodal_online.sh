@@ -95,7 +95,7 @@ PREPROCESS_SEQ_LENGTH="${PREPROCESS_SEQ_LENGTH:-3584}"  # Conservative filter
 FORCE_PREPROCESS="${FORCE_PREPROCESS:-0}"  # set 1 to rebuild cached arrow data
 EPOCHS="${EPOCHS:-5}"
 LR="${LR:-3e-4}"
-CHECKPOINT_FREQ="${CHECKPOINT_FREQ:-1}"  # save every N epochs
+CHECKPOINT_FREQ="${CHECKPOINT_FREQ:-5}"  # save every N epochs
 
 # --- Experiment tracking (loss / acceptance curves) -----------------------
 # tensorboard = local, intranet-friendly (view via SSH tunnel — see RUN.md /
@@ -118,7 +118,7 @@ fi
 # --- 4) DFlash-specific ----------------------------------------------------
 SPECULATOR_TYPE="dflash"
 BLOCK_SIZE=8            # tokens drafted per block (one forward pass)
-MAX_ANCHORS="${MAX_ANCHORS:-512}"  # max anchor positions sampled per step (memory knob)
+MAX_ANCHORS="${MAX_ANCHORS:-128}"  # max anchor positions sampled per step (memory knob)
 NUM_LAYERS=5            # draft transformer layers (DFlash typically uses ~5)
 DRAFT_VOCAB_SIZE=32000  # reduced draft vocab; auto-cleared (full vocab) when warm-starting
 
@@ -219,9 +219,9 @@ if ! [[ "$MAX_ANCHORS" =~ ^[0-9]+$ ]]; then
     echo "[fatal] MAX_ANCHORS must be an integer, got '$MAX_ANCHORS'"
     exit 1
 fi
-if [ -z "$DRAFT_VOCAB_SIZE" ] && (( 10#$BLOCK_SIZE >= 16 && 10#$MAX_ANCHORS > 512 )); then
+if [ -z "$DRAFT_VOCAB_SIZE" ] && (( 10#$BLOCK_SIZE >= 16 && 10#$MAX_ANCHORS > 128 )); then
     echo "[fatal] Full-vocab DFlash with block_size=$BLOCK_SIZE and MAX_ANCHORS=$MAX_ANCHORS is likely to OOM."
-    echo "        Use MAX_ANCHORS=512 or lower for the 4-GPU training split."
+    echo "        Use MAX_ANCHORS=128 or lower for the 4-GPU training split."
     exit 1
 fi
 
@@ -232,6 +232,7 @@ echo "    dflash block_size: $BLOCK_SIZE"
 echo "    dflash max_anchors: $MAX_ANCHORS"
 echo "    dflash num_layers: $NUM_LAYERS"
 echo "    dflash draft vocab: ${DRAFT_VOCAB_SIZE:-full}"
+echo "    checkpoint_freq: $CHECKPOINT_FREQ"
 echo "    target_layer_ids: $TARGET_LAYER_IDS"
 
 # Step 0 (optional): build a `conversations` jsonl from the chosen data source.
@@ -345,7 +346,7 @@ fi
 # file path in the dataset. Everything after `--` is passed straight to vLLM.
 echo "=== Step 2: Launching vLLM server ==="
 filter_vllm_access_logs() {
-    grep -v -E '^\(ApiServer_[^)]*\) INFO: .*"(POST /v1/chat/completions|GET /health) HTTP/1\.1" 200 OK$'
+    grep -v -E '^\(ApiServer_[^)]*\) INFO: .*"(POST /v1/chat/completions|GET /health|GET /v1/models) HTTP/1\.1" 200 OK$'
 }
 CUDA_VISIBLE_DEVICES="$VLLM_GPUS" python3 scripts/launch_vllm.py "$MODEL" \
     --target-layer-ids $TARGET_LAYER_IDS \
