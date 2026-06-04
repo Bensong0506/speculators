@@ -1,13 +1,17 @@
-s/185641.jpeg. Failed with Incorrect padding
-2026-06-04 11:47:21,578 - speculators.data_generation.preprocessing - ERROR -   ✗ Failed to process conversation 245 (assistant_pattern=True): Incorrect image source. Must be a valid URL starting with `http://` or `https://`, a valid path to an image file, or a base64 encoded string. Got /home/wenxuan_train_dflash/wenxuan/ALLaVA-4V/allava_laion/images/6150.jpeg. Failed with Invalid base64-encoded string: number of data characters (69) cannot be 1 more than a multiple of 4
-2026-06-04 11:47:21,578 - speculators.data_generation.preprocessing - ERROR -   ✗ Failed to process conversation 246 (assistant_pattern=True): Incorrect image source. Must be a valid URL starting with `http://` or `https://`, a valid path to an image file, or a base64 encoded string. Got /home/wenxuan_train_dflash/wenxuan/ALLaVA-4V/allava_laion/images/51967.jpeg. Failed with Incorrect padding
-2026-06-04 11:47:21,579 - speculators.data_generation.preprocessing - ERROR -   ✗ Failed to process conversation 247 (assistant_pattern=True): Incorrect image source. Must be a valid URL starting with `http://` or `https://`, a valid path to an image file, or a base64 encoded string. Got /home/wenxuan_train_dflash/wenxuan/ALLaVA-4V/allava_laion/images/29105.jpeg. Failed with Incorrect padding
-2026-06-04 11:47:21,579 - speculators.data_generation.preprocessing - ERROR -   ✗ Failed to process conversation 248 (assistant_pattern=True): Incorrect image source. Must be a valid URL starting with `http://` or `https://`, a valid path to an image file, or a base64 encoded string. Got /home/wenxuan_train_dflash/wenxuan/ALLaVA-4V/allava_laion/images/233677.jpeg. Failed with Incorrect padding
-2026-06-04 11:47:21,579 - speculators.data_generation.preprocessing - ERROR -   ✗ Failed to process conversation 249 (assistant_pattern=True): Incorrect image source. Must be a valid URL starting with `http://` or `https://`, a valid path to an image file, or a base64 encoded string. Got /home/wenxuan_train_dflash/wenxuan/ALLaVA-4V/allava_laion/images/101999734.jpeg. Failed with Incorrect padding
-Map (num_proc=8): 100%|██████████| 10000/10000 [00:14<00:00, 682.31 examples/s]
-2026-06-04 11:47:21,691 - speculators.data_generation.preprocessing - INFO - 
+2026-06-04 11:55:12,140 - speculators.data_generation.preprocessing - INFO -   Loaded 2 samples
+[transformers] return_assistant_tokens_mask==True but chat template does not contain `{% generation %}` keyword.
+2026-06-04 11:55:12,189 - speculators.data_generation.preprocessing - INFO -   Detected assistant pattern: <\|im_start\|>assistant\
+((?:(?!<\|im_start\|).)*?)<\|im_end\|>\
+...
+num_proc must be <= 2. Reducing num_proc to 2 for dataset of size 2.
+2026-06-04 11:55:12,189 - datasets.arrow_dataset - WARNING - num_proc must be <= 2. Reducing num_proc to 2 for dataset of size 2.
+Map (num_proc=2):   0%|          | 0/2 [00:00<?, ? examples/s]2026-06-04 11:55:16,284 - speculators.data_generation.preprocessing - ERROR -   ✗ Failed to process conversation 0 (assistant_pattern=True): Expected a non empty file
+Map (num_proc=2):  50%|█████     | 1/2 [00:02<00:02,  2.44s/ examples]2026-06-04 11:55:17,973 - speculators.data_generation.preprocessing - ERROR -   ✗ Failed to process conversation 0 (assistant_pattern=True): Expected a non empty file
+Map (num_proc=2): 100%|██████████| 2/2 [00:04<00:00,  2.11s/ examples]
+2026-06-04 11:55:18,074 - speculators.data_generation.preprocessing - INFO - 
 ▸ Computing token frequency distribution
-2026-06-04 11:47:21,691 - speculators.data_generation.preprocessing - INFO - 
+Counting token frequencies: 0it [00:00, ?it/s]
+2026-06-04 11:55:18,076 - speculators.data_generation.preprocessing - INFO - 
 ▸ Visualizing sample
 Traceback (most recent call last):
   File "/home/wenxuan_train_dflash/wenxuan/speculators/scripts/prepare_data.py", line 201, in <module>
