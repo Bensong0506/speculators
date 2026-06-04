@@ -1,6 +1,6 @@
 #!/bin/bash
 # Detached long-run launcher for Qwen3.5-9B multimodal DFlash on ALLaVA LAION.
-# Defaults to a 10k-sample ALLaVA warm-start run from a downloaded DFlash model.
+# Defaults to a 10k-sample ALLaVA warm-start run from a converted DFlash model.
 
 set -euo pipefail
 
@@ -16,10 +16,9 @@ PID_PATH="${PID_PATH:-$NOHUP_LOG_DIR/${RUN_NAME}.pid}"
 mkdir -p "$NOHUP_LOG_DIR"
 
 export MODEL="${MODEL:-/home/models/Qwen3.5-9B}"
-export RAW_DFLASH_FROM="${RAW_DFLASH_FROM:-/home/models/Qwen3.5-9B-DFlash}"
-export FINETUNE_FROM="${FINETUNE_FROM:-$RAW_DFLASH_FROM}"
-export CONVERTED_DFLASH_OUT="${CONVERTED_DFLASH_OUT:-./output/pretrained/qwen3.5_9b_dflash_speculators}"
-export AUTO_CONVERT_DFLASH="${AUTO_CONVERT_DFLASH:-1}"
+export FINETUNE_FROM="${FINETUNE_FROM:-/home/models/Qwen3.5-9B-DFlash-spec}"
+export CONVERTED_DFLASH_OUT="${CONVERTED_DFLASH_OUT:-}"
+export AUTO_CONVERT_DFLASH="${AUTO_CONVERT_DFLASH:-0}"
 export REQUIRE_PRETRAINED_WEIGHTS="${REQUIRE_PRETRAINED_WEIGHTS:-1}"
 export OUTPUT_DIR="${OUTPUT_DIR:-./output/dflash_qwen3.5_9b_mm_10k}"
 export SAVE_PATH="${SAVE_PATH:-./output/dflash_qwen3.5_9b_mm_10k_continue_dflash/${RUN_NAME}/checkpoints}"
@@ -58,7 +57,6 @@ echo "  max_samples: $MAX_SAMPLES"
 echo "  epochs: $EPOCHS"
 echo "  checkpoint_freq: $CHECKPOINT_FREQ"
 echo "  lr: $LR"
-echo "  raw_dflash_from: ${RAW_DFLASH_FROM:-unset}"
 echo "  finetune_from: $FINETUNE_FROM"
 echo "  converted_dflash_out: ${CONVERTED_DFLASH_OUT:-unset}"
 echo "  auto_convert_dflash: $AUTO_CONVERT_DFLASH"
