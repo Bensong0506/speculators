@@ -1,6 +1,6 @@
 #!/bin/bash
 # Detached long-run launcher for Qwen3.5-9B multimodal DFlash on ALLaVA LAION.
-# Defaults to the two local LAION json files: caption + instruct = 937,340 rows.
+# Defaults to a 10k-sample ALLaVA smoke run before scaling to the full 937,340 rows.
 
 set -euo pipefail
 
@@ -9,7 +9,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$REPO_ROOT"
 
 STAMP="$(date +%Y%m%d_%H%M%S)"
-RUN_NAME="${RUN_NAME:-dflash_qwen35_9b_allava_full_scratch_fullvocab_5aux_${STAMP}}"
+RUN_NAME="${RUN_NAME:-dflash_qwen35_9b_allava_10k_scratch_fullvocab_5aux_${STAMP}}"
 NOHUP_LOG_DIR="${NOHUP_LOG_DIR:-$REPO_ROOT/run_logs}"
 NOHUP_LOG_PATH="${NOHUP_LOG_PATH:-$NOHUP_LOG_DIR/${RUN_NAME}.nohup.log}"
 PID_PATH="${PID_PATH:-$NOHUP_LOG_DIR/${RUN_NAME}.pid}"
@@ -17,12 +17,12 @@ mkdir -p "$NOHUP_LOG_DIR"
 
 export MODEL="${MODEL:-/home/models/Qwen3.5-9B}"
 export FINETUNE_FROM="${FINETUNE_FROM:-}"
-export OUTPUT_DIR="${OUTPUT_DIR:-./output/dflash_qwen3.5_9b_mm}"
-export SAVE_PATH="${SAVE_PATH:-./output/dflash_qwen3.5_9b_mm_scratch_fullvocab_5aux/checkpoints}"
+export OUTPUT_DIR="${OUTPUT_DIR:-./output/dflash_qwen3.5_9b_mm_10k}"
+export SAVE_PATH="${SAVE_PATH:-./output/dflash_qwen3.5_9b_mm_10k_scratch_fullvocab_5aux/checkpoints}"
 export ALLAVA_IMAGE_ROOT="${ALLAVA_IMAGE_ROOT:-/home/wenxuan/ALLaVA-4V}"
 export ALLAVA_INPUTS="${ALLAVA_INPUTS:-$ALLAVA_IMAGE_ROOT/allava_laion/ALLaVA-Caption-LAION-4V.json $ALLAVA_IMAGE_ROOT/allava_laion/ALLaVA-Instruct-LAION-4V.json}"
 
-export MAX_SAMPLES="${MAX_SAMPLES:-937340}"
+export MAX_SAMPLES="${MAX_SAMPLES:-10000}"
 export EPOCHS="${EPOCHS:-1000}"
 export CHECKPOINT_FREQ="${CHECKPOINT_FREQ:-5}"
 export LR="${LR:-1e-4}"
