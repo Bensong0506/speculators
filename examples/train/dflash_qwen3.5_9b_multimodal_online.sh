@@ -199,6 +199,29 @@ PY
     echo "    text num_hidden_layers based -> TARGET_LAYER_IDS = ${TARGET_LAYER_IDS}"
 fi
 
+if ! [[ "$BLOCK_SIZE" =~ ^[0-9]+$ ]]; then
+    echo "[fatal] BLOCK_SIZE must be an integer, got '$BLOCK_SIZE'"
+    exit 1
+fi
+if ! [[ "$MAX_ANCHORS" =~ ^[0-9]+$ ]]; then
+    echo "[fatal] MAX_ANCHORS must be an integer, got '$MAX_ANCHORS'"
+    exit 1
+fi
+if [ -z "$DRAFT_VOCAB_SIZE" ] && (( 10#$BLOCK_SIZE >= 16 && 10#$MAX_ANCHORS > 512 )); then
+    echo "[fatal] Full-vocab DFlash with block_size=$BLOCK_SIZE and MAX_ANCHORS=$MAX_ANCHORS is likely to OOM."
+    echo "        Use MAX_ANCHORS=512 or lower for the 4-GPU training split."
+    exit 1
+fi
+
+echo "=== Resolved training limits ==="
+echo "    seq_length: $SEQ_LENGTH"
+echo "    preprocessing keep length: $PREPROCESS_SEQ_LENGTH"
+echo "    dflash block_size: $BLOCK_SIZE"
+echo "    dflash max_anchors: $MAX_ANCHORS"
+echo "    dflash num_layers: $NUM_LAYERS"
+echo "    dflash draft vocab: ${DRAFT_VOCAB_SIZE:-full}"
+echo "    target_layer_ids: $TARGET_LAYER_IDS"
+
 # Step 0 (optional): build a `conversations` jsonl from the chosen data source.
 # Idempotent: skips conversion if the target jsonl already exists (rm it to redo).
 if [ "${USE_ALLAVA}" = "1" ]; then

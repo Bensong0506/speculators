@@ -74,6 +74,9 @@ FINETUNE_FROM=/home/models/Qwen3.5-9B-DFlash \
 # Preprocessing keeps only PREPROCESS_SEQ_LENGTH=3584 tokens by default, leaving
 # margin for vLLM's multimodal prompt expansion. DFlash training also defaults
 # to MAX_ANCHORS=512 because full-vocab block-16 logits are large.
+# The launcher prints a "Resolved training limits" block before preprocessing;
+# if MAX_ANCHORS is accidentally overridden above 512 in full-vocab block-16 mode,
+# it now exits immediately instead of running until CUDA OOM.
 # vLLM request access logs are filtered by the shell so repeated 200 OK lines do
 # not hide errors, without relying on version-specific vLLM CLI flags.
 # the run prints "Warm-start: aligning ..." -> eyeball block_size=16 / 5 layers /
