@@ -118,7 +118,7 @@ fi
 # --- 4) DFlash-specific ----------------------------------------------------
 SPECULATOR_TYPE="dflash"
 BLOCK_SIZE=8            # tokens drafted per block (one forward pass)
-MAX_ANCHORS="${MAX_ANCHORS:-128}"  # max anchor positions sampled per step (memory knob)
+MAX_ANCHORS="${MAX_ANCHORS:-512}"  # max anchor positions sampled per step (memory knob)
 NUM_LAYERS=5            # draft transformer layers (DFlash typically uses ~5)
 DRAFT_VOCAB_SIZE=32000  # reduced draft vocab; auto-cleared (full vocab) when warm-starting
 
@@ -219,9 +219,9 @@ if ! [[ "$MAX_ANCHORS" =~ ^[0-9]+$ ]]; then
     echo "[fatal] MAX_ANCHORS must be an integer, got '$MAX_ANCHORS'"
     exit 1
 fi
-if [ -z "$DRAFT_VOCAB_SIZE" ] && (( 10#$BLOCK_SIZE >= 16 && 10#$MAX_ANCHORS > 128 )); then
+if [ -z "$DRAFT_VOCAB_SIZE" ] && (( 10#$BLOCK_SIZE >= 16 && 10#$MAX_ANCHORS > 512 )); then
     echo "[fatal] Full-vocab DFlash with block_size=$BLOCK_SIZE and MAX_ANCHORS=$MAX_ANCHORS is likely to OOM."
-    echo "        Use MAX_ANCHORS=128 or lower for the 4-GPU training split."
+    echo "        Use MAX_ANCHORS=512 or lower for the 4-GPU training split."
     exit 1
 fi
 
