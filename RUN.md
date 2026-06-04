@@ -110,7 +110,7 @@ and writes `run_logs/<run_name>.nohup.log` plus a PID file:
 bash examples/train/nohup_dflash_qwen3.5_9b_allava_full.sh
 tail -f run_logs/dflash_qwen35_9b_allava_full_*.nohup.log
 ```
-Defaults: `MAX_SAMPLES=937340 EPOCHS=1 LOGGER=wandb`.
+Defaults: `MAX_SAMPLES=937340 EPOCHS=1000 CHECKPOINT_FREQ=50 LOGGER=wandb`.
 
 ### 1d. Watch training (loss + per-position acceptance)
 ```bash

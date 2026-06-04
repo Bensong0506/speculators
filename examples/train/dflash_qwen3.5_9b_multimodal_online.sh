@@ -95,6 +95,7 @@ PREPROCESS_SEQ_LENGTH="${PREPROCESS_SEQ_LENGTH:-3584}"  # Conservative filter
 FORCE_PREPROCESS="${FORCE_PREPROCESS:-0}"  # set 1 to rebuild cached arrow data
 EPOCHS="${EPOCHS:-5}"
 LR="${LR:-3e-4}"
+CHECKPOINT_FREQ="${CHECKPOINT_FREQ:-1}"  # save every N epochs
 
 # --- Experiment tracking (loss / acceptance curves) -----------------------
 # tensorboard = local, intranet-friendly (view via SSH tunnel — see RUN.md /
@@ -389,6 +390,7 @@ CUDA_VISIBLE_DEVICES="$TRAIN_GPUS" torchrun \
     "${DRAFTARCH_FLAG[@]}" \
     "${MASK_FLAG[@]}" \
     --epochs "$EPOCHS" \
+    --checkpoint-freq "$CHECKPOINT_FREQ" \
     --lr "$LR" \
     --total-seq-len "$SEQ_LENGTH" \
     --speculator-type "$SPECULATOR_TYPE" \
