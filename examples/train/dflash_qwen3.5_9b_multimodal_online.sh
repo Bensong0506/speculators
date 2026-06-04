@@ -85,6 +85,7 @@ ALLAVA_IMAGE_ROOT="${ALLAVA_IMAGE_ROOT:-/home/wenxuan/ALLaVA-4V}"
 OUTPUT_DIR="${OUTPUT_DIR:-./output/dflash_qwen3.5_9b_mm}"
 SAVE_PATH="${SAVE_PATH:-}"
 VLLM_PORT="${VLLM_PORT:-8000}"
+NO_RESUME_FROM_CHECKPOINT="${NO_RESUME_FROM_CHECKPOINT:-0}"
 MAX_SAMPLES="${MAX_SAMPLES:-5000}"  # 5k = sanity check only. Use 100k+ for real quality.
 SEQ_LENGTH="${SEQ_LENGTH:-4096}"    # Feeds vLLM --max-model-len /
                                     # --max-num-batched-tokens, and trainer
@@ -213,6 +214,10 @@ fi
 VOCAB_FLAG=();     [ -n "$DRAFT_VOCAB_SIZE" ]  && VOCAB_FLAG=(--draft-vocab-size "$DRAFT_VOCAB_SIZE")
 DRAFTARCH_FLAG=(); [ -n "${DRAFT_ARCH:-}" ]    && DRAFTARCH_FLAG=(--draft-arch "$DRAFT_ARCH")
 MASK_FLAG=();      [ -n "${MASK_TOKEN_ID:-}" ] && MASK_FLAG=(--mask-token-id "$MASK_TOKEN_ID")
+NO_RESUME_FLAG=()
+if [ "$NO_RESUME_FROM_CHECKPOINT" = "1" ]; then
+    NO_RESUME_FLAG=(--no-resume-from-checkpoint)
+fi
 FORCE_EAGER_FLAG=()
 if [ "$FORCE_EAGER" = "1" ]; then
     FORCE_EAGER_FLAG=(--force-eager)
@@ -260,6 +265,7 @@ echo "    dflash num_layers: $NUM_LAYERS"
 echo "    dflash draft vocab: ${DRAFT_VOCAB_SIZE:-full}"
 echo "    checkpoint_freq: $CHECKPOINT_FREQ"
 echo "    save_path: $SAVE_PATH"
+echo "    no_resume_from_checkpoint: $NO_RESUME_FROM_CHECKPOINT"
 echo "    force_eager_training: $FORCE_EAGER"
 echo "    dflash_compile_training: $DFLASH_COMPILE"
 echo "    target_layer_ids: $TARGET_LAYER_IDS"
@@ -419,6 +425,7 @@ CUDA_VISIBLE_DEVICES="$TRAIN_GPUS" torchrun \
     "${FROM_FLAG[@]}" \
     "${DRAFTARCH_FLAG[@]}" \
     "${MASK_FLAG[@]}" \
+    "${NO_RESUME_FLAG[@]}" \
     "${FORCE_EAGER_FLAG[@]}" \
     --epochs "$EPOCHS" \
     --checkpoint-freq "$CHECKPOINT_FREQ" \
