@@ -76,10 +76,10 @@ MMSTAR_MEDIA_ROOT="${MMSTAR_MEDIA_ROOT:-/home/wenxuan/mmstar/images}"
 # Option D (REAL training): ALLaVA-4V (or any LLaVA-style json). Step 0 converts
 # it to a conversations jsonl via scripts/llava_to_jsonl.py. Set the paths below.
 USE_ALLAVA="${USE_ALLAVA:-1}"
-# One or more ALLaVA json files, space-separated (caption + instruct subsets):
-ALLAVA_INPUTS="${ALLAVA_INPUTS:-/home/wenxuan/ALLaVA-4V/allava_laion/ALLaVA-Caption-LAION-4V.json /home/wenxuan/ALLaVA-4V/allava_laion/ALLaVA-Instruct-LAION-4V.json}"
 # Dir that contains allava_laion/ , allava_vflan/ (where images.zip was extracted):
-ALLAVA_IMAGE_ROOT="${ALLAVA_IMAGE_ROOT:-/home/wenxuan/ALLaVA-4V}"
+ALLAVA_IMAGE_ROOT="${ALLAVA_IMAGE_ROOT:-/home/wenxuan_train_dflash/wenxuan/ALLaVA-4V}"
+# One or more ALLaVA json files, space-separated (caption + instruct subsets):
+ALLAVA_INPUTS="${ALLAVA_INPUTS:-$ALLAVA_IMAGE_ROOT/allava_laion/ALLaVA-Caption-LAION-4V.json $ALLAVA_IMAGE_ROOT/allava_laion/ALLaVA-Instruct-LAION-4V.json}"
 
 # --- 3) General training knobs --------------------------------------------
 OUTPUT_DIR="${OUTPUT_DIR:-./output/dflash_qwen3.5_9b_mm}"

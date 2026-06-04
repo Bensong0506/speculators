@@ -22,7 +22,7 @@ export AUTO_CONVERT_DFLASH="${AUTO_CONVERT_DFLASH:-0}"
 export REQUIRE_PRETRAINED_WEIGHTS="${REQUIRE_PRETRAINED_WEIGHTS:-1}"
 export OUTPUT_DIR="${OUTPUT_DIR:-./output/dflash_qwen3.5_9b_mm_10k}"
 export SAVE_PATH="${SAVE_PATH:-./output/dflash_qwen3.5_9b_mm_10k_continue_dflash/${RUN_NAME}/checkpoints}"
-export ALLAVA_IMAGE_ROOT="${ALLAVA_IMAGE_ROOT:-/home/wenxuan/ALLaVA-4V}"
+export ALLAVA_IMAGE_ROOT="${ALLAVA_IMAGE_ROOT:-/home/wenxuan_train_dflash/wenxuan/ALLaVA-4V}"
 export ALLAVA_INPUTS="${ALLAVA_INPUTS:-$ALLAVA_IMAGE_ROOT/allava_laion/ALLaVA-Caption-LAION-4V.json $ALLAVA_IMAGE_ROOT/allava_laion/ALLaVA-Instruct-LAION-4V.json}"
 
 export MAX_SAMPLES="${MAX_SAMPLES:-10000}"
