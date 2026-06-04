@@ -92,6 +92,7 @@ SEQ_LENGTH="${SEQ_LENGTH:-4096}"    # Feeds vLLM --max-model-len /
 PREPROCESS_SEQ_LENGTH="${PREPROCESS_SEQ_LENGTH:-3584}"  # Conservative filter
                                                         # before vLLM expands MM
                                                         # inputs into prompt tokens.
+FORCE_PREPROCESS="${FORCE_PREPROCESS:-0}"  # set 1 to rebuild cached arrow data
 EPOCHS=5
 LR=3e-4
 
@@ -278,14 +279,65 @@ fi
 echo "=== Step 1: Preparing data ==="
 echo "    vLLM/training max length: $SEQ_LENGTH"
 echo "    preprocessing keep length: $PREPROCESS_SEQ_LENGTH"
-python3 scripts/prepare_data.py \
-    --model "$MODEL" \
-    --data "$DATASET" \
-    --output "$OUTPUT_DIR" \
-    --overwrite \
-    --max-samples "$MAX_SAMPLES" \
-    --seq-length "$PREPROCESS_SEQ_LENGTH" \
+PREPROCESS_FINGERPRINT="$OUTPUT_DIR/.preprocess_fingerprint.json"
+CURRENT_PREPROCESS_FINGERPRINT=$(python3 - "$MODEL" "$DATASET" "$MAX_SAMPLES" "$PREPROCESS_SEQ_LENGTH" "$TRUST_REMOTE_CODE" <<'PY'
+import json, sys
+keys = ("model", "data", "max_samples", "seq_length", "trust_remote_code")
+print(json.dumps(dict(zip(keys, sys.argv[1:])), sort_keys=True, indent=2))
+PY
+)
+EXISTING_ARROW="$(find "$OUTPUT_DIR" -maxdepth 1 -name '*.arrow' -print -quit 2>/dev/null || true)"
+PREPARE_DATA_ARGS=(
+    --model "$MODEL"
+    --data "$DATASET"
+    --output "$OUTPUT_DIR"
+    --max-samples "$MAX_SAMPLES"
+    --seq-length "$PREPROCESS_SEQ_LENGTH"
     "${TRC_FLAG[@]}"
+)
+clear_preprocess_cache() {
+    python3 - "$OUTPUT_DIR" "$PREPROCESS_FINGERPRINT" <<'PY'
+import sys
+from pathlib import Path
+
+output = Path(sys.argv[1])
+fingerprint = Path(sys.argv[2])
+if not output.exists():
+    raise SystemExit
+
+for path in output.glob("*.arrow"):
+    path.unlink()
+for name in ("state.json", "dataset_info.json", "token_freq.pt"):
+    path = output / name
+    if path.exists():
+        path.unlink()
+if fingerprint.exists():
+    fingerprint.unlink()
+PY
+}
+
+if [ "$FORCE_PREPROCESS" = "1" ]; then
+    echo "    FORCE_PREPROCESS=1 -> rebuilding cached arrow data"
+    clear_preprocess_cache
+    python3 scripts/prepare_data.py "${PREPARE_DATA_ARGS[@]}"
+    printf '%s\n' "$CURRENT_PREPROCESS_FINGERPRINT" > "$PREPROCESS_FINGERPRINT"
+elif [ -n "$EXISTING_ARROW" ] && [ -f "$PREPROCESS_FINGERPRINT" ] \
+    && printf '%s\n' "$CURRENT_PREPROCESS_FINGERPRINT" | cmp -s - "$PREPROCESS_FINGERPRINT"; then
+    echo "    reuse existing preprocessed data in $OUTPUT_DIR"
+elif [ -n "$EXISTING_ARROW" ] && [ ! -f "$PREPROCESS_FINGERPRINT" ]; then
+    echo "    reuse existing preprocessed data in $OUTPUT_DIR"
+    echo "    note: no fingerprint found; writing one for future parameter-change checks"
+    printf '%s\n' "$CURRENT_PREPROCESS_FINGERPRINT" > "$PREPROCESS_FINGERPRINT"
+else
+    if [ -n "$EXISTING_ARROW" ]; then
+        echo "    preprocessing parameters changed -> rebuilding cached arrow data"
+        clear_preprocess_cache
+        python3 scripts/prepare_data.py "${PREPARE_DATA_ARGS[@]}"
+    else
+        python3 scripts/prepare_data.py "${PREPARE_DATA_ARGS[@]}"
+    fi
+    printf '%s\n' "$CURRENT_PREPROCESS_FINGERPRINT" > "$PREPROCESS_FINGERPRINT"
+fi
 
 # Step 2: Launch vLLM server (verifier) in the background -------------------
 # --allowed-local-media-path lets vLLM read the local images referenced by
