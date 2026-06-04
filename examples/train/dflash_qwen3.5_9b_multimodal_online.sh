@@ -98,8 +98,8 @@ LR=3e-4
 
 # --- Experiment tracking (loss / acceptance curves) -----------------------
 # tensorboard = local, intranet-friendly (view via SSH tunnel — see RUN.md /
-# examples/train/view_tensorboard.sh). Use LOGGER=wandb if this box can reach
-# wandb.ai (otherwise: WANDB_MODE=offline LOGGER=wandb ... then `wandb sync`).
+# examples/train/view_tensorboard.sh). Use LOGGER=wandb with WANDB_BASE_URL for
+# a self-hosted/internal W&B server.
 LOGGER="${LOGGER:-tensorboard}"
 RUN_NAME="${RUN_NAME:-dflash_qwen3.5_9b_mm}"
 LOG_DIR="${LOG_DIR:-./train_logs}"

@@ -106,8 +106,17 @@ bash examples/train/convert_zlab_dflash.sh        # -> /home/models/Qwen3.5-9B-D
 bash examples/train/view_tensorboard.sh
 # from your laptop:  ssh -N -L 6006:localhost:6006 <user>@<gpu-box>  -> http://localhost:6006
 ```
-Prefer wandb? `LOGGER=wandb ...` (needs wandb.ai; else prefix `WANDB_MODE=offline` + `wandb sync`).
-First time: `pip install tensorboard` (or `wandb`).
+Prefer wandb? Install/login once, then add `LOGGER=wandb` to the training command:
+```bash
+python3 -m pip install wandb
+wandb login --host http://<internal-wandb-host>:<port>
+
+WANDB_BASE_URL=http://<internal-wandb-host>:<port> \
+  WANDB_PROJECT=speculators \
+  LOGGER=wandb \
+  bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
+```
+First time for tensorboard only: `pip install tensorboard`.
 
 ---
 
