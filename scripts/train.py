@@ -329,6 +329,17 @@ def main(args: argparse.Namespace):
         draft_model = model_class.from_pretrained(
             args.from_pretrained, t2d=t2d, d2t=d2t
         )
+        if args.speculator_type == "dflash" and hasattr(
+            draft_model.config, "max_anchors"
+        ):
+            loaded_max_anchors = draft_model.config.max_anchors
+            draft_model.config.max_anchors = args.max_anchors
+            if loaded_max_anchors != args.max_anchors:
+                logger.info(
+                    "Overriding loaded DFlash max_anchors: %s -> %s",
+                    loaded_max_anchors,
+                    args.max_anchors,
+                )
     else:
         args.draft_vocab_size = draft_vocab_size
         draft_model = model_class.from_training_args(
