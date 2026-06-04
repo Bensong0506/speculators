@@ -96,6 +96,7 @@ FORCE_PREPROCESS="${FORCE_PREPROCESS:-0}"  # set 1 to rebuild cached arrow data
 EPOCHS="${EPOCHS:-5}"
 LR="${LR:-3e-4}"
 CHECKPOINT_FREQ="${CHECKPOINT_FREQ:-5}"  # save every N epochs
+FORCE_EAGER="${FORCE_EAGER:-0}"          # set 1 to disable torch.compile in training
 
 # --- Experiment tracking (loss / acceptance curves) -----------------------
 # tensorboard = local, intranet-friendly (view via SSH tunnel — see RUN.md /
@@ -193,6 +194,10 @@ fi
 VOCAB_FLAG=();     [ -n "$DRAFT_VOCAB_SIZE" ]  && VOCAB_FLAG=(--draft-vocab-size "$DRAFT_VOCAB_SIZE")
 DRAFTARCH_FLAG=(); [ -n "${DRAFT_ARCH:-}" ]    && DRAFTARCH_FLAG=(--draft-arch "$DRAFT_ARCH")
 MASK_FLAG=();      [ -n "${MASK_TOKEN_ID:-}" ] && MASK_FLAG=(--mask-token-id "$MASK_TOKEN_ID")
+FORCE_EAGER_FLAG=()
+if [ "$FORCE_EAGER" = "1" ]; then
+    FORCE_EAGER_FLAG=(--force-eager)
+fi
 
 # Auto-compute TARGET_LAYER_IDS from the verifier's *text* config if unset,
 # so vLLM and the trainer always agree.
@@ -233,6 +238,7 @@ echo "    dflash max_anchors: $MAX_ANCHORS"
 echo "    dflash num_layers: $NUM_LAYERS"
 echo "    dflash draft vocab: ${DRAFT_VOCAB_SIZE:-full}"
 echo "    checkpoint_freq: $CHECKPOINT_FREQ"
+echo "    force_eager_training: $FORCE_EAGER"
 echo "    target_layer_ids: $TARGET_LAYER_IDS"
 
 # Step 0 (optional): build a `conversations` jsonl from the chosen data source.
@@ -390,6 +396,7 @@ CUDA_VISIBLE_DEVICES="$TRAIN_GPUS" torchrun \
     "${FROM_FLAG[@]}" \
     "${DRAFTARCH_FLAG[@]}" \
     "${MASK_FLAG[@]}" \
+    "${FORCE_EAGER_FLAG[@]}" \
     --epochs "$EPOCHS" \
     --checkpoint-freq "$CHECKPOINT_FREQ" \
     --lr "$LR" \

@@ -66,7 +66,11 @@ def split_files(datapath: str, ratio: float = 0.9, seed: int = 0):
 StandardizeFnSig = Callable[[dict[str, Any]], dict[str, Any]]
 
 
-def create_empty_sample(hidden_size: int, dtype: torch.dtype = torch.bfloat16):
+def create_empty_sample(
+    hidden_size: int,
+    dtype: torch.dtype = torch.bfloat16,
+    hidden_states_width: int | None = None,
+):
     # data structure: {
     #     "hidden_states": [seq_len, 3 * hidden_size],
     #     "input_ids": [seq_len],
@@ -80,8 +84,9 @@ def create_empty_sample(hidden_size: int, dtype: torch.dtype = torch.bfloat16):
     # we substitute an empty sample), the implicit float32 placeholders crashed
     # bf16 EAGLE-3 layers (fc, verifier_lm_head) with a dtype mismatch.
 
+    hidden_states_width = hidden_states_width or 3 * hidden_size
     return {
-        "hidden_states": torch.empty(0, 3 * hidden_size, dtype=dtype),
+        "hidden_states": torch.empty(0, hidden_states_width, dtype=dtype),
         "input_ids": torch.empty(0, dtype=torch.long),
         "verifier_last_hidden_states": torch.empty(0, hidden_size, dtype=dtype),
         "loss_mask": torch.empty(0, dtype=torch.bool),
@@ -208,6 +213,7 @@ class ArrowDataset(BaseDataset):
         model: str | None = None,
         request_timeout: float | None = DEFAULT_REQUEST_TIMEOUT,
         max_retries: int = DEFAULT_MAX_RETRIES,
+        expected_hidden_states_width: int | None = None,
     ):
         """Initialize the ArrowDataset.
         Args:
@@ -244,6 +250,7 @@ class ArrowDataset(BaseDataset):
         self.model = model
         self.request_timeout = request_timeout
         self.max_retries = max_retries
+        self.expected_hidden_states_width = expected_hidden_states_width
 
         # Delay super init so that `_compute_approx_lengths` has required data
         super().__init__(max_len, transform, hidden_states_dtype)
@@ -345,10 +352,23 @@ class ArrowDataset(BaseDataset):
             )
             return None
 
+        hidden_states = loaded_hs["hidden_states"][:, :-1].flatten(1)
+        if (
+            self.expected_hidden_states_width is not None
+            and hidden_states.shape[-1] != self.expected_hidden_states_width
+        ):
+            warnings.warn(
+                "Hidden-state width mismatch for sample "
+                f"{index} (file_idx={file_idx}, path={candidate_path}): "
+                f"got hidden_states raw shape {tuple(loaded_hs['hidden_states'].shape)} "
+                f"-> flattened width {hidden_states.shape[-1]}, expected "
+                f"{self.expected_hidden_states_width}. Skipping sample.",
+                stacklevel=1,
+            )
+            return None
+
         return {
-            "hidden_states": loaded_hs["hidden_states"][:, :-1].flatten(
-                1
-            ),  # [seq_len, 3 * hidden_size]
+            "hidden_states": hidden_states,  # [seq_len, aux_layers * hidden_size]
             "input_ids": loaded_hs["token_ids"],  # [seq_len]
             "verifier_last_hidden_states": loaded_hs["hidden_states"][
                 :, -1
@@ -459,10 +479,27 @@ def create_collate_fn(
     hidden_size: int,
     dtype: torch.dtype = torch.bfloat16,
     preprocess: Callable[[BatchType], BatchType] | None = None,
+    expected_hidden_states_width: int | None = None,
 ):
     def collate_fn(batch: list[BatchType | None]) -> BatchType:
         # Apply per-sample preprocessing and filter failed samples
         batch = [preprocess(b) if preprocess else b for b in batch if b is not None]
+        expected_width = expected_hidden_states_width or 3 * hidden_size
+        filtered_batch = []
+        for sample in batch:
+            hidden_states = sample.get("hidden_states")
+            if (
+                isinstance(hidden_states, torch.Tensor)
+                and hidden_states.shape[-1] != expected_width
+            ):
+                warnings.warn(
+                    "Skipping sample with hidden_states width "
+                    f"{hidden_states.shape[-1]} (expected {expected_width}).",
+                    stacklevel=1,
+                )
+                continue
+            filtered_batch.append(sample)
+        batch = filtered_batch
 
         if not batch:
             # Create empty sample which then gets padded to full
@@ -470,7 +507,13 @@ def create_collate_fn(
             # Match the configured `dtype` so the placeholder doesn't crash
             # downstream layers loaded at a different precision (e.g. bf16
             # weights vs fp32 default placeholders).
-            batch = [create_empty_sample(hidden_size, dtype=dtype)]
+            batch = [
+                create_empty_sample(
+                    hidden_size,
+                    dtype=dtype,
+                    hidden_states_width=expected_width,
+                )
+            ]
 
         collated_data = {}
         for key in batch[0]:  # type: ignore[union-attr]

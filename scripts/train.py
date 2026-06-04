@@ -73,6 +73,7 @@ def setup_dataloader(
     num_workers: int = 12,
     prefetch_factor: int = 4,
     preprocess=None,
+    expected_hidden_states_width: int | None = None,
 ) -> DataLoader:
     """Setup dataloader for training.
     Args:
@@ -101,10 +102,28 @@ def setup_dataloader(
         prefetch_factor=prefetch_factor,
         pin_memory=True,
         collate_fn=create_collate_fn(
-            args.total_seq_len, hidden_size, dataset.hidden_states_dtype, preprocess
+            args.total_seq_len,
+            hidden_size,
+            dataset.hidden_states_dtype,
+            preprocess,
+            expected_hidden_states_width=expected_hidden_states_width,
         ),
         persistent_workers=True,
     )
+
+
+def maybe_force_eager_training(force_eager: bool):
+    if not force_eager:
+        return
+
+    if not hasattr(torch, "compiler") or not hasattr(torch.compiler, "set_stance"):
+        raise RuntimeError(
+            "--force-eager requires torch.compiler.set_stance, which is not "
+            "available in this PyTorch build."
+        )
+
+    torch.compiler.set_stance("force_eager")
+    logger.info("Torch compiler stance set to force_eager for training")
 
 
 def create_transformer_layer_config(  # noqa: C901
@@ -282,6 +301,7 @@ def main(args: argparse.Namespace):
     setup_metric_logger(
         loggers=args.logger, run_name=args.run_name, output_dir=args.log_dir
     )
+    maybe_force_eager_training(args.force_eager)
 
     # Setup distributed training
     local_rank, world_size, rank, is_distributed = maybe_setup_distributed()
@@ -349,6 +369,12 @@ def main(args: argparse.Namespace):
             **vars(args),
         )
 
+    expected_hidden_states_width = getattr(
+        getattr(draft_model, "fc", None), "in_features", None
+    )
+    if expected_hidden_states_width is not None:
+        logger.info("Expected hidden_states width: %s", expected_hidden_states_width)
+
     # Setup dataloaders
     preprocess = shift_batch if args.speculator_type in ("eagle3", "peagle") else None
 
@@ -385,6 +411,7 @@ def main(args: argparse.Namespace):
             hidden_states_dtype=hidden_states_dtype,
             request_timeout=args.request_timeout,
             max_retries=args.max_retries,
+            expected_hidden_states_width=expected_hidden_states_width,
         )
         val_dataset = ArrowDataset(
             datapath=args.data_path,
@@ -398,6 +425,7 @@ def main(args: argparse.Namespace):
             hidden_states_dtype=hidden_states_dtype,
             request_timeout=args.request_timeout,
             max_retries=args.max_retries,
+            expected_hidden_states_width=expected_hidden_states_width,
         )
 
     train_loader = setup_dataloader(
@@ -408,6 +436,7 @@ def main(args: argparse.Namespace):
         num_workers=args.num_workers,
         prefetch_factor=args.prefetch_factor,
         preprocess=preprocess,
+        expected_hidden_states_width=expected_hidden_states_width,
     )
     val_loader = setup_dataloader(
         val_dataset,
@@ -417,6 +446,7 @@ def main(args: argparse.Namespace):
         num_workers=args.num_workers,
         prefetch_factor=args.prefetch_factor,
         preprocess=preprocess,
+        expected_hidden_states_width=expected_hidden_states_width,
     )
 
     # Get trainer kwargs from model class
@@ -665,6 +695,15 @@ def parse_args():
         action="store_true",
         default=False,
         help="Sets cuda to deterministic mode. This may impact performance.",
+    )
+    parser.add_argument(
+        "--force-eager",
+        action="store_true",
+        default=False,
+        help=(
+            "Run torch.compile-decorated training code in eager mode. Useful for "
+            "debugging Dynamo shape errors."
+        ),
     )
     parser.add_argument(
         "--use-off-policy-tokens",
