@@ -1,3 +1,221 @@
+=== Aligning recipe to /home/models/Qwen3.5-9B-DFlash-spec/config.json ===
+    -> block_size=16 num_layers=5 draft_arch=qwen3
+    -> target_layer_ids='1 8 15 22 29' mask_token_id='248070' (full vocab, lr=1e-4)
+    -> speculators-format checkpoint: LOADING its weights (true warm-start)
+=== Resolved training limits ===
+    seq_length: 4096
+    preprocessing keep length: 3584
+    dflash block_size: 16
+    dflash max_anchors: 512
+    dflash num_layers: 5
+    dflash draft vocab: full
+    checkpoint_freq: 5
+    target_layer_ids: 1 8 15 22 29
+=== Step 0: Converting ALLaVA-4V -> conversations jsonl ===
+    reuse existing /home/wenxuan/speculators/data/allava/allava_937340.jsonl  (rm it to regenerate)
+=== Step 1: Preparing data ===
+    vLLM/training max length: 4096
+    preprocessing keep length: 3584
+    reuse existing preprocessed data in ./output/dflash_qwen3.5_9b_mm_ft
+=== Step 2: Launching vLLM server ===
+
+
+           INFO     train/loss=1.734, train/full_acc=0.204,       trainer.py:230
+                    train/position_1_acc=0.694,                                 
+                    train/position_2_acc=0.480,                                 
+                    train/position_3_acc=0.360,                                 
+                    train/position_4_acc=0.260,                                 
+                    train/position_5_acc=0.212,                                 
+                    train/position_6_acc=0.169,                                 
+                    train/position_7_acc=0.135,                                 
+                    train/position_8_acc=0.114,                                 
+                    train/position_9_acc=0.098,                                 
+                    train/position_10_acc=0.101,                                
+                    train/position_11_acc=0.096,                                
+                    train/position_12_acc=0.084,                                
+                    train/position_13_acc=0.071,                                
+                    train/position_14_acc=0.063,                                
+                    train/position_15_acc=0.059, epoch=0,                       
+                    lr=2.07e-08, global_step=107                                
+[rank0]:E0604 05:25:12.054000 94478 torch/_subclasses/fake_tensor.py:2908] [1/1] failed while attempting to run meta for aten.mm.default
+[rank0]:E0604 05:25:12.054000 94478 torch/_subclasses/fake_tensor.py:2908] [1/1] Traceback (most recent call last):
+[rank0]:E0604 05:25:12.054000 94478 torch/_subclasses/fake_tensor.py:2908] [1/1]   File "/usr/local/lib/python3.12/dist-packages/torch/_subclasses/fake_tensor.py", line 2904, in _dispatch_impl
+[rank0]:E0604 05:25:12.054000 94478 torch/_subclasses/fake_tensor.py:2908] [1/1]     r = func(*args, **kwargs)
+[rank0]:E0604 05:25:12.054000 94478 torch/_subclasses/fake_tensor.py:2908] [1/1]         ^^^^^^^^^^^^^^^^^^^^^
+[rank0]:E0604 05:25:12.054000 94478 torch/_subclasses/fake_tensor.py:2908] [1/1]   File "/usr/local/lib/python3.12/dist-packages/torch/_ops.py", line 865, in __call__
+[rank0]:E0604 05:25:12.054000 94478 torch/_subclasses/fake_tensor.py:2908] [1/1]     return self._op(*args, **kwargs)
+[rank0]:E0604 05:25:12.054000 94478 torch/_subclasses/fake_tensor.py:2908] [1/1]            ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:E0604 05:25:12.054000 94478 torch/_subclasses/fake_tensor.py:2908] [1/1]   File "/usr/local/lib/python3.12/dist-packages/torch/_prims_common/wrappers.py", line 314, in _fn
+[rank0]:E0604 05:25:12.054000 94478 torch/_subclasses/fake_tensor.py:2908] [1/1]     result = fn(*args, **kwargs)
+[rank0]:E0604 05:25:12.054000 94478 torch/_subclasses/fake_tensor.py:2908] [1/1]              ^^^^^^^^^^^^^^^^^^^
+[rank0]:E0604 05:25:12.054000 94478 torch/_subclasses/fake_tensor.py:2908] [1/1]   File "/usr/local/lib/python3.12/dist-packages/torch/_meta_registrations.py", line 2330, in meta_mm
+[rank0]:E0604 05:25:12.054000 94478 torch/_subclasses/fake_tensor.py:2908] [1/1]     torch._check(
+[rank0]:E0604 05:25:12.054000 94478 torch/_subclasses/fake_tensor.py:2908] [1/1]   File "/usr/local/lib/python3.12/dist-packages/torch/__init__.py", line 1753, in _check
+[rank0]:E0604 05:25:12.054000 94478 torch/_subclasses/fake_tensor.py:2908] [1/1]     _check_with(RuntimeError, cond, message)  # pyrefly: ignore [bad-argument-type]
+[rank0]:E0604 05:25:12.054000 94478 torch/_subclasses/fake_tensor.py:2908] [1/1]     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:E0604 05:25:12.054000 94478 torch/_subclasses/fake_tensor.py:2908] [1/1]   File "/usr/local/lib/python3.12/dist-packages/torch/__init__.py", line 1735, in _check_with
+[rank0]:E0604 05:25:12.054000 94478 torch/_subclasses/fake_tensor.py:2908] [1/1]     raise error_type(message_evaluated)
+[rank0]:E0604 05:25:12.054000 94478 torch/_subclasses/fake_tensor.py:2908] [1/1] RuntimeError: a and b must have same reduction dim, but got [4096, s33] X [20480, 4096].
+Epoch 0   0%                         108/51,663  [ 0:01:58 < 10:53:49 , 1 it/s ]
+Traceback (most recent call last):
+  File "/home/wenxuan/speculators/scripts/train.py", line 793, in <module>
+    main(args)
+  File "/home/wenxuan/speculators/scripts/train.py", line 446, in main
+    trainer.run_training()
+  File "/home/wenxuan/speculators/src/speculators/train/graceful_shutdown.py", line 118, in wrapper
+    return fn(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/wenxuan/speculators/src/speculators/train/trainer.py", line 340, in run_training
+    self.train_epoch(epoch)
+  File "/home/wenxuan/speculators/src/speculators/train/trainer.py", line 209, in train_epoch
+    _draft_tokens, loss, metrics = self.model(
+                                   ^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1885, in _call_impl
+    return inner()
+           ^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1833, in inner
+    result = forward_call(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/eval_frame.py", line 1024, in compile_wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/wenxuan/speculators/src/speculators/models/dflash/core.py", line 259, in forward
+    self._build_attention_mask(loss_mask, lengths, device)
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/convert_frame.py", line 2316, in __call__
+    result = self._torchdynamo_orig_backend(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/convert_frame.py", line 2052, in __call__
+    result = self._inner_convert(
+             ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/convert_frame.py", line 729, in __call__
+    result = _compile(
+             ^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/convert_frame.py", line 1827, in _compile
+    guarded_code, tracer_output = compile_inner(code, one_graph, hooks)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/_utils_internal.py", line 96, in wrapper_function
+    return function(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/convert_frame.py", line 1500, in compile_inner
+    return _compile_inner(code, one_graph, hooks)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/convert_frame.py", line 1534, in _compile_inner
+    dynamo_output = compile_frame(
+                    ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/convert_frame.py", line 1408, in compile_frame
+    bytecode, tracer_output = transform_code_object(code, transform)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/bytecode_transformation.py", line 1608, in transform_code_object
+    tracer_output = transformations(instructions, code_options)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/convert_frame.py", line 1380, in transform
+    tracer_output = trace_frame(
+                    ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/convert_frame.py", line 341, in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/convert_frame.py", line 863, in trace_frame
+    run_tracer()
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/convert_frame.py", line 844, in run_tracer
+    tracer.run()
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/symbolic_convert.py", line 1794, in run
+    while self.step():
+          ^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/symbolic_convert.py", line 1459, in step
+    self.dispatch_table[inst.opcode](self, inst)
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/symbolic_convert.py", line 1001, in wrapper
+    return inner_fn(self, inst)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/symbolic_convert.py", line 4093, in CALL
+    self._call(inst)
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/symbolic_convert.py", line 4084, in _call
+    self.call_function(fn, args, kwargs)
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/symbolic_convert.py", line 1360, in call_function
+    self.push(fn.call_function(self, args, kwargs))  # type: ignore[arg-type]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/variables/lazy.py", line 294, in realize_and_forward
+    return getattr(self.realize(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/variables/nn_module.py", line 1146, in call_function
+    return variables.UserFunctionVariable(fn, source=source).call_function(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/variables/functions.py", line 691, in call_function
+    return super().call_function(tx, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/variables/functions.py", line 403, in call_function
+    return tx.inline_user_function_return(self, [*self.self_args(), *args], kwargs)  # type: ignore[attr-defined]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/symbolic_convert.py", line 1387, in inline_user_function_return
+    return InliningInstructionTranslator.inline_call(self, fn, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/symbolic_convert.py", line 5668, in inline_call
+    return tracer.inline_call_()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/symbolic_convert.py", line 5882, in inline_call_
+    self.run()
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/symbolic_convert.py", line 1794, in run
+    while self.step():
+          ^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/symbolic_convert.py", line 1459, in step
+    self.dispatch_table[inst.opcode](self, inst)
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/symbolic_convert.py", line 1001, in wrapper
+    return inner_fn(self, inst)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/symbolic_convert.py", line 4093, in CALL
+    self._call(inst)
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/symbolic_convert.py", line 4084, in _call
+    self.call_function(fn, args, kwargs)
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/symbolic_convert.py", line 1360, in call_function
+    self.push(fn.call_function(self, args, kwargs))  # type: ignore[arg-type]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/variables/lazy.py", line 294, in realize_and_forward
+    return getattr(self.realize(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/variables/torch.py", line 2322, in call_function
+    tensor_variable = wrap_fx_proxy(
+                      ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/variables/builder.py", line 3032, in wrap_fx_proxy
+    return wrap_fx_proxy_cls(target_cls=TensorVariable, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/variables/builder.py", line 3107, in wrap_fx_proxy_cls
+    out: VTTypeAlias = _wrap_fx_proxy(
+                       ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/variables/builder.py", line 3231, in _wrap_fx_proxy
+    example_value = get_fake_value(proxy.node, tx, allow_non_graph_fake=True)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/utils.py", line 3627, in get_fake_value
+    return _get_fake_value_impl(node, tx, allow_non_graph_fake)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/utils.py", line 3818, in _get_fake_value_impl
+    _wrap_graph_break_with_torch_runtime_err(
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/utils.py", line 3616, in _wrap_graph_break_with_torch_runtime_err
+    raise exc.with_traceback(e.__traceback__) from None
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/utils.py", line 3613, in _wrap_graph_break_with_torch_runtime_err
+    gb_fn()
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/utils.py", line 3819, in <lambda>
+    lambda: unimplemented(
+            ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/exc.py", line 631, in unimplemented
+    raise Unsupported(
+torch._dynamo.exc.TorchRuntimeError: RuntimeError when making fake tensor call
+  Explanation: Dynamo failed to run FX node with fake tensors: call_function <built-in function linear>(*(FakeTensor(..., device='cuda:0', size=(1, 4096, s33), dtype=torch.bfloat16), Parameter(FakeTensor(..., device='cuda:0', size=(4096, 20480), dtype=torch.bfloat16,
+               requires_grad=True)), None), **{}): got RuntimeError('a and b must have same reduction dim, but got [4096, s33] X [20480, 4096].')
+  Hint: Your code may result in an error when running in eager. Please double check that your code doesn't contain a similar error when actually running eager/uncompiled. You can do this by removing the `torch.compile` call, or by using `torch.compiler.set_stance("force_eager")`. 
+
+  Developer debug context: 
+
+ For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb4315.html
+
+from user code:
+   File "/home/wenxuan/speculators/src/speculators/models/dflash/core.py", line 274, in torch_dynamo_resume_in_forward_at_259
+    fc_output = self.fc(hidden_states)
+  File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/linear.py", line 134, in forward
+    return F.linear(input, self.weight, self.bias)
+
+Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
 
 [rank0]: Traceback (most recent call last):
 [rank0]:   File "/home/wenxuan/speculators/scripts/train.py", line 793, in <module>
@@ -158,3 +376,99 @@
 [rank0]:     return F.linear(input, self.weight, self.bias)
 
 [rank0]: Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+
+[1;34mwandb[0m: 
+[1;34mwandb[0m: 🚀 View run [33mdflash_qwen35_9b_allava_full_20260604_052105[0m at: [34mhttp://10.155.156.175:38080/aigc/speculators/runs/gk591usi[0m
+W0604 05:26:16.711000 94410 torch/distributed/elastic/multiprocessing/api.py:1012] Sending process 94479 closing signal SIGTERM
+W0604 05:26:16.715000 94410 torch/distributed/elastic/multiprocessing/api.py:1012] Sending process 94480 closing signal SIGTERM
+W0604 05:26:16.716000 94410 torch/distributed/elastic/multiprocessing/api.py:1012] Sending process 94481 closing signal SIGTERM
+W0604 05:26:46.716000 94410 torch/distributed/elastic/multiprocessing/api.py:1031] Unable to shutdown process 94479 via 15, forcefully exiting via 9
+W0604 05:26:49.187000 94410 torch/distributed/elastic/multiprocessing/api.py:1031] Unable to shutdown process 94480 via 15, forcefully exiting via 9
+W0604 05:26:51.719000 94410 torch/distributed/elastic/multiprocessing/api.py:1031] Unable to shutdown process 94481 via 15, forcefully exiting via 9
+E0604 05:26:54.309000 94410 torch/distributed/elastic/multiprocessing/api.py:986] failed (exitcode: 1) local_rank: 0 (pid: 94478) of binary: /usr/bin/python3
+Traceback (most recent call last):
+  File "/usr/local/bin/torchrun", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 362, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/distributed/run.py", line 990, in main
+    run(args)
+  File "/usr/local/lib/python3.12/dist-packages/torch/distributed/run.py", line 981, in run
+    elastic_launch(
+  File "/usr/local/lib/python3.12/dist-packages/torch/distributed/launcher/api.py", line 170, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/distributed/launcher/api.py", line 317, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+scripts/train.py FAILED
+------------------------------------------------------------
+Failures:
+[1]:
+  time      : 2026-06-04_05:26:54
+  host      : devserver-bms-userdata0
+  rank      : 1 (local_rank: 1)
+  exitcode  : -9 (pid: 94479)
+  error_file: <N/A>
+  traceback : Signal 9 (SIGKILL) received by PID 94479
+[2]:
+  time      : 2026-06-04_05:26:54
+  host      : devserver-bms-userdata0
+  rank      : 2 (local_rank: 2)
+  exitcode  : -9 (pid: 94480)
+  error_file: <N/A>
+  traceback : Signal 9 (SIGKILL) received by PID 94480
+[3]:
+  time      : 2026-06-04_05:26:54
+  host      : devserver-bms-userdata0
+  rank      : 3 (local_rank: 3)
+  exitcode  : -9 (pid: 94481)
+  error_file: <N/A>
+  traceback : Signal 9 (SIGKILL) received by PID 94481
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2026-06-04_05:26:16
+  host      : devserver-bms-userdata0
+  rank      : 0 (local_rank: 0)
+  exitcode  : 1 (pid: 94478)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================
+Stopping vLLM server...
+d=91137) INFO:     Application startup complete.
+/usr/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 4 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+/usr/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 8 leaked shared_memory objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+iServer_1 pid=91137) INFO 06-04 05:22:38 [launcher.py:46] Route: /v1/messages/count_tokens, Methods: POST
+(ApiServer_1 pid=91137) INFO 06-04 05:22:38 [launcher.py:46] Route: /inference/v1/generate, Methods: POST
+(ApiServer_1 pid=91137) INFO 06-04 05:22:38 [launcher.py:46] Route: /scale_elastic_ep, Methods: POST
+(ApiServer_1 pid=91137) INFO 06-04 05:22:38 [launcher.py:46] Route: /is_scaling_elastic_ep, Methods: POST
+(ApiServer_1 pid=91137) INFO 06-04 05:22:38 [launcher.py:46] Route: /generative_scoring, Methods: POST
+(ApiServer_1 pid=91137) INFO 06-04 05:22:38 [launcher.py:46] Route: /v1/chat/completions/render, Methods: POST
+(ApiServer_1 pid=91137) INFO 06-04 05:22:38 [launcher.py:46] Route: /v1/completions/render, Methods: POST
+(Worker pid=92758) WARNING 06-04 05:23:14 [jit_monitor.py:103] Triton kernel JIT compilation during inference: _zero_kv_blocks_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+(Worker pid=92758) WARNING 06-04 05:23:14 [jit_monitor.py:103] Triton kernel JIT compilation during inference: _compute_slot_mapping_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+(Worker pid=92758) WARNING 06-04 05:23:14 [jit_monitor.py:103] Triton kernel JIT compilation during inference: _bilinear_pos_embed_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+(Worker pid=92758) WARNING 06-04 05:23:14 [jit_monitor.py:103] Triton kernel JIT compilation during inference: rotary_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+(Worker pid=92758) WARNING 06-04 05:23:14 [jit_monitor.py:103] Triton kernel JIT compilation during inference: _causal_conv1d_fwd_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+(Worker pid=92758) WARNING 06-04 05:23:14 [jit_monitor.py:103] Triton kernel JIT compilation during inference: _fused_post_conv_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+(Worker pid=92758) WARNING 06-04 05:23:14 [jit_monitor.py:103] Triton kernel JIT compilation during inference: _triton_mrope_forward. This causes a latency spike; consider extending warmup to cover this shape/config.
+INFO 06-04 05:26:54 [serve.py:369] Waiting up to 0 seconds for processes to exit
+(EngineCore_DP1 pid=91133) INFO 06-04 05:26:54 [core.py:1266] Shutdown initiated (timeout=0)
+(EngineCore_DP1 pid=91133) INFO 06-04 05:26:54 [core.py:1289] Shutdown complete
+(EngineCore_DP0 pid=91132) INFO 06-04 05:26:54 [core.py:1266] Shutdown initiated (timeout=0)
+(EngineCore_DP0 pid=91132) INFO 06-04 05:26:54 [core.py:1289] Shutdown complete
+(EngineCore_DP3 pid=91135) INFO 06-04 05:26:54 [core.py:1266] Shutdown initiated (timeout=0)
+(EngineCore_DP3 pid=91135) INFO 06-04 05:26:54 [core.py:1289] Shutdown complete
+(EngineCore_DP2 pid=91134) INFO 06-04 05:26:54 [core.py:1266] Shutdown initiated (timeout=0)
+(Worker pid=92758) INFO 06-04 05:26:54 [multiproc_executor.py:775] Parent process exited, terminating worker queues
+(Worker pid=92759) INFO 06-04 05:26:54 [multiproc_executor.py:872] WorkerProc shutting down.
+(EngineCore_DP2 pid=91134) INFO 06-04 05:26:54 [core.py:1289] Shutdown complete
+(Worker pid=92758) INFO 06-04 05:26:54 [multiproc_executor.py:872] WorkerProc shutting down.
+(Worker pid=92756) INFO 06-04 05:26:54 [multiproc_executor.py:872] WorkerProc shutting down.
+(Worker pid=92757) INFO 06-04 05:26:54 [multiproc_executor.py:872] WorkerProc shutting down.
