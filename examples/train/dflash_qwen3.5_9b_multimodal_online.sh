@@ -317,6 +317,7 @@ import json, sys
 keys = ("image_root", "max_samples")
 payload = dict(zip(keys, sys.argv[1:3]))
 payload["inputs"] = sys.argv[3:]
+payload["conversion_policy"] = "skip_missing_images_v1"
 print(json.dumps(payload, sort_keys=True, indent=2))
 PY
 )
