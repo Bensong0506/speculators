@@ -16,7 +16,7 @@ PID_PATH="${PID_PATH:-$NOHUP_LOG_DIR/${RUN_NAME}.pid}"
 mkdir -p "$NOHUP_LOG_DIR"
 
 export MODEL="${MODEL:-/home/models/Qwen3.5-9B}"
-export FINETUNE_FROM="${FINETUNE_FROM:-/home/models/Qwen3.5-9B-DFlash-spec}"
+export FINETUNE_FROM="${FINETUNE_FROM:-}"
 export ALLAVA_IMAGE_ROOT="${ALLAVA_IMAGE_ROOT:-/home/wenxuan/ALLaVA-4V}"
 export ALLAVA_INPUTS="${ALLAVA_INPUTS:-$ALLAVA_IMAGE_ROOT/allava_laion/ALLaVA-Caption-LAION-4V.json $ALLAVA_IMAGE_ROOT/allava_laion/ALLaVA-Instruct-LAION-4V.json}"
 
@@ -45,11 +45,20 @@ echo "  run_name: $RUN_NAME"
 echo "  max_samples: $MAX_SAMPLES"
 echo "  epochs: $EPOCHS"
 echo "  checkpoint_freq: $CHECKPOINT_FREQ"
-echo "  block_size: ${BLOCK_SIZE:-checkpoint/default}"
+echo "  finetune_from: ${FINETUNE_FROM:-scratch}"
+if [ -n "${BLOCK_SIZE:-}" ]; then
+    echo "  block_size: $BLOCK_SIZE"
+elif [ -n "$FINETUNE_FROM" ]; then
+    echo "  block_size: checkpoint/default"
+else
+    echo "  block_size: 8 (from-scratch default)"
+fi
 if [ -n "${BLOCK_SIZE:-}" ]; then
     echo "  num_spec: $((BLOCK_SIZE - 1))"
-else
+elif [ -n "$FINETUNE_FROM" ]; then
     echo "  num_spec: checkpoint/default"
+else
+    echo "  num_spec: 7"
 fi
 echo "  max_anchors: $MAX_ANCHORS"
 echo "  force_eager_training: $FORCE_EAGER"
