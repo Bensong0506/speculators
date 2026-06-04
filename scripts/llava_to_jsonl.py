@@ -93,6 +93,7 @@ def main():
 
     written = 0
     missing = 0
+    missing_examples: list[str] = []
     with out.open("w", encoding="utf-8") as f:
         for src in args.inputs:
             records = load_records(Path(src))
@@ -104,6 +105,11 @@ def main():
                 if img_rel:
                     p = Path(img_rel)
                     image_abs = str(p if p.is_absolute() else (image_root / img_rel))
+                    if not Path(image_abs).exists():
+                        missing += 1
+                        if len(missing_examples) < 5:
+                            missing_examples.append(image_abs)
+                        continue
 
                 conv_out: list[dict] = []
                 saw_image = False
@@ -129,8 +135,6 @@ def main():
                             saw_image = True
                             break
 
-                if image_abs and not Path(image_abs).exists():
-                    missing += 1
                 if conv_out:
                     f.write(json.dumps({"conversations": conv_out}, ensure_ascii=False) + "\n")
                     written += 1
@@ -139,8 +143,15 @@ def main():
 
     print(f"Wrote {written} samples -> {out}")
     if missing:
-        print(f"WARNING: {missing} image path(s) missing on disk under {image_root} "
+        print(f"WARNING: skipped {missing} image path(s) missing on disk under {image_root} "
               "— check --image-root / that images.zip is extracted.")
+        for p in missing_examples:
+            print(f"  missing: {p}")
+    if written == 0:
+        raise SystemExit(
+            f"No samples were written to {out}. Check --image-root and whether "
+            "ALLaVA images are extracted."
+        )
 
 
 if __name__ == "__main__":

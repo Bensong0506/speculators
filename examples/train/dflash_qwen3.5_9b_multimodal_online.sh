@@ -307,6 +307,7 @@ echo "    target_layer_ids: $TARGET_LAYER_IDS"
 
 # Step 0 (optional): build a `conversations` jsonl from the chosen data source.
 # Idempotent: skips conversion only when the source/image-root fingerprint matches.
+DATASET_REBUILT=0
 if [ "${USE_ALLAVA}" = "1" ]; then
     echo "=== Step 0: Converting ALLaVA-4V -> conversations jsonl ==="
     ALLAVA_JSONL="$(pwd)/data/allava/allava_${MAX_SAMPLES}.jsonl"  # name carries the count so changing MAX_SAMPLES regenerates
@@ -328,6 +329,7 @@ PY
             --out-jsonl "$ALLAVA_JSONL" \
             --max-samples "$MAX_SAMPLES"
         printf '%s\n' "$CURRENT_ALLAVA_FINGERPRINT" > "$ALLAVA_FINGERPRINT"
+        DATASET_REBUILT=1
     }
     if [ -s "$ALLAVA_JSONL" ] && [ -f "$ALLAVA_FINGERPRINT" ] \
         && printf '%s\n' "$CURRENT_ALLAVA_FINGERPRINT" | cmp -s - "$ALLAVA_FINGERPRINT"; then
@@ -405,8 +407,12 @@ if fingerprint.exists():
 PY
 }
 
-if [ "$FORCE_PREPROCESS" = "1" ]; then
-    echo "    FORCE_PREPROCESS=1 -> rebuilding cached arrow data"
+if [ "$FORCE_PREPROCESS" = "1" ] || [ "${DATASET_REBUILT:-0}" = "1" ]; then
+    if [ "$FORCE_PREPROCESS" = "1" ]; then
+        echo "    FORCE_PREPROCESS=1 -> rebuilding cached arrow data"
+    else
+        echo "    converted dataset rebuilt -> rebuilding cached arrow data"
+    fi
     clear_preprocess_cache
     python3 scripts/prepare_data.py "${PREPARE_DATA_ARGS[@]}"
     printf '%s\n' "$CURRENT_PREPROCESS_FINGERPRINT" > "$PREPROCESS_FINGERPRINT"
