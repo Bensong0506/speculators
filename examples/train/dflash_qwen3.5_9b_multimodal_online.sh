@@ -118,7 +118,7 @@ fi
 
 # --- 4) DFlash-specific ----------------------------------------------------
 SPECULATOR_TYPE="dflash"
-BLOCK_SIZE=8            # tokens drafted per block (one forward pass)
+BLOCK_SIZE="${BLOCK_SIZE:-8}"  # tokens drafted per block (num_spec = block_size - 1)
 MAX_ANCHORS="${MAX_ANCHORS:-512}"  # max anchor positions sampled per step (memory knob)
 NUM_LAYERS=5            # draft transformer layers (DFlash typically uses ~5)
 DRAFT_VOCAB_SIZE=32000  # reduced draft vocab; auto-cleared (full vocab) when warm-starting
@@ -157,6 +157,7 @@ fi
 # (has speculators_model_type). A raw DFlash ckpt (e.g. z-lab's) can't be loaded
 # by this repo's from_pretrained, so we keep the recipe and train FROM SCRATCH.
 FROM_FLAG=()
+REQUESTED_BLOCK_SIZE="$BLOCK_SIZE"
 if [ -n "$FINETUNE_FROM" ]; then
     echo "=== Aligning recipe to $FINETUNE_FROM/config.json ==="
     [ -f "$FINETUNE_FROM/config.json" ] || { echo "[fatal] $FINETUNE_FROM/config.json not found"; exit 1; }
@@ -174,10 +175,13 @@ print(f'MASK_TOKEN_ID={mt}' if mt is not None else 'MASK_TOKEN_ID=')
 print(f'SPEC_FORMAT={1 if "speculators_model_type" in c else 0}')
 PY
 )"
+    PRETRAINED_BLOCK_SIZE="$BLOCK_SIZE"
+    BLOCK_SIZE="$REQUESTED_BLOCK_SIZE"
     DRAFT_VOCAB_SIZE=""                          # match pretrained: FULL vocab (no mapping)
     LR="$LR_FT"                                  # lower LR
     OUTPUT_DIR="${OUTPUT_DIR}_ft"                # separate dir
-    echo "    -> block_size=$BLOCK_SIZE num_layers=$NUM_LAYERS draft_arch=$DRAFT_ARCH"
+    echo "    -> checkpoint block_size=$PRETRAINED_BLOCK_SIZE; training block_size=$BLOCK_SIZE"
+    echo "    -> num_layers=$NUM_LAYERS draft_arch=$DRAFT_ARCH"
     echo "    -> target_layer_ids='$TARGET_LAYER_IDS' mask_token_id='$MASK_TOKEN_ID' (full vocab, lr=$LR)"
     if [ "${SPEC_FORMAT:-0}" = "1" ]; then
         FROM_FLAG=(--from-pretrained "$FINETUNE_FROM")

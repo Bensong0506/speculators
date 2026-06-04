@@ -126,6 +126,39 @@ def maybe_force_eager_training(force_eager: bool):
     logger.info("Torch compiler stance set to force_eager for training")
 
 
+def override_loaded_dflash_knobs(draft_model, args: argparse.Namespace):
+    if args.speculator_type != "dflash":
+        return
+
+    if hasattr(draft_model.config, "max_anchors"):
+        loaded_max_anchors = draft_model.config.max_anchors
+        draft_model.config.max_anchors = args.max_anchors
+        if loaded_max_anchors != args.max_anchors:
+            logger.info(
+                "Overriding loaded DFlash max_anchors: %s -> %s",
+                loaded_max_anchors,
+                args.max_anchors,
+            )
+
+    if hasattr(draft_model.config, "block_size"):
+        loaded_block_size = draft_model.config.block_size
+        draft_model.config.block_size = args.block_size
+        if hasattr(draft_model, "block_size"):
+            draft_model.block_size = args.block_size
+        if loaded_block_size != args.block_size:
+            logger.info(
+                "Overriding loaded DFlash block_size: %s -> %s",
+                loaded_block_size,
+                args.block_size,
+            )
+
+    speculators_config = getattr(draft_model.config, "speculators_config", None)
+    proposal_methods = getattr(speculators_config, "proposal_methods", [])
+    for proposal_method in proposal_methods:
+        if hasattr(proposal_method, "speculative_tokens"):
+            proposal_method.speculative_tokens = args.block_size - 1
+
+
 def create_transformer_layer_config(  # noqa: C901
     verifier_name_or_path: str,
     num_layers: int,
@@ -349,17 +382,7 @@ def main(args: argparse.Namespace):
         draft_model = model_class.from_pretrained(
             args.from_pretrained, t2d=t2d, d2t=d2t
         )
-        if args.speculator_type == "dflash" and hasattr(
-            draft_model.config, "max_anchors"
-        ):
-            loaded_max_anchors = draft_model.config.max_anchors
-            draft_model.config.max_anchors = args.max_anchors
-            if loaded_max_anchors != args.max_anchors:
-                logger.info(
-                    "Overriding loaded DFlash max_anchors: %s -> %s",
-                    loaded_max_anchors,
-                    args.max_anchors,
-                )
+        override_loaded_dflash_knobs(draft_model, args)
     else:
         args.draft_vocab_size = draft_vocab_size
         draft_model = model_class.from_training_args(
