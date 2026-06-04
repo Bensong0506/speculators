@@ -19,9 +19,9 @@ The resolved image paths must sit under whatever you give vLLM as
 
 Usage (combine several ALLaVA subsets into one jsonl):
     python3 scripts/llava_to_jsonl.py \
-        --in /data/ALLaVA-4V/allava_laion/ALLaVA-Caption-LAION-4V.json \
-        --in /data/ALLaVA-4V/allava_laion/ALLaVA-Instruct-LAION-4V.json \
-        --image-root /data/ALLaVA-4V \
+        --in /home/wenxuan/ALLaVA-4V/allava_laion/ALLaVA-Caption-LAION-4V.json \
+        --in /home/wenxuan/ALLaVA-4V/allava_laion/ALLaVA-Instruct-LAION-4V.json \
+        --image-root /home/wenxuan/ALLaVA-4V \
         --out-jsonl ./data/allava/allava.jsonl
 """
 
