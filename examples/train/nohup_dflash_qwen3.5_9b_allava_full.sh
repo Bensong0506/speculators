@@ -25,10 +25,12 @@ export EPOCHS="${EPOCHS:-1000}"
 export CHECKPOINT_FREQ="${CHECKPOINT_FREQ:-5}"
 export SEQ_LENGTH="${SEQ_LENGTH:-4096}"
 export PREPROCESS_SEQ_LENGTH="${PREPROCESS_SEQ_LENGTH:-3584}"
-export BLOCK_SIZE="${BLOCK_SIZE:-8}"
 export MAX_ANCHORS="${MAX_ANCHORS:-512}"
 export FORCE_EAGER="${FORCE_EAGER:-0}"
 export DFLASH_COMPILE="${DFLASH_COMPILE:-1}"
+if [ -n "${BLOCK_SIZE:-}" ]; then
+    export BLOCK_SIZE
+fi
 
 export LOGGER="${LOGGER:-wandb}"
 export WANDB_BASE_URL="${WANDB_BASE_URL:-http://10.155.156.175:38080}"
@@ -43,8 +45,12 @@ echo "  run_name: $RUN_NAME"
 echo "  max_samples: $MAX_SAMPLES"
 echo "  epochs: $EPOCHS"
 echo "  checkpoint_freq: $CHECKPOINT_FREQ"
-echo "  block_size: $BLOCK_SIZE"
-echo "  num_spec: $((BLOCK_SIZE - 1))"
+echo "  block_size: ${BLOCK_SIZE:-checkpoint/default}"
+if [ -n "${BLOCK_SIZE:-}" ]; then
+    echo "  num_spec: $((BLOCK_SIZE - 1))"
+else
+    echo "  num_spec: checkpoint/default"
+fi
 echo "  max_anchors: $MAX_ANCHORS"
 echo "  force_eager_training: $FORCE_EAGER"
 echo "  dflash_compile_training: $DFLASH_COMPILE"

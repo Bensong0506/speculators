@@ -119,7 +119,8 @@ fi
 
 # --- 4) DFlash-specific ----------------------------------------------------
 SPECULATOR_TYPE="dflash"
-BLOCK_SIZE="${BLOCK_SIZE:-8}"  # tokens drafted per block (num_spec = block_size - 1)
+# Empty = use the warm-start checkpoint block size; from scratch falls back to 8.
+BLOCK_SIZE="${BLOCK_SIZE:-}"
 MAX_ANCHORS="${MAX_ANCHORS:-512}"  # max anchor positions sampled per step (memory knob)
 NUM_LAYERS=5            # draft transformer layers (DFlash typically uses ~5)
 DRAFT_VOCAB_SIZE=32000  # reduced draft vocab; auto-cleared (full vocab) when warm-starting
@@ -158,7 +159,7 @@ fi
 # (has speculators_model_type). A raw DFlash ckpt (e.g. z-lab's) can't be loaded
 # by this repo's from_pretrained, so we keep the recipe and train FROM SCRATCH.
 FROM_FLAG=()
-REQUESTED_BLOCK_SIZE="$BLOCK_SIZE"
+REQUESTED_BLOCK_SIZE="${BLOCK_SIZE:-}"
 if [ -n "$FINETUNE_FROM" ]; then
     echo "=== Aligning recipe to $FINETUNE_FROM/config.json ==="
     [ -f "$FINETUNE_FROM/config.json" ] || { echo "[fatal] $FINETUNE_FROM/config.json not found"; exit 1; }
@@ -177,11 +178,16 @@ print(f'SPEC_FORMAT={1 if "speculators_model_type" in c else 0}')
 PY
 )"
     PRETRAINED_BLOCK_SIZE="$BLOCK_SIZE"
-    BLOCK_SIZE="$REQUESTED_BLOCK_SIZE"
+    if [ -n "$REQUESTED_BLOCK_SIZE" ]; then
+        BLOCK_SIZE="$REQUESTED_BLOCK_SIZE"
+        BLOCK_SIZE_NOTE="checkpoint block_size=$PRETRAINED_BLOCK_SIZE; training override block_size=$BLOCK_SIZE"
+    else
+        BLOCK_SIZE_NOTE="checkpoint/training block_size=$BLOCK_SIZE"
+    fi
     DRAFT_VOCAB_SIZE=""                          # match pretrained: FULL vocab (no mapping)
     LR="$LR_FT"                                  # lower LR
     OUTPUT_DIR="${OUTPUT_DIR}_ft"                # separate dir
-    echo "    -> checkpoint block_size=$PRETRAINED_BLOCK_SIZE; training block_size=$BLOCK_SIZE"
+    echo "    -> $BLOCK_SIZE_NOTE"
     echo "    -> num_layers=$NUM_LAYERS draft_arch=$DRAFT_ARCH"
     echo "    -> target_layer_ids='$TARGET_LAYER_IDS' mask_token_id='$MASK_TOKEN_ID' (full vocab, lr=$LR)"
     if [ "${SPEC_FORMAT:-0}" = "1" ]; then
@@ -193,6 +199,10 @@ PY
         echo "       Training FROM SCRATCH with this recipe (full vocab / block_size=$BLOCK_SIZE"
         echo "       / $DRAFT_ARCH / aux=[$TARGET_LAYER_IDS]). See me about a converter for true warm-start."
     fi
+fi
+
+if [ -z "$BLOCK_SIZE" ]; then
+    BLOCK_SIZE=8
 fi
 
 # Conditional trainer flags (mirror the TRC_FLAG pattern; empty arrays are no-ops)
