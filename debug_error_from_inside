@@ -1,37 +1,47 @@
-2026-06-04 11:55:12,140 - speculators.data_generation.preprocessing - INFO -   Loaded 2 samples
-[transformers] return_assistant_tokens_mask==True but chat template does not contain `{% generation %}` keyword.
-2026-06-04 11:55:12,189 - speculators.data_generation.preprocessing - INFO -   Detected assistant pattern: <\|im_start\|>assistant\
-((?:(?!<\|im_start\|).)*?)<\|im_end\|>\
-...
-num_proc must be <= 2. Reducing num_proc to 2 for dataset of size 2.
-2026-06-04 11:55:12,189 - datasets.arrow_dataset - WARNING - num_proc must be <= 2. Reducing num_proc to 2 for dataset of size 2.
-Map (num_proc=2):   0%|          | 0/2 [00:00<?, ? examples/s]2026-06-04 11:55:16,284 - speculators.data_generation.preprocessing - ERROR -   ✗ Failed to process conversation 0 (assistant_pattern=True): Expected a non empty file
-Map (num_proc=2):  50%|█████     | 1/2 [00:02<00:02,  2.44s/ examples]2026-06-04 11:55:17,973 - speculators.data_generation.preprocessing - ERROR -   ✗ Failed to process conversation 0 (assistant_pattern=True): Expected a non empty file
-Map (num_proc=2): 100%|██████████| 2/2 [00:04<00:00,  2.11s/ examples]
-2026-06-04 11:55:18,074 - speculators.data_generation.preprocessing - INFO - 
-▸ Computing token frequency distribution
-Counting token frequencies: 0it [00:00, ?it/s]
-2026-06-04 11:55:18,076 - speculators.data_generation.preprocessing - INFO - 
-▸ Visualizing sample
-Traceback (most recent call last):
-  File "/home/wenxuan_train_dflash/wenxuan/speculators/scripts/prepare_data.py", line 201, in <module>
-    main()
-  File "/home/wenxuan_train_dflash/wenxuan/speculators/scripts/prepare_data.py", line 181, in main
-    dataset, _ = load_and_preprocess_dataset(
-                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/wenxuan_train_dflash/wenxuan/speculators/src/speculators/data_generation/preprocessing.py", line 769, in load_and_preprocess_dataset
-    _visualize_sample(combined_dataset, processor, idx=0)
-  File "/home/wenxuan_train_dflash/wenxuan/speculators/src/speculators/data_generation/preprocessing.py", line 43, in _visualize_sample
-    prep_sample = preprocessed[idx]
-                  ~~~~~~~~~~~~^^^^^
-  File "/usr/local/lib/python3.12/dist-packages/datasets/arrow_dataset.py", line 3157, in __getitem__
-    return self._getitem(key)
-           ^^^^^^^^^^^^^^^^^^
-  File "/usr/local/lib/python3.12/dist-packages/datasets/arrow_dataset.py", line 3138, in _getitem
-    pa_subtable = query_table(self._data, key, indices=self._indices)
-                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/local/lib/python3.12/dist-packages/datasets/formatting/formatting.py", line 612, in query_table
-    _check_valid_index_key(key, size)
-  File "/usr/local/lib/python3.12/dist-packages/datasets/formatting/formatting.py", line 552, in _check_valid_index_key
-    raise IndexError(f"Invalid key: {key} is out of bounds for size {size}")
-IndexError: Invalid key: 0 is out of bounds for size 0
+(Worker pid=4846) ERROR 06-04 12:04:29 [multiproc_executor.py:870] RuntimeError: The NVIDIA driver on your system is too old (found version 12040). Please update your GPU driver by downloading and installing a new version from the URL: http://www.nvidia.com/Download/index.aspx Alternatively, go to: https://pytorch.org to install a PyTorch version that has been compiled with your version of the CUDA driver.
+(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870] WorkerProc failed to start.
+(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870] Traceback (most recent call last):
+(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 837, in worker_main
+(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     worker = WorkerProc(*args, **kwargs)
+(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     return func(*args, **kwargs)
+(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]            ^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 611, in __init__
+(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     self.worker.init_device()
+(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/worker_base.py", line 325, in init_device
+(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     self.worker.init_device()  # type: ignore
+(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     ^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     return func(*args, **kwargs)
+(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]            ^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu_worker.py", line 272, in init_device
+(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     torch.accelerator.set_device_index(self.device)
+(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/torch/accelerator/__init__.py", line 191, in set_device_index
+(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     torch._C._accelerator_setDeviceIndex(device_index)
+(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py", line 478, in _lazy_init
+(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     torch._C._cuda_init()
+(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870] RuntimeError: The NVIDIA driver on your system is too old (found version 12040). Please update your GPU driver by downloading and installing a new version from the URL: http://www.nvidia.com/Download/index.aspx Alternatively, go to: https://pytorch.org to install a PyTorch version that has been compiled with your version of the CUDA driver.
+(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870] WorkerProc failed to start.
+(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870] Traceback (most recent call last):
+(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 837, in worker_main
+(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     worker = WorkerProc(*args, **kwargs)
+(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     return func(*args, **kwargs)
+(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]            ^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 611, in __init__
+(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     self.worker.init_device()
+(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/worker_base.py", line 325, in init_device
+(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     self.worker.init_device()  # type: ignore
+(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     ^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     return func(*args, **kwargs)
+(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]            ^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu_worker.py", line 272, in init_device
+(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     torch.accelerator.set_device_index(self.device)
+(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/torch/accelerator/__init__.py", line 191, in set_device_index
+(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     torch._C._accelerator_setDeviceIndex(device_index)
+(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py", line 478, in _lazy_init
+(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     torch._C._cuda_init()
+(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870] RuntimeError: The NVIDIA driver on your system is too old (found version 12040). Please update your GPU driver by downloading and installing a new version from the URL: http://www.nvidia.com/Download/index.aspx Alternatively, go to: https://pytorch.org to install a PyTorch version that has been compiled with your version of the CUDA driver.
