@@ -1,2 +1,1 @@
-
-/home/wenxuan/speculators/scripts/train.py --verifier-name-or-path /home/models/Qwen3.5-9B --data-path ./output/dflash_qwen3.5_9b_mm --vllm-endpoint http://localhost:8000/v1 --save-path ./output/dflash_qwen3.5_9b_mm/checkpoints --draft-vocab-size 32000 --epochs 5 --lr 3e-4 --total-seq-len 4096 --speculator-type dflash --block-size 8 --max-anchors 512 --num-layers 5 --target-layer-ids 2 16 29 --logger wandb --run-name dflash_qwen3.5_9b_mm --log-dir ./train_logs --on-missing generate --on-generate delete --trust-remote-code
+/home/wenxuan_train_dflash/wenxuan/speculators
