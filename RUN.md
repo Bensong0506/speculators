@@ -77,6 +77,8 @@ FINETUNE_FROM=/home/models/Qwen3.5-9B-DFlash \
 # The launcher prints a "Resolved training limits" block before preprocessing;
 # if MAX_ANCHORS is accidentally overridden above 512 in full-vocab block-16 mode,
 # it now exits immediately instead of running until CUDA OOM.
+# Full stdout/stderr is also saved by default under ./run_logs/*.log; override with
+# RUN_LOG_PATH=/abs/train.log or disable with LOG_TO_FILE=0.
 # vLLM request access logs are filtered by the shell so repeated 200 OK lines do
 # not hide errors, without relying on version-specific vLLM CLI flags.
 # the run prints "Warm-start: aligning ..." -> eyeball block_size=16 / 5 layers /

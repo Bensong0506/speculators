@@ -102,6 +102,16 @@ LR=3e-4
 LOGGER="${LOGGER:-tensorboard}"
 RUN_NAME="${RUN_NAME:-dflash_qwen3.5_9b_mm}"
 LOG_DIR="${LOG_DIR:-./train_logs}"
+LOG_TO_FILE="${LOG_TO_FILE:-1}"
+RUN_LOG_DIR="${RUN_LOG_DIR:-./run_logs}"
+RUN_LOG_NAME="${RUN_NAME//\//_}"
+RUN_LOG_PATH="${RUN_LOG_PATH:-$RUN_LOG_DIR/${RUN_LOG_NAME}_$(date +%Y%m%d_%H%M%S).log}"
+
+if [ "$LOG_TO_FILE" = "1" ]; then
+    mkdir -p "$(dirname "$RUN_LOG_PATH")"
+    exec > >(tee -a "$RUN_LOG_PATH") 2>&1
+    echo "=== Writing full launcher log to $RUN_LOG_PATH ==="
+fi
 
 # --- 4) DFlash-specific ----------------------------------------------------
 SPECULATOR_TYPE="dflash"
