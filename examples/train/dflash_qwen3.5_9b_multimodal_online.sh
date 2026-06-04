@@ -35,11 +35,11 @@ set -euo pipefail
 
 # --- 1) Verifier (target) multimodal model --------------------------------
 # Local path on the A800 box (or HF id). Must be a VLM, e.g. your Qwen3.5-9B.
-MODEL="/home/models/Qwen3.5-9B"
+MODEL="${MODEL:-/home/models/Qwen3.5-9B}"
 
 # Some VLM processors/configs need remote code. Set to 1 if loading fails
 # with "trust_remote_code" errors; harmless to leave on for Qwen-VL.
-TRUST_REMOTE_CODE=1
+TRUST_REMOTE_CODE="${TRUST_REMOTE_CODE:-1}"
 
 # --- 2) Multimodal dataset -------------------------------------------------
 # Option A (built-in sanity check): "sharegpt4v_coco"
@@ -47,14 +47,14 @@ TRUST_REMOTE_CODE=1
 #      Download: http://images.cocodataset.org/zips/train2017.zip
 #      Set COCO_DIR to the folder that CONTAINS train2017/.
 # Option B (your own data): path to a .jsonl file (see format note at bottom).
-DATASET="sharegpt4v_coco"
+DATASET="${DATASET:-sharegpt4v_coco}"
 export COCO_DIR="/path/to/coco"           # only used by sharegpt4v_coco
 
 # Root directory that contains ALL images referenced by the dataset.
 # vLLM will only load local images located under this path. For
 # sharegpt4v_coco this is your COCO_DIR; for custom data set it to the
 # common parent of your image files.
-MEDIA_ROOT="${COCO_DIR}"
+MEDIA_ROOT="${MEDIA_ROOT:-$COCO_DIR}"
 
 # Option C (quickest start — no COCO / no HF download): use a local MMStar set.
 # Set USE_MMSTAR=1 and point MMSTAR_SRC at your MMStar data. Step 0 below
@@ -66,12 +66,12 @@ MEDIA_ROOT="${COCO_DIR}"
 USE_MMSTAR="${USE_MMSTAR:-0}"   # smoke test only; set 1 (and USE_ALLAVA=0) to use it
 # A JSON/JSONL of records with image FILE PATHS (a pre-extracted dump), or a HF
 # MMStar dataset dir/parquet/id (inline images get extracted automatically).
-MMSTAR_SRC="/home/wenxuan/mmstar/mmstar_answers.json"
-MMSTAR_SPLIT="val"
+MMSTAR_SRC="${MMSTAR_SRC:-/home/wenxuan/mmstar/mmstar_answers.json}"
+MMSTAR_SPLIT="${MMSTAR_SPLIT:-val}"
 # Folder vLLM is allowed to read images from (must be a prefix of the image
 # paths). For the json-with-paths case set it to your images dir; leave EMPTY
 # for the HF-extract case (the extraction dir is used instead).
-MMSTAR_MEDIA_ROOT="/home/wenxuan/mmstar/images"
+MMSTAR_MEDIA_ROOT="${MMSTAR_MEDIA_ROOT:-/home/wenxuan/mmstar/images}"
 
 # Option D (REAL training): ALLaVA-4V (or any LLaVA-style json). Step 0 converts
 # it to a conversations jsonl via scripts/llava_to_jsonl.py. Set the paths below.
@@ -82,9 +82,9 @@ ALLAVA_INPUTS="${ALLAVA_INPUTS:-/home/wenxuan/ALLaVA-4V/allava_laion/ALLaVA-Capt
 ALLAVA_IMAGE_ROOT="${ALLAVA_IMAGE_ROOT:-/home/wenxuan/ALLaVA-4V}"
 
 # --- 3) General training knobs --------------------------------------------
-OUTPUT_DIR="./output/dflash_qwen3.5_9b_mm"
-VLLM_PORT=8000
-MAX_SAMPLES=5000        # 5k = sanity check only. Use 100k+ for real quality.
+OUTPUT_DIR="${OUTPUT_DIR:-./output/dflash_qwen3.5_9b_mm}"
+VLLM_PORT="${VLLM_PORT:-8000}"
+MAX_SAMPLES="${MAX_SAMPLES:-5000}"  # 5k = sanity check only. Use 100k+ for real quality.
 SEQ_LENGTH="${SEQ_LENGTH:-4096}"    # Feeds vLLM --max-model-len /
                                     # --max-num-batched-tokens, and trainer
                                     # --total-seq-len. Raise only if you have
@@ -93,8 +93,8 @@ PREPROCESS_SEQ_LENGTH="${PREPROCESS_SEQ_LENGTH:-3584}"  # Conservative filter
                                                         # before vLLM expands MM
                                                         # inputs into prompt tokens.
 FORCE_PREPROCESS="${FORCE_PREPROCESS:-0}"  # set 1 to rebuild cached arrow data
-EPOCHS=5
-LR=3e-4
+EPOCHS="${EPOCHS:-5}"
+LR="${LR:-3e-4}"
 
 # --- Experiment tracking (loss / acceptance curves) -----------------------
 # tensorboard = local, intranet-friendly (view via SSH tunnel — see RUN.md /

@@ -86,8 +86,10 @@ FINETUNE_FROM=/home/models/Qwen3.5-9B-DFlash \
 # not hide errors, without relying on version-specific vLLM CLI flags.
 # the run prints "Warm-start: aligning ..." -> eyeball block_size=16 / 5 layers /
 #   qwen3 / aux=[1,8,15,22,29] / mask=248070 / full vocab before it continues.
-# NOTE: MAX_SAMPLES caps TOTAL in input order (Caption first) — raise it (e.g. 300000)
-#   to mix in Instruct. Re-convert after changing data: rm -f data/allava/allava.jsonl
+# NOTE: MAX_SAMPLES caps TOTAL in input order (Caption first). The two local
+#   LAION files are 468,670 caption + 468,670 instruct = 937,340 rows total, so
+#   MAX_SAMPLES must be >468670 to include instruct. Re-convert after changing
+#   data by either using FORCE_PREPROCESS=1 or removing data/allava/allava_*.jsonl.
 ```
 (From scratch instead: drop `FINETUNE_FROM`. MMStar smoke test:
 `USE_ALLAVA=0 USE_MMSTAR=1 bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh`.)
@@ -101,7 +103,16 @@ bash examples/train/convert_zlab_dflash.sh        # -> /home/models/Qwen3.5-9B-D
 # then in 1b's command use:  FINETUNE_FROM=/home/models/Qwen3.5-9B-DFlash-spec
 ```
 
-### 1c. Watch training (loss + per-position acceptance)
+### 1c. Detached longer ALLaVA run
+After W&B login, this starts a nohup run over all local LAION caption+instruct rows
+and writes `run_logs/<run_name>.nohup.log` plus a PID file:
+```bash
+bash examples/train/nohup_dflash_qwen3.5_9b_allava_full.sh
+tail -f run_logs/dflash_qwen35_9b_allava_full_*.nohup.log
+```
+Defaults: `MAX_SAMPLES=937340 EPOCHS=1 LOGGER=wandb`.
+
+### 1d. Watch training (loss + per-position acceptance)
 ```bash
 bash examples/train/view_tensorboard.sh
 # from your laptop:  ssh -N -L 6006:localhost:6006 <user>@<gpu-box>  -> http://localhost:6006
