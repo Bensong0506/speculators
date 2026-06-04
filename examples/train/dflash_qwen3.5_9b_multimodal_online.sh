@@ -83,6 +83,7 @@ ALLAVA_IMAGE_ROOT="${ALLAVA_IMAGE_ROOT:-/home/wenxuan/ALLaVA-4V}"
 
 # --- 3) General training knobs --------------------------------------------
 OUTPUT_DIR="${OUTPUT_DIR:-./output/dflash_qwen3.5_9b_mm}"
+SAVE_PATH="${SAVE_PATH:-}"
 VLLM_PORT="${VLLM_PORT:-8000}"
 MAX_SAMPLES="${MAX_SAMPLES:-5000}"  # 5k = sanity check only. Use 100k+ for real quality.
 SEQ_LENGTH="${SEQ_LENGTH:-4096}"    # Feeds vLLM --max-model-len /
@@ -123,7 +124,7 @@ SPECULATOR_TYPE="dflash"
 BLOCK_SIZE="${BLOCK_SIZE:-}"
 MAX_ANCHORS="${MAX_ANCHORS:-512}"  # max anchor positions sampled per step (memory knob)
 NUM_LAYERS=5            # draft transformer layers (DFlash typically uses ~5)
-DRAFT_VOCAB_SIZE=32000  # reduced draft vocab; auto-cleared (full vocab) when warm-starting
+DRAFT_VOCAB_SIZE="${DRAFT_VOCAB_SIZE-32000}"  # empty = full vocab; default scratch uses reduced vocab
 
 # --- Warm-start (continue-training) from a pretrained DFlash --------------
 # Point at a DFlash checkpoint dir (e.g. /home/models/Qwen3.5-9B-DFlash) to
@@ -137,7 +138,7 @@ LR_FT="${LR_FT:-1e-4}"   # lower LR used when warm-starting (vs 3e-4 from scratc
 # auto-compute the repo-default "2  L/2  L-3" (L = text num_hidden_layers);
 # launch_vllm appends the final layer L automatically. The SAME ids must be
 # passed to both vLLM and train.py — this script guarantees that.
-TARGET_LAYER_IDS=""
+TARGET_LAYER_IDS="${TARGET_LAYER_IDS:-}"
 
 # --- 5) GPU layout on the A800 node ---------------------------------------
 # Online training runs vLLM (serving) and the trainer (FSDP) on SEPARATE GPUs.
@@ -204,6 +205,9 @@ fi
 if [ -z "$BLOCK_SIZE" ]; then
     BLOCK_SIZE=8
 fi
+if [ -z "$SAVE_PATH" ]; then
+    SAVE_PATH="$OUTPUT_DIR/checkpoints"
+fi
 
 # Conditional trainer flags (mirror the TRC_FLAG pattern; empty arrays are no-ops)
 VOCAB_FLAG=();     [ -n "$DRAFT_VOCAB_SIZE" ]  && VOCAB_FLAG=(--draft-vocab-size "$DRAFT_VOCAB_SIZE")
@@ -255,6 +259,7 @@ echo "    dflash max_anchors: $MAX_ANCHORS"
 echo "    dflash num_layers: $NUM_LAYERS"
 echo "    dflash draft vocab: ${DRAFT_VOCAB_SIZE:-full}"
 echo "    checkpoint_freq: $CHECKPOINT_FREQ"
+echo "    save_path: $SAVE_PATH"
 echo "    force_eager_training: $FORCE_EAGER"
 echo "    dflash_compile_training: $DFLASH_COMPILE"
 echo "    target_layer_ids: $TARGET_LAYER_IDS"
@@ -409,7 +414,7 @@ CUDA_VISIBLE_DEVICES="$TRAIN_GPUS" torchrun \
     --verifier-name-or-path "$MODEL" \
     --data-path "$OUTPUT_DIR" \
     --vllm-endpoint "http://localhost:${VLLM_PORT}/v1" \
-    --save-path "$OUTPUT_DIR/checkpoints" \
+    --save-path "$SAVE_PATH" \
     "${VOCAB_FLAG[@]}" \
     "${FROM_FLAG[@]}" \
     "${DRAFTARCH_FLAG[@]}" \
@@ -431,7 +436,7 @@ CUDA_VISIBLE_DEVICES="$TRAIN_GPUS" torchrun \
     --on-generate delete \
     "${TRC_FLAG[@]}"
 
-echo "Done. Checkpoints saved to $OUTPUT_DIR/checkpoints/"
+echo "Done. Checkpoints saved to $SAVE_PATH/"
 
 # ===========================================================================
 # CUSTOM MULTIMODAL DATA FORMAT (Option B)
