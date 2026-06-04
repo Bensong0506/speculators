@@ -97,6 +97,7 @@ EPOCHS="${EPOCHS:-5}"
 LR="${LR:-3e-4}"
 CHECKPOINT_FREQ="${CHECKPOINT_FREQ:-5}"  # save every N epochs
 FORCE_EAGER="${FORCE_EAGER:-0}"          # set 1 to disable torch.compile in training
+DFLASH_COMPILE="${DFLASH_COMPILE:-1}"    # keep on for flex-attention memory efficiency
 
 # --- Experiment tracking (loss / acceptance curves) -----------------------
 # tensorboard = local, intranet-friendly (view via SSH tunnel — see RUN.md /
@@ -201,7 +202,9 @@ MASK_FLAG=();      [ -n "${MASK_TOKEN_ID:-}" ] && MASK_FLAG=(--mask-token-id "$M
 FORCE_EAGER_FLAG=()
 if [ "$FORCE_EAGER" = "1" ]; then
     FORCE_EAGER_FLAG=(--force-eager)
+    DFLASH_COMPILE=0
 fi
+export SPECULATORS_DFLASH_COMPILE="$DFLASH_COMPILE"
 
 # Auto-compute TARGET_LAYER_IDS from the verifier's *text* config if unset,
 # so vLLM and the trainer always agree.
@@ -243,6 +246,7 @@ echo "    dflash num_layers: $NUM_LAYERS"
 echo "    dflash draft vocab: ${DRAFT_VOCAB_SIZE:-full}"
 echo "    checkpoint_freq: $CHECKPOINT_FREQ"
 echo "    force_eager_training: $FORCE_EAGER"
+echo "    dflash_compile_training: $DFLASH_COMPILE"
 echo "    target_layer_ids: $TARGET_LAYER_IDS"
 
 # Step 0 (optional): build a `conversations` jsonl from the chosen data source.

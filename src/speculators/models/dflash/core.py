@@ -1,3 +1,4 @@
+import os
 from typing import ClassVar
 
 import torch
@@ -20,6 +21,13 @@ from speculators.models.dflash.utils import (
 )
 from speculators.models.metrics import kl_div_loss, resolve_loss_fn
 from speculators.models.utils import resolve_target_layer_ids
+
+
+def maybe_compile_dflash_forward(func):
+    compile_enabled = os.environ.get("SPECULATORS_DFLASH_COMPILE", "1").lower()
+    if compile_enabled in {"0", "false", "no", "off"}:
+        return func
+    return torch.compile(func)
 
 
 @SpeculatorModel.register("dflash")
@@ -232,6 +240,7 @@ class DFlashDraftModel(DraftVocabMixin, SpeculatorModel):
 
         return full_attn_mask, sliding_window_attn_mask, anchor_positions, anchor_valid
 
+    @maybe_compile_dflash_forward
     def forward(
         self,
         hidden_states: torch.Tensor,  # shape: [1,total_seq_len,num_hidden*hidden_size]
