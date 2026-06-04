@@ -232,7 +232,6 @@ class DFlashDraftModel(DraftVocabMixin, SpeculatorModel):
 
         return full_attn_mask, sliding_window_attn_mask, anchor_positions, anchor_valid
 
-    @torch.compile
     def forward(
         self,
         hidden_states: torch.Tensor,  # shape: [1,total_seq_len,num_hidden*hidden_size]
