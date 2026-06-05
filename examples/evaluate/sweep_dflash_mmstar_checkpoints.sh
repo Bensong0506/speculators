@@ -69,7 +69,8 @@ for path in root.rglob("*"):
     name = path.name
     if name == "checkpoint_best" and not include_best:
         continue
-    if name != "checkpoint_best" and not re.match(r"checkpoint[_-]?\d+$", name):
+    step_match = re.match(r"checkpoint[_-]?(\d+)$", name) or re.match(r"(\d+)$", name)
+    if name != "checkpoint_best" and not step_match:
         continue
     cfg_path = path / "config.json"
     weights_path = path / "model.safetensors"
@@ -81,8 +82,7 @@ for path in root.rglob("*"):
         continue
     if cfg.get("speculators_model_type") != "dflash":
         continue
-    match = re.search(r"checkpoint[_-]?(\d+)$", name)
-    step = int(match.group(1)) if match else 10**18
+    step = int(step_match.group(1)) if step_match else 10**18
     key = str(path.resolve()) if dedup_realpath else str(path)
     items.append(
         {

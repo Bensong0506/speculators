@@ -203,6 +203,21 @@ RUN_MODE=dflash   ... bash examples/serve/run_qwen35_9b_gpu.sh   # then eval -> 
 # speedup = B / A
 ```
 
+### Overnight MMStar sweep over all checkpoints
+
+This tests every speculators-format DFlash checkpoint under the training output
+directory against the native/raw DFlash baseline, using `INFER_NUM_SPEC=7`.
+Results are written to `output/mmstar_checkpoint_sweeps/<timestamp>/results.csv`
+and `results.jsonl`.
+
+```bash
+cd /data/wenxuan/speculators
+
+INFER_NUM_SPEC=7 \
+CHECKPOINT_FIND_ROOT=/data/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_100k_continue_dflash \
+bash examples/evaluate/sweep_dflash_mmstar_checkpoints.sh
+```
+
 ---
 
 ## Files
