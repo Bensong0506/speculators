@@ -1,194 +1,76 @@
-root@devserver-bms-af631bb3:/home/wenxuan/speculators# bash examples/evaluate/test_dflash_mmstar_weights.sh 
-=== Checkpoint sanity ===
-Checkpoint sanity OK
-  draft:      /home/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_10k_scratch_fullvocab_5aux/checkpoints/checkpoint_best
-  block_size: 8
-  num_spec:   7
-  aux_layers: [1, 8, 15, 22, 29]
-  hidden:     4096
-  fc.weight:  (4096, 20480)
-  layers.*:   55 tensors
-NUM_SPEC_TOKENS=7
-=== Preparing MMStar conversations jsonl ===
-reuse existing /home/wenxuan/speculators/home/wenxuan/mmstar/mmstar_eval.jsonl
-
-=== Starting baseline server ===
-  model:      /home/models/Qwen3.5-9B
-  draft:      /home/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_10k_scratch_fullvocab_5aux/checkpoints/checkpoint_best
-  port:       8100
-  devices:    0
-  media_root: /home/wenxuan/mmstar/images
-  log:        /home/wenxuan/speculators/output/mmstar_weight_tests/20260605_073415/baseline_vllm.log
-[cmd] env CUDA_VISIBLE_DEVICES=0 vllm serve /home/models/Qwen3.5-9B --served-model-name qwen3.5-9b-mmstar-weight-test --seed 42 --tensor-parallel-size 1 --max-model-len 8192 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.85 --trust-remote-code --allowed-local-media-path /home/wenxuan/mmstar/images --limit-mm-per-prompt \{\"image\":1\} --generation-config vllm --host 0.0.0.0 --port 8100 --enforce-eager
-Waiting for baseline server on :8100 (log: /home/wenxuan/speculators/output/mmstar_weight_tests/20260605_073415/baseline_vllm.log)
-baseline server ready.
-Endpoint=http://localhost:8100/v1 model=qwen3.5-9b-mmstar-weight-test prompts=128 max_tokens=128
-[1/128] ok tokens=128 latency=6.65s
-[2/128] ok tokens=128 latency=4.03s
-[3/128] ok tokens=128 latency=4.04s
-[4/128] ok tokens=128 latency=4.03s
-[5/128] ok tokens=128 latency=4.02s
-[6/128] ok tokens=128 latency=4.03s
-[7/128] ok tokens=128 latency=4.04s
-[8/128] ok tokens=128 latency=4.03s
-[9/128] ok tokens=128 latency=4.05s
-[10/128] ok tokens=128 latency=4.05s
-[11/128] ok tokens=128 latency=4.04s
-[12/128] ok tokens=128 latency=4.03s
-[13/128] ok tokens=128 latency=4.04s
-[14/128] ok tokens=128 latency=4.03s
-[15/128] ok tokens=128 latency=4.13s
-[16/128] ok tokens=128 latency=4.12s
-[17/128] ok tokens=128 latency=4.11s
-[18/128] ok tokens=128 latency=4.11s
-[19/128] ok tokens=128 latency=4.11s
-[20/128] ok tokens=128 latency=4.17s
-[21/128] ok tokens=128 latency=4.12s
-[22/128] ok tokens=128 latency=4.12s
-[23/128] ok tokens=128 latency=4.12s
-[24/128] ok tokens=128 latency=4.13s
-[25/128] ok tokens=128 latency=4.12s
-[26/128] ok tokens=128 latency=4.11s
-[27/128] ok tokens=128 latency=4.11s
-[28/128] ok tokens=128 latency=4.12s
-[29/128] ok tokens=128 latency=4.12s
-[30/128] ok tokens=128 latency=4.10s
-[31/128] ok tokens=128 latency=4.11s
-[32/128] ok tokens=128 latency=4.11s
-[33/128] ok tokens=128 latency=4.11s
-[34/128] ok tokens=128 latency=4.11s
-[35/128] ok tokens=128 latency=4.11s
-[36/128] ok tokens=128 latency=4.10s
-[37/128] ok tokens=128 latency=4.11s
-[38/128] ok tokens=128 latency=4.10s
-[39/128] ok tokens=128 latency=4.11s
-[40/128] ok tokens=128 latency=4.11s
-[41/128] ok tokens=128 latency=4.11s
-[42/128] ok tokens=128 latency=4.11s
-[43/128] ok tokens=128 latency=4.11s
-[44/128] ok tokens=128 latency=4.11s
-[45/128] ok tokens=128 latency=4.11s
-[46/128] ok tokens=128 latency=4.12s
-[47/128] ok tokens=128 latency=4.10s
-[48/128] ok tokens=128 latency=4.11s
-[49/128] ok tokens=128 latency=4.11s
-[50/128] ok tokens=128 latency=4.11s
-[51/128] ok tokens=128 latency=4.11s
-[52/128] ok tokens=128 latency=4.11s
-[53/128] ok tokens=128 latency=4.12s
-[54/128] ok tokens=128 latency=4.13s
-[55/128] ok tokens=128 latency=4.12s
-[56/128] ok tokens=128 latency=4.12s
-[57/128] ok tokens=128 latency=4.12s
-[58/128] ok tokens=128 latency=4.10s
-[59/128] ok tokens=128 latency=4.08s
-[60/128] ok tokens=128 latency=4.11s
-[61/128] ok tokens=128 latency=4.12s
-[62/128] ok tokens=128 latency=4.12s
-[63/128] ok tokens=128 latency=4.12s
-[64/128] ok tokens=128 latency=4.10s
-[65/128] ok tokens=128 latency=4.12s
-[66/128] ok tokens=128 latency=4.11s
-[67/128] ok tokens=128 latency=4.11s
-[68/128] ok tokens=128 latency=4.11s
-[69/128] ok tokens=128 latency=4.11s
-[70/128] ok tokens=128 latency=4.11s
-[71/128] ok tokens=128 latency=4.11s
-[72/128] ok tokens=128 latency=4.11s
-[73/128] ok tokens=128 latency=4.12s
-[74/128] ok tokens=128 latency=4.11s
-[75/128] ok tokens=128 latency=4.12s
-[76/128] ok tokens=128 latency=4.12s
-[77/128] ok tokens=128 latency=4.11s
-[78/128] ok tokens=128 latency=4.11s
-[79/128] ok tokens=128 latency=4.11s
-[80/128] ok tokens=128 latency=4.11s
-[81/128] ok tokens=128 latency=4.11s
-[82/128] ok tokens=128 latency=4.11s
-[83/128] ok tokens=128 latency=4.11s
-[84/128] ok tokens=128 latency=4.11s
-[85/128] ok tokens=128 latency=4.11s
-[86/128] ok tokens=128 latency=4.11s
-[87/128] ok tokens=128 latency=4.11s
-[88/128] ok tokens=128 latency=4.11s
-[89/128] ok tokens=128 latency=4.11s
-[90/128] ok tokens=128 latency=4.12s
-[91/128] ok tokens=128 latency=4.11s
-[92/128] ok tokens=128 latency=4.11s
-[93/128] ok tokens=128 latency=4.11s
-[94/128] ok tokens=128 latency=4.11s
-[95/128] ok tokens=128 latency=4.12s
-[96/128] ok tokens=128 latency=4.11s
-[97/128] ok tokens=128 latency=4.09s
-[98/128] ok tokens=128 latency=4.14s
-[99/128] ok tokens=128 latency=4.11s
-[100/128] ok tokens=128 latency=4.11s
-[101/128] ok tokens=128 latency=4.12s
-[102/128] ok tokens=128 latency=4.11s
-[103/128] ok tokens=128 latency=4.11s
-[104/128] ok tokens=128 latency=4.13s
-[105/128] ok tokens=128 latency=4.11s
-[106/128] ok tokens=128 latency=4.11s
-[107/128] ok tokens=128 latency=4.11s
-[108/128] ok tokens=128 latency=4.11s
-[109/128] ok tokens=128 latency=4.10s
-[110/128] ok tokens=128 latency=4.10s
-[111/128] ok tokens=128 latency=4.10s
-[112/128] ok tokens=128 latency=4.10s
-[113/128] ok tokens=128 latency=4.10s
-[114/128] ok tokens=128 latency=4.12s
-[115/128] ok tokens=128 latency=4.27s
-[116/128] ok tokens=128 latency=4.10s
-[117/128] ok tokens=128 latency=4.11s
-[118/128] ok tokens=128 latency=4.11s
-[119/128] ok tokens=128 latency=4.11s
-[120/128] ok tokens=128 latency=4.11s
-[121/128] ok tokens=128 latency=4.11s
-[122/128] ok tokens=128 latency=4.11s
-[123/128] ok tokens=128 latency=4.11s
-[124/128] ok tokens=128 latency=4.11s
-[125/128] ok tokens=128 latency=4.10s
-[126/128] ok tokens=128 latency=4.10s
-[127/128] ok tokens=128 latency=4.08s
-[128/128] ok tokens=128 latency=4.07s
-
 Summary
 {
-  "endpoint": "http://localhost:8100/v1",
+  "endpoint": "http://localhost:8101/v1",
   "model": "qwen3.5-9b-mmstar-weight-test",
   "num_requested": 128,
   "completed": 128,
   "failed": 0,
   "completion_tokens": 16384,
-  "wall_sec": 527.9073954649502,
-  "output_tok_per_sec": 31.035746308440938,
-  "mean_latency_sec": 4.124187839140177,
-  "reference_contains_rate": 0.21875,
+  "wall_sec": 655.2506688160356,
+  "output_tok_per_sec": 25.004171349575344,
+  "mean_latency_sec": 5.119053583398454,
+  "reference_contains_rate": 0.234375,
   "reference_count": 128,
-  "spec_metrics_delta": {},
-  "spec_accepted_like_total": 0.0,
-  "spec_drafted_like_total": 0.0,
-  "spec_acceptance_like_rate": null
+  "spec_metrics_delta": {
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\"}": 15403.0,
+    "vllm:spec_decode_num_drafts_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\"}": 0.0,
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\"}": 107821.0,
+    "vllm:spec_decode_num_draft_tokens_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\"}": 860.0,
+    "vllm:spec_decode_num_accepted_tokens_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"0\"}": 860.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"1\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"2\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"3\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"4\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"5\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"6\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"0\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"1\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"2\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"3\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"4\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"5\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"6\"}": 0.0
+  },
+  "spec_accepted_like_total": 1720.0,
+  "spec_drafted_like_total": 123224.0,
+  "spec_acceptance_like_rate": 0.013958319807829644
 }
-Stopping vLLM server pid=120961
 
-=== Starting dflash server ===
-  model:      /home/models/Qwen3.5-9B
-  draft:      /home/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_10k_scratch_fullvocab_5aux/checkpoints/checkpoint_best
-  port:       8101
-  devices:    0
-  media_root: /home/wenxuan/mmstar/images
-  log:        /home/wenxuan/speculators/output/mmstar_weight_tests/20260605_073415/dflash_vllm.log
-[cmd] env CUDA_VISIBLE_DEVICES=0 vllm serve /home/models/Qwen3.5-9B --served-model-name qwen3.5-9b-mmstar-weight-test --seed 42 --tensor-parallel-size 1 --max-model-len 8192 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.85 --trust-remote-code --allowed-local-media-path /home/wenxuan/mmstar/images --limit-mm-per-prompt \{\"image\":1\} --generation-config vllm --host 0.0.0.0 --port 8101 --enforce-eager --speculative-config \{\"method\":\"dflash\"\,\"model\":\"/home/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_10k_scratch_fullvocab_5aux/checkpoints/checkpoint_best\"\,\"num_speculative_tokens\":7\}
-Waiting for dflash server on :8101 (log: /home/wenxuan/speculators/output/mmstar_weight_tests/20260605_073415/dflash_vllm.log)
-dflash server ready.
-Endpoint=http://localhost:8101/v1 model=qwen3.5-9b-mmstar-weight-test prompts=128 max_tokens=128
-[1/128] ok tokens=128 latency=6.21s
-[2/128] ok tokens=128 latency=4.89s
-[3/128] ok tokens=128 latency=5.28s
-[4/128] ok tokens=128 latency=4.94s
-[5/128] ok tokens=128 latency=5.34s
-[6/128] ok tokens=128 latency=4.99s
-[7/128] ok tokens=128 latency=5.23s
-[8/128] ok tokens=128 latency=5.05s
-[9/128] ok tokens=128 latency=5.04s
+=== DFlash log acceptance parse ===
+/home/wenxuan/speculators/examples/evaluate/eval-guidellm/scripts/parse_logs.py:85: RuntimeWarning: invalid value encountered in divide
+  conditional = weighted_with_start[1:] / weighted_with_start[:-1]
+======================================================================
+Speculative Decoding Acceptance Analysis
+======================================================================
+
+Total samples: 66
+Total drafted tokens: 107821
+Average drafted tokens: 1633.65
+
+Weighted per-position acceptance rates:
+[0.056 0.    0.    0.    0.    0.    0.   ]
+
+Conditional acceptance rates:
+[0.056 0.      nan   nan   nan   nan   nan]
+======================================================================
+
+=== Final comparison ===
+baseline completed: 128/128
+dflash completed:   128/128
+baseline tok/s:     31.036
+dflash tok/s:       25.004
+speedup:            0.806
+baseline ref hit:   0.219
+dflash ref hit:     0.234
+spec drafted-like:  123224.000
+spec accepted-like: 1720.000
+spec accept-like:   0.014
+
+VERDICT: PASS SMOKE - checkpoint loads and DFlash accepts draft tokens.
+         Use speedup/ref-hit as quality signals, not as strict pass/fail.
+
+Artifacts:
+  /home/wenxuan/speculators/output/mmstar_weight_tests/20260605_073415
+Stopping vLLM server pid=121881
