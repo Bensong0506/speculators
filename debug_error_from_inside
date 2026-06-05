@@ -1,3 +1,229 @@
-root@devserver-bms-250cfc86-tmp1108:/data/wenxuan/speculators# bash examples/evaluate/test_dflash_mmstar_weights.sh 
-=== Checkpoint sanity ===
-[fatal] native block_size=16, expected block_size=8. Set REQUIRE_BLOCK_SIZE=0 to allow mismatched block sizes.
+Summary
+{
+  "endpoint": "http://localhost:8101/v1",
+  "model": "qwen3.5-9b-mmstar-weight-test",
+  "num_requested": 128,
+  "completed": 128,
+  "failed": 0,
+  "completion_tokens": 16384,
+  "wall_sec": 274.1545645300066,
+  "output_tok_per_sec": 59.76190849890718,
+  "mean_latency_sec": 2.141741900983334,
+  "reference_contains_rate": 0.234375,
+  "reference_count": 128,
+  "spec_metrics_delta": {
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\"}": 6430.0,
+    "vllm:spec_decode_num_drafts_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\"}": 0.0,
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\"}": 45010.0,
+    "vllm:spec_decode_num_draft_tokens_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\"}": 10003.0,
+    "vllm:spec_decode_num_accepted_tokens_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"0\"}": 4436.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"1\"}": 2673.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"2\"}": 1409.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"3\"}": 683.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"4\"}": 395.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"5\"}": 255.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"6\"}": 152.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"0\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"1\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"2\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"3\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"4\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"5\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"6\"}": 0.0
+  },
+  "spec_draft_steps_total": 6430.0,
+  "spec_draft_tokens_total": 45010.0,
+  "spec_accepted_tokens_total": 10003.0,
+  "spec_accepted_tokens_by_position": {
+    "0": 4436.0,
+    "1": 2673.0,
+    "2": 1409.0,
+    "3": 683.0,
+    "4": 395.0,
+    "5": 255.0,
+    "6": 152.0
+  },
+  "spec_token_acceptance_rate": 0.22223950233281492,
+  "spec_first_position_acceptance_rate": 0.689891135303266,
+  "spec_mean_accepted_tokens_per_draft": 1.5556765163297046
+}
+
+=== native log acceptance parse ===
+======================================================================
+Speculative Decoding Acceptance Analysis
+======================================================================
+
+Total samples: 24
+Total drafted tokens: 36967
+Average drafted tokens: 1540.29
+
+Weighted per-position acceptance rates:
+[0.763 0.483 0.298 0.2   0.148 0.119 0.082]
+
+Conditional acceptance rates:
+[0.763 0.633 0.616 0.671 0.743 0.799 0.693]
+======================================================================
+
+=== trained log acceptance parse ===
+======================================================================
+Speculative Decoding Acceptance Analysis
+======================================================================
+
+Total samples: 28
+Total drafted tokens: 45010
+Average drafted tokens: 1607.50
+
+Weighted per-position acceptance rates:
+[0.69  0.416 0.219 0.106 0.061 0.04  0.024]
+
+Conditional acceptance rates:
+[0.69  0.603 0.527 0.485 0.578 0.647 0.596]
+======================================================================
+
+=== Final comparison ===
+native completed:   128/128
+trained completed:  128/128
+native tok/s:       68.679
+trained tok/s:      59.762
+trained/native:     0.870
+native ref hit:     0.234
+trained ref hit:    0.234
+
+native DFlash spec metrics:
+  draft steps:      5333.000
+  draft tokens:     37331.000
+  accepted:         11159.000
+  token accept:     0.299
+  first-pos accept: 0.764
+  mean accept/draft:   2.092
+
+trained DFlash spec metrics:
+  draft steps:      6430.000
+  draft tokens:     45010.000
+  accepted:         10003.000
+  token accept:     0.222
+  first-pos accept: 0.690
+  mean accept/draft:   1.556
+
+accept-rate ratio:  0.743
+mean-accept ratio:  0.743
+
+VERDICT: NOT IMPROVED - trained DFlash did not beat native DFlash.
+
+Artifacts:
+  /data/wenxuan/speculators/output/mmstar_weight_tests/20260605_085038
+Stopping vLLM server pid=14066
+
+up is infer_spec = 7
+
+follow is infer_spec = 3
+Summary
+{
+  "endpoint": "http://localhost:8101/v1",
+  "model": "qwen3.5-9b-mmstar-weight-test",
+  "num_requested": 128,
+  "completed": 128,
+  "failed": 0,
+  "completion_tokens": 16384,
+  "wall_sec": 310.9146599759988,
+  "output_tok_per_sec": 52.69613211954937,
+  "mean_latency_sec": 2.4289330449134923,
+  "reference_contains_rate": 0.2265625,
+  "reference_count": 128,
+  "spec_metrics_delta": {
+    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\"}": 7218.0,
+    "vllm:spec_decode_num_drafts_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\"}": 0.0,
+    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\"}": 21654.0,
+    "vllm:spec_decode_num_draft_tokens_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\"}": 9160.0,
+    "vllm:spec_decode_num_accepted_tokens_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"0\"}": 4922.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"1\"}": 2752.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"2\"}": 1486.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"0\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"1\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"2\"}": 0.0
+  },
+  "spec_draft_steps_total": 7218.0,
+  "spec_draft_tokens_total": 21654.0,
+  "spec_accepted_tokens_total": 9160.0,
+  "spec_accepted_tokens_by_position": {
+    "0": 4922.0,
+    "1": 2752.0,
+    "2": 1486.0
+  },
+  "spec_token_acceptance_rate": 0.4230165327422185,
+  "spec_first_position_acceptance_rate": 0.6819063452479911,
+  "spec_mean_accepted_tokens_per_draft": 1.2690495982266556
+}
+
+=== native log acceptance parse ===
+======================================================================
+Speculative Decoding Acceptance Analysis
+======================================================================
+
+Total samples: 28
+Total drafted tokens: 18669
+Average drafted tokens: 666.75
+
+Weighted per-position acceptance rates:
+[0.777 0.519 0.335]
+
+Conditional acceptance rates:
+[0.777 0.667 0.647]
+======================================================================
+
+=== trained log acceptance parse ===
+======================================================================
+Speculative Decoding Acceptance Analysis
+======================================================================
+
+Total samples: 31
+Total drafted tokens: 21318
+Average drafted tokens: 687.68
+
+Weighted per-position acceptance rates:
+[0.682 0.381 0.206]
+
+Conditional acceptance rates:
+[0.682 0.559 0.541]
+======================================================================
+
+=== Final comparison ===
+native completed:   128/128
+trained completed:  128/128
+native tok/s:       59.322
+trained tok/s:      52.696
+trained/native:     0.888
+native ref hit:     0.227
+trained ref hit:    0.227
+
+native DFlash spec metrics:
+  draft steps:      6228.000
+  draft tokens:     18684.000
+  accepted:         10158.000
+  token accept:     0.544
+  first-pos accept: 0.777
+  mean accept/draft:   1.631
+
+trained DFlash spec metrics:
+  draft steps:      7218.000
+  draft tokens:     21654.000
+  accepted:         9160.000
+  token accept:     0.423
+  first-pos accept: 0.682
+  mean accept/draft:   1.269
+
+accept-rate ratio:  0.778
+mean-accept ratio:  0.778
+
+VERDICT: NOT IMPROVED - trained DFlash did not beat native DFlash.
+
+Artifacts:
+  /data/wenxuan/speculators/output/mmstar_weight_tests/20260605_090300
+Stopping vLLM server pid=16119
+
+
+
