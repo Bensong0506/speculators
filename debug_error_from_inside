@@ -1,47 +1,86 @@
-(Worker pid=4846) ERROR 06-04 12:04:29 [multiproc_executor.py:870] RuntimeError: The NVIDIA driver on your system is too old (found version 12040). Please update your GPU driver by downloading and installing a new version from the URL: http://www.nvidia.com/Download/index.aspx Alternatively, go to: https://pytorch.org to install a PyTorch version that has been compiled with your version of the CUDA driver.
-(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870] WorkerProc failed to start.
-(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870] Traceback (most recent call last):
-(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 837, in worker_main
-(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     worker = WorkerProc(*args, **kwargs)
-(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
-(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     return func(*args, **kwargs)
-(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]            ^^^^^^^^^^^^^^^^^^^^^
-(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 611, in __init__
-(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     self.worker.init_device()
-(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/worker_base.py", line 325, in init_device
-(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     self.worker.init_device()  # type: ignore
-(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     ^^^^^^^^^^^^^^^^^^^^^^^^^
-(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
-(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     return func(*args, **kwargs)
-(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]            ^^^^^^^^^^^^^^^^^^^^^
-(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu_worker.py", line 272, in init_device
-(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     torch.accelerator.set_device_index(self.device)
-(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/torch/accelerator/__init__.py", line 191, in set_device_index
-(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     torch._C._accelerator_setDeviceIndex(device_index)
-(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py", line 478, in _lazy_init
-(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     torch._C._cuda_init()
-(Worker pid=4847) ERROR 06-04 12:04:29 [multiproc_executor.py:870] RuntimeError: The NVIDIA driver on your system is too old (found version 12040). Please update your GPU driver by downloading and installing a new version from the URL: http://www.nvidia.com/Download/index.aspx Alternatively, go to: https://pytorch.org to install a PyTorch version that has been compiled with your version of the CUDA driver.
-(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870] WorkerProc failed to start.
-(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870] Traceback (most recent call last):
-(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 837, in worker_main
-(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     worker = WorkerProc(*args, **kwargs)
-(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
-(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     return func(*args, **kwargs)
-(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]            ^^^^^^^^^^^^^^^^^^^^^
-(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 611, in __init__
-(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     self.worker.init_device()
-(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/worker_base.py", line 325, in init_device
-(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     self.worker.init_device()  # type: ignore
-(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     ^^^^^^^^^^^^^^^^^^^^^^^^^
-(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
-(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     return func(*args, **kwargs)
-(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]            ^^^^^^^^^^^^^^^^^^^^^
-(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu_worker.py", line 272, in init_device
-(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     torch.accelerator.set_device_index(self.device)
-(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/torch/accelerator/__init__.py", line 191, in set_device_index
-(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     torch._C._accelerator_setDeviceIndex(device_index)
-(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py", line 478, in _lazy_init
-(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870]     torch._C._cuda_init()
-(Worker pid=4845) ERROR 06-04 12:04:29 [multiproc_executor.py:870] RuntimeError: The NVIDIA driver on your system is too old (found version 12040). Please update your GPU driver by downloading and installing a new version from the URL: http://www.nvidia.com/Download/index.aspx Alternatively, go to: https://pytorch.org to install a PyTorch version that has been compiled with your version of the CUDA driver.
+del may not be usable for inference in vLLM. Consider using 'llama' (the default) for full vLLM compatibility.
+  transformer_layer_config = create_transformer_layer_config(
+           INFO     Using explicit mask_token_id=248070              utils.py:76
+Loading weights: 100%|██████████| 60/60 [00:00<00:00, 11799.43it/s]
+Loading weights: 100%|██████████| 60/60 [00:00<00:00, 12537.78it/s]
+Loading weights: 100%|██████████| 60/60 [00:00<00:00, 11499.12it/s]
+Loading weights: 100%|██████████| 60/60 [00:00<00:00, 11174.38it/s]
+[transformers] DFlashDraftModel LOAD REPORT from: /data/wenxuan/Qwen3.5-9B-DFlash-spec
+Key                     | Status  | 
+------------------------+---------+-
+verifier_lm_head.weight | MISSING | 
+
+Notes:
+- MISSING:      those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[transformers] DFlashDraftModel LOAD REPORT from: /data/wenxuan/Qwen3.5-9B-DFlash-spec
+Key                     | Status  | 
+------------------------+---------+-
+verifier_lm_head.weight | MISSING | 
+
+Notes:
+- MISSING:      those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[transformers] DFlashDraftModel LOAD REPORT from: /data/wenxuan/Qwen3.5-9B-DFlash-spec
+Key                     | Status  | 
+------------------------+---------+-
+verifier_lm_head.weight | MISSING | 
+
+Notes:
+- MISSING:      those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[transformers] DFlashDraftModel LOAD REPORT from: /data/wenxuan/Qwen3.5-9B-DFlash-spec
+Key                     | Status  | 
+------------------------+---------+-
+verifier_lm_head.weight | MISSING | 
+
+Notes:
+- MISSING:      those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-06-05 02:40:54.062 | INFO     | speculators.utils.loading:_resolve_file:89 - Loading from huggingface directory: /home/models/Qwen3.5-9B: model.safetensors.index.json
+2026-06-05 02:40:54.062 | INFO     | speculators.utils.loading:_resolve_file:89 - Loading from huggingface directory: /home/models/Qwen3.5-9B: model.safetensors.index.json
+2026-06-05 02:40:54.062 | INFO     | speculators.utils.loading:_resolve_file:89 - Loading from huggingface directory: /home/models/Qwen3.5-9B: model.safetensors.index.json
+2026-06-05 02:40:54.062 | INFO     | speculators.utils.loading:_resolve_file:89 - Loading from huggingface directory: /home/models/Qwen3.5-9B: model.safetensors.index.json
+[rank1]: Traceback (most recent call last):
+[rank1]:   File "/data/wenxuan/speculators/scripts/train.py", line 855, in <module>
+[rank1]:     main(args)
+[rank1]:   File "/data/wenxuan/speculators/scripts/train.py", line 382, in main
+[rank1]:     draft_model = model_class.from_pretrained(
+[rank1]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/data/wenxuan/speculators/src/speculators/model.py", line 361, in from_pretrained
+[rank1]:     model.load_verifier_weights()  # type: ignore[operator,attr-defined]
+[rank1]:     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/data/wenxuan/speculators/src/speculators/model.py", line 150, in load_verifier_weights
+[rank1]:     verifier_weights = load_model_layers(
+[rank1]:                        ^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/data/wenxuan/speculators/src/speculators/utils/loading.py", line 27, in load_model_layers
+[rank1]:     index_file = _resolve_file(model_path, "model.safetensors.index.json")
+[rank1]:                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/data/wenxuan/speculators/src/speculators/utils/loading.py", line 90, in _resolve_file
+[rank1]:     return Path(hf_hub_download(repo_id=model_path, filename=file_name))
+[rank1]:                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/dist-packages/huggingface_hub/utils/_validators.py", line 84, in _inner_fn
+[rank1]:     validate_repo_id(arg_value)
+[rank1]:   File "/usr/local/lib/python3.12/dist-packages/huggingface_hub/utils/_validators.py", line 132, in validate_repo_id
+[rank1]:     raise HFValidationError(
+[rank1]: huggingface_hub.errors.HFValidationError: Repo id must be in the form 'repo_name' or 'namespace/repo_name': '/home/models/Qwen3.5-9B'. Use `repo_type` argument if needed.
+[rank2]: Traceback (most recent call last):
+[rank2]:   File "/data/wenxuan/speculators/scripts/train.py", line 855, in <module>
+[rank2]:     main(args)
+[rank2]:   File "/data/wenxuan/speculators/scripts/train.py", line 382, in main
+[rank2]:     draft_model = model_class.from_pretrained(
+[rank2]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/data/wenxuan/speculators/src/speculators/model.py", line 361, in from_pretrained
+[rank2]:     model.load_verifier_weights()  # type: ignore[operator,attr-defined]
+[rank2]:     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/data/wenxuan/speculators/src/speculators/model.py", line 150, in load_verifier_weights
+[rank2]:     verifier_weights = load_model_layers(
+[rank2]:                        ^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/data/wenxuan/speculators/src/speculators/utils/loading.py", line 27, in load_model_layers
+[rank2]:     index_file = _resolve_file(model_path, "model.safetensors.index.json")
+[rank2]:                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/data/wenxuan/speculators/src/speculators/utils/loading.py", line 90, in _resolve_file
+[rank2]:     return Path(hf_hub_download(repo_id=model_path, filename=file_name))
+[rank2]:                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/dist-packages/huggingface_hub/utils/_validators.py", line 84, in _inner_fn
+[rank2]:     validate_repo_id(arg_value)
+[rank2]:   File "/usr/local/lib/python3.12/dist-packages/huggingface_hub/utils/_validators.py", line 132, in validate_repo_id
+[rank2]:     raise HFValidationError(
+[rank2]: huggingface_hub.errors.HFValidationError: Repo id must be in the form 'repo_name' or 'namespace/repo_name': '/home/models/Qwen3.5-9B'. Use `repo_type` argument if needed.
+[rank3]: Traceback (most recent call last):
