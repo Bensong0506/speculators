@@ -162,10 +162,6 @@ wait_for_server() {
     local mode="$3"
     echo "Waiting for $mode server on :$port (log: $log)"
     for _ in $(seq 1 180); do
-        if curl -sf "http://localhost:${port}/health" >/dev/null 2>&1; then
-            echo "$mode server ready."
-            return 0
-        fi
         if ! kill -0 "$SERVER_PID" 2>/dev/null; then
             echo "ERROR: $mode vLLM server died during startup. Last 80 log lines:"
             tail -n 80 "$log" || true
@@ -175,6 +171,10 @@ wait_for_server() {
                 echo "DIAGNOSIS: this vLLM build likely lacks multimodal/M-RoPE spec support."
             fi
             return 1
+        fi
+        if curl -sf "http://localhost:${port}/health" >/dev/null 2>&1; then
+            echo "$mode server ready."
+            return 0
         fi
         sleep 5
     done
@@ -189,6 +189,11 @@ start_server() {
     local log="$3"
 
     cleanup_server
+    if curl -sf "http://localhost:${port}/health" >/dev/null 2>&1; then
+        echo "ERROR: port $port already has a healthy server before starting $mode."
+        echo "       Stop the old vLLM process or choose a different port."
+        return 1
+    fi
 
     local args=(
         vllm serve "$MODEL"
@@ -288,6 +293,7 @@ def fmt(value, suffix=""):
 b_tps = baseline.get("output_tok_per_sec")
 d_tps = dflash.get("output_tok_per_sec")
 speedup = d_tps / b_tps if b_tps and d_tps else None
+baseline_draft_tokens = baseline.get("spec_draft_tokens_total", 0) or 0
 
 print(f"baseline completed: {baseline['completed']}/{baseline['num_requested']}")
 print(f"dflash completed:   {dflash['completed']}/{dflash['num_requested']}")
@@ -296,6 +302,7 @@ print(f"dflash tok/s:       {fmt(d_tps)}")
 print(f"speedup:            {fmt(speedup)}")
 print(f"baseline ref hit:   {fmt(baseline.get('reference_contains_rate'))}")
 print(f"dflash ref hit:     {fmt(dflash.get('reference_contains_rate'))}")
+print(f"baseline draft tok: {fmt(baseline_draft_tokens)}")
 print(f"spec draft steps:   {fmt(dflash.get('spec_draft_steps_total'))}")
 print(f"spec draft tokens:  {fmt(dflash.get('spec_draft_tokens_total'))}")
 print(f"spec accepted:      {fmt(dflash.get('spec_accepted_tokens_total'))}")
@@ -304,7 +311,10 @@ print(f"first-pos accept:   {fmt(dflash.get('spec_first_position_acceptance_rate
 print(f"mean accept/draft:  {fmt(dflash.get('spec_mean_accepted_tokens_per_draft'))}")
 
 print()
-if dflash["completed"] == 0:
+if baseline_draft_tokens > 0:
+    print("VERDICT: BAD - baseline emitted speculative draft metrics.")
+    print("         Baseline is not a clean no-draft run; check baseline_vllm.log.")
+elif dflash["completed"] == 0:
     print("VERDICT: BAD - dflash server accepted no requests.")
 elif dflash.get("spec_draft_tokens_total", 0) <= 0:
     print("VERDICT: INCONCLUSIVE - dflash served, but /metrics did not show draft counters.")
