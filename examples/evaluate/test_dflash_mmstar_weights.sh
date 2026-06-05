@@ -3,7 +3,7 @@
 #
 # This script answers a narrow question: "did my continued-training DFlash
 # checkpoint improve over the native/downloaded DFlash checkpoint?" It runs two
-# DFlash servers, native baseline then trained candidate, against the same
+# DFlash servers, native/raw baseline then trained candidate, against the same
 # MMStar prompts and writes all outputs under RUN_DIR.
 #
 # Usage:
@@ -97,10 +97,16 @@ if not weights_path.exists():
     )
 
 cfg = json.loads(cfg_path.read_text())
-if cfg.get("speculators_model_type") != "dflash":
+speculators_type = cfg.get("speculators_model_type")
+is_speculators_dflash = speculators_type == "dflash"
+is_raw_dflash = bool(cfg.get("dflash_config")) and bool(cfg.get("block_size"))
+if not is_speculators_dflash and not (label == "native" and is_raw_dflash):
     raise SystemExit(
-        "[fatal] checkpoint is not a speculators DFlash model: "
-        f"speculators_model_type={cfg.get('speculators_model_type')!r}"
+        f"[fatal] {label} checkpoint is not an accepted DFlash model: {draft}\n"
+        f"        speculators_model_type={speculators_type!r}, "
+        f"has_dflash_config={bool(cfg.get('dflash_config'))}.\n"
+        "        Native baseline may be raw/z-lab DFlash; trained candidate must "
+        "be speculators-format DFlash."
     )
 
 aux = cfg.get("aux_hidden_state_layer_ids") or cfg.get("dflash_config", {}).get(
@@ -146,6 +152,7 @@ if verifier and verifier != model:
 
 print(f"Checkpoint sanity OK ({label})")
 print(f"  draft:      {draft}")
+print(f"  format:     {'speculators' if is_speculators_dflash else 'raw'}")
 print(f"  block_size: {block}")
 print(f"  num_spec:   {max(0, block - 1)}")
 print(f"  aux_layers: {aux}")
