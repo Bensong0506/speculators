@@ -296,20 +296,26 @@ print(f"dflash tok/s:       {fmt(d_tps)}")
 print(f"speedup:            {fmt(speedup)}")
 print(f"baseline ref hit:   {fmt(baseline.get('reference_contains_rate'))}")
 print(f"dflash ref hit:     {fmt(dflash.get('reference_contains_rate'))}")
-print(f"spec drafted-like:  {fmt(dflash.get('spec_drafted_like_total'))}")
-print(f"spec accepted-like: {fmt(dflash.get('spec_accepted_like_total'))}")
-print(f"spec accept-like:   {fmt(dflash.get('spec_acceptance_like_rate'))}")
+print(f"spec draft steps:   {fmt(dflash.get('spec_draft_steps_total'))}")
+print(f"spec draft tokens:  {fmt(dflash.get('spec_draft_tokens_total'))}")
+print(f"spec accepted:      {fmt(dflash.get('spec_accepted_tokens_total'))}")
+print(f"token accept rate:  {fmt(dflash.get('spec_token_acceptance_rate'))}")
+print(f"first-pos accept:   {fmt(dflash.get('spec_first_position_acceptance_rate'))}")
+print(f"mean accept/draft:  {fmt(dflash.get('spec_mean_accepted_tokens_per_draft'))}")
 
 print()
 if dflash["completed"] == 0:
     print("VERDICT: BAD - dflash server accepted no requests.")
-elif dflash.get("spec_drafted_like_total", 0) <= 0:
+elif dflash.get("spec_draft_tokens_total", 0) <= 0:
     print("VERDICT: INCONCLUSIVE - dflash served, but /metrics did not show draft counters.")
     print("         Check dflash_vllm.log and dflash_acceptance_from_log.txt.")
-elif dflash.get("spec_acceptance_like_rate") == 0:
+elif dflash.get("spec_accepted_tokens_total", 0) <= 0:
     print("VERDICT: SUSPICIOUS - draft counters advanced but no accepted draft tokens.")
+elif speedup is not None and speedup < 1.0:
+    print("VERDICT: LOADS BUT NOT EFFECTIVE - throughput regressed.")
+    print("         Draft acceptance is too low to pay for DFlash overhead.")
 else:
-    print("VERDICT: PASS SMOKE - checkpoint loads and DFlash accepts draft tokens.")
+    print("VERDICT: PASS - checkpoint loads and improves throughput on this run.")
     print("         Use speedup/ref-hit as quality signals, not as strict pass/fail.")
 PY
 

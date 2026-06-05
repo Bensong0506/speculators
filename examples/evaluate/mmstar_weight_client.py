@@ -111,13 +111,30 @@ def _metric_delta(
     return {key: value - before.get(key, 0.0) for key, value in after.items()}
 
 
-def _sum_matching(metrics: dict[str, float], *needles: str) -> float:
+def _metric_name(key: str) -> str:
+    return key.split("{", 1)[0]
+
+
+def _sum_metric(metrics: dict[str, float], name: str) -> float:
     total = 0.0
     for key, value in metrics.items():
-        lowered = key.lower()
-        if all(needle in lowered for needle in needles):
+        if _metric_name(key) == name:
             total += value
     return total
+
+
+def _sum_pos_metric(metrics: dict[str, float], name: str) -> dict[int, float]:
+    totals: dict[int, float] = {}
+    pattern = re.compile(r'position="(\d+)"')
+    for key, value in metrics.items():
+        if _metric_name(key) != name:
+            continue
+        match = pattern.search(key)
+        if not match:
+            continue
+        pos = int(match.group(1))
+        totals[pos] = totals.get(pos, 0.0) + value
+    return totals
 
 
 def _build_content(image: str | None, text: str) -> list[dict[str, Any]]:
@@ -227,9 +244,23 @@ def main() -> None:  # noqa: C901
     wall_sec = time.perf_counter() - wall_start
     after_metrics = scrape_metrics(args.endpoint)
     spec_delta = _metric_delta(before_metrics, after_metrics)
-    accepted = _sum_matching(spec_delta, "accept")
-    drafted = _sum_matching(spec_delta, "draft")
-    acceptance_rate = accepted / drafted if drafted > 0 else None
+    draft_steps = _sum_metric(spec_delta, "vllm:spec_decode_num_drafts_total")
+    draft_tokens = _sum_metric(spec_delta, "vllm:spec_decode_num_draft_tokens_total")
+    accepted_tokens = _sum_metric(
+        spec_delta, "vllm:spec_decode_num_accepted_tokens_total"
+    )
+    accepted_by_pos = _sum_pos_metric(
+        spec_delta, "vllm:spec_decode_num_accepted_tokens_per_pos_total"
+    )
+    token_acceptance_rate = (
+        accepted_tokens / draft_tokens if draft_tokens > 0 else None
+    )
+    first_position_acceptance_rate = (
+        accepted_by_pos.get(0, 0.0) / draft_steps if draft_steps > 0 else None
+    )
+    mean_accepted_tokens_per_draft = (
+        accepted_tokens / draft_steps if draft_steps > 0 else None
+    )
 
     summary: dict[str, Any] = {
         "endpoint": args.endpoint,
@@ -248,9 +279,13 @@ def main() -> None:  # noqa: C901
         ),
         "reference_count": ref_count,
         "spec_metrics_delta": spec_delta,
-        "spec_accepted_like_total": accepted,
-        "spec_drafted_like_total": drafted,
-        "spec_acceptance_like_rate": acceptance_rate,
+        "spec_draft_steps_total": draft_steps,
+        "spec_draft_tokens_total": draft_tokens,
+        "spec_accepted_tokens_total": accepted_tokens,
+        "spec_accepted_tokens_by_position": accepted_by_pos,
+        "spec_token_acceptance_rate": token_acceptance_rate,
+        "spec_first_position_acceptance_rate": first_position_acceptance_rate,
+        "spec_mean_accepted_tokens_per_draft": mean_accepted_tokens_per_draft,
     }
     args.summary_json.write_text(json.dumps(summary, indent=2), encoding="utf-8")
 
