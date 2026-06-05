@@ -4,10 +4,10 @@
 # speculators format for true warm-start (need its weight-key names).
 #
 #   bash examples/train/dump_ckpt_keys.sh                       # default z-lab path
-#   CKPT=/home/models/Qwen3.5-9B-DFlash bash examples/train/dump_ckpt_keys.sh
+#   CKPT=/data/wenxuan/Qwen3.5-9B-DFlash bash examples/train/dump_ckpt_keys.sh
 
 set -uo pipefail
-CKPT="${CKPT:-/home/models/Qwen3.5-9B-DFlash}"
+CKPT="${CKPT:-/data/wenxuan/Qwen3.5-9B-DFlash}"
 
 echo "=== checkpoint dir: $CKPT ==="
 ls -la "$CKPT" 2>/dev/null

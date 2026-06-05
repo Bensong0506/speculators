@@ -14,7 +14,7 @@ set -euo pipefail
 
 PORT="${PORT:-8100}"
 SERVED="${SERVED:-qwen3.5-9b}"                 # must equal --served-model-name
-IMAGE="${IMAGE:-/home/wenxuan/mmstar/images/mmstar_000000.jpg}"  # must be under --allowed-local-media-path
+IMAGE="${IMAGE:-/data/wenxuan/mmstar/images/mmstar_000000.jpg}"  # must be under --allowed-local-media-path
 PROMPT="${PROMPT:-描述这张图}"
 MAX_TOKENS="${MAX_TOKENS:-128}"
 TEMPERATURE="${TEMPERATURE:-0}"     # greedy → fair speculative-acceptance read

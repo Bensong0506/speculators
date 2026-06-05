@@ -159,6 +159,22 @@ def override_loaded_dflash_knobs(draft_model, args: argparse.Namespace):
             proposal_method.speculative_tokens = args.block_size - 1
 
 
+def load_pretrained_config_with_current_verifier(model_class, args: argparse.Namespace):
+    config = model_class.config_class.from_pretrained(args.from_pretrained)
+    speculators_config = getattr(config, "speculators_config", None)
+    verifier_config = getattr(speculators_config, "verifier", None)
+    if verifier_config is not None:
+        loaded_path = getattr(verifier_config, "name_or_path", None)
+        if loaded_path != args.verifier_name_or_path:
+            logger.info(
+                "Overriding pretrained verifier path: %s -> %s",
+                loaded_path,
+                args.verifier_name_or_path,
+            )
+            verifier_config.name_or_path = args.verifier_name_or_path
+    return config
+
+
 def create_transformer_layer_config(  # noqa: C901
     verifier_name_or_path: str,
     num_layers: int,
@@ -379,8 +395,14 @@ def main(args: argparse.Namespace):
     model_class = registry[args.speculator_type]
 
     if args.from_pretrained:
+        pretrained_config = load_pretrained_config_with_current_verifier(
+            model_class, args
+        )
         draft_model = model_class.from_pretrained(
-            args.from_pretrained, t2d=t2d, d2t=d2t
+            args.from_pretrained,
+            config=pretrained_config,
+            t2d=t2d,
+            d2t=d2t,
         )
         override_loaded_dflash_knobs(draft_model, args)
     else:

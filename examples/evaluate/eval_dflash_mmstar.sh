@@ -15,10 +15,10 @@
 set -euo pipefail
 
 # ===================== CONFIG — EDIT THESE ============================
-MODEL="/home/models/Qwen3.5-9B"
+MODEL="/data/wenxuan/Qwen3.5-9B"
 SPECULATOR="$(pwd)/output/dflash_qwen3.5_9b_mm/checkpoints/checkpoint_best"
 DATA_JSONL="$(pwd)/data/mmstar/mmstar.jsonl"   # prompts (image+text) come from here
-MEDIA_ROOT="/home/wenxuan/mmstar/images"        # vLLM may read images under this dir
+MEDIA_ROOT="/data/wenxuan/mmstar/images"        # vLLM may read images under this dir
 
 GPUS="0"                 # GPUs for the eval server (1 card holds a 9B fine)
 TP=1                     # tensor-parallel size; bump (and add GPUs) if it OOMs

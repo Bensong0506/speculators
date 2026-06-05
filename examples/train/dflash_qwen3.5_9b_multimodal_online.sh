@@ -66,12 +66,12 @@ MEDIA_ROOT="${MEDIA_ROOT:-$COCO_DIR}"
 USE_MMSTAR="${USE_MMSTAR:-0}"   # smoke test only; set 1 (and USE_ALLAVA=0) to use it
 # A JSON/JSONL of records with image FILE PATHS (a pre-extracted dump), or a HF
 # MMStar dataset dir/parquet/id (inline images get extracted automatically).
-MMSTAR_SRC="${MMSTAR_SRC:-/home/wenxuan/mmstar/mmstar_answers.json}"
+MMSTAR_SRC="${MMSTAR_SRC:-/data/wenxuan/mmstar/mmstar_answers.json}"
 MMSTAR_SPLIT="${MMSTAR_SPLIT:-val}"
 # Folder vLLM is allowed to read images from (must be a prefix of the image
 # paths). For the json-with-paths case set it to your images dir; leave EMPTY
 # for the HF-extract case (the extraction dir is used instead).
-MMSTAR_MEDIA_ROOT="${MMSTAR_MEDIA_ROOT:-/home/wenxuan/mmstar/images}"
+MMSTAR_MEDIA_ROOT="${MMSTAR_MEDIA_ROOT:-/data/wenxuan/mmstar/images}"
 
 # Option D (REAL training): ALLaVA-4V (or any LLaVA-style json). Step 0 converts
 # it to a conversations jsonl via scripts/llava_to_jsonl.py. Set the paths below.

@@ -14,10 +14,10 @@
 
 set -euo pipefail
 
-MODEL_PATH="${MODEL_PATH:-/home/models/Qwen3.5-9B}"
-DRAFT="${DRAFT:-/home/wenxuan/speculators/output/dflash_qwen3.5_9b_mm/checkpoints/checkpoint_best}"
+MODEL_PATH="${MODEL_PATH:-/data/wenxuan/Qwen3.5-9B}"
+DRAFT="${DRAFT:-/data/wenxuan/speculators/output/dflash_qwen3.5_9b_mm/checkpoints/checkpoint_best}"
 NUM_SPEC_TOKENS="${NUM_SPEC_TOKENS:-7}"           # trained block_size=8 -> 7
-MM_MEDIA_DIR="${MM_MEDIA_DIR:-/home/wenxuan/mmstar/images}"   # must contain images
+MM_MEDIA_DIR="${MM_MEDIA_DIR:-/data/wenxuan/mmstar/images}"   # must contain images
 MAX_IMAGES="${MAX_IMAGES:-40}"
 MAX_MODEL_LEN="${MAX_MODEL_LEN:-32768}"   # must be <= max-num-batched-tokens (chunked prefill is off)
 CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}"

@@ -11,8 +11,8 @@
 
 set -euo pipefail
 
-MODEL_PATH="${MODEL_PATH:-/home/models/Qwen3.5-9B}"
-DRAFT="${DRAFT:-/home/wenxuan/speculators/output/dflash_qwen3.5_9b_mm/checkpoints/checkpoint_best}"
+MODEL_PATH="${MODEL_PATH:-/data/wenxuan/Qwen3.5-9B}"
+DRAFT="${DRAFT:-/data/wenxuan/speculators/output/dflash_qwen3.5_9b_mm/checkpoints/checkpoint_best}"
 NUM_SPEC_TOKENS="${NUM_SPEC_TOKENS:-7}"          # we trained block_size=8 -> 7
 CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}"
 PORT="${PORT:-8100}"
@@ -34,6 +34,6 @@ exec vllm serve "$MODEL_PATH" \
   --port "$PORT"
 # To test with IMAGES, append these to the line above and curl with an image_url
 # whose path is under the allowed dir:
-#   --allowed-local-media-path /home/wenxuan/multimodel_test \
+#   --allowed-local-media-path /data/wenxuan/multimodel_test \
 #   --limit-mm-per-prompt '{"image":40}' \
 #   --trust-remote-code

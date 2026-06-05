@@ -19,7 +19,7 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 
 # ===== model + device config (EDIT THESE) =====
-export MODEL_PATH="${MODEL_PATH:-/home/models/Qwen3.5-9B}"
+export MODEL_PATH="${MODEL_PATH:-/data/wenxuan/Qwen3.5-9B}"
 # DFlash draft = OUR trained speculator checkpoint (swap in a published one,
 # e.g. z-lab/Qwen3.5-9B-DFlash, by overriding DFLASH_DRAFT_PATH).
 export DFLASH_DRAFT_PATH="${DFLASH_DRAFT_PATH:-$(pwd)/output/dflash_qwen3.5_9b_mm/checkpoints/checkpoint_best}"
@@ -28,7 +28,7 @@ export SERVED_MODEL_NAME="${SERVED_MODEL_NAME:-qwen3.5-9b}"
 export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}"
 export TP="${TP:-1}"
 export VLLM_PORT="${VLLM_PORT:-8100}"
-export MM_MEDIA_DIR="${MM_MEDIA_DIR:-/home/wenxuan/multimodel_test}"  # allowed image dir
+export MM_MEDIA_DIR="${MM_MEDIA_DIR:-/data/wenxuan/multimodel_test}"  # allowed image dir
 
 # ===== run mode =====
 RUN_MODE="${RUN_MODE:-baseline}"     # baseline | mtp | dflash

@@ -21,10 +21,10 @@ cd "$(dirname "$0")/../.."   # repo root, so the python path below resolves
 ENDPOINT="${ENDPOINT:-http://localhost:8100/v1}"
 
 # Images MUST live under the server's --allowed-local-media-path. Your launcher
-# uses MM_MEDIA_DIR=/home/wenxuan/multimodel_test, so point IMAGE_DIR there.
-# (To eval on MMStar instead, serve with MM_MEDIA_DIR=/home/wenxuan/mmstar/images
+# uses MM_MEDIA_DIR=/data/wenxuan/multimodel_test, so point IMAGE_DIR there.
+# (To eval on MMStar instead, serve with MM_MEDIA_DIR=/data/wenxuan/mmstar/images
 #  and set DATA_JSONL=.../data/mmstar/mmstar.jsonl below.)
-IMAGE_DIR="${IMAGE_DIR:-/home/wenxuan/multimodel_test}"
+IMAGE_DIR="${IMAGE_DIR:-/data/wenxuan/multimodel_test}"
 DATA_JSONL="${DATA_JSONL:-}"          # set this to use a conversations jsonl instead
 QUESTION="${QUESTION:-Describe this image in detail.}"
 NUM="${NUM:-32}"
