@@ -35,7 +35,7 @@ set -euo pipefail
 
 # --- 1) Verifier (target) multimodal model --------------------------------
 # Local path on the A800 box (or HF id). Must be a VLM, e.g. your Qwen3.5-9B.
-MODEL="${MODEL:-/home/models/Qwen3.5-9B}"
+MODEL="${MODEL:-/data/wenxuan/Qwen3.5-9B}"
 
 # Some VLM processors/configs need remote code. Set to 1 if loading fails
 # with "trust_remote_code" errors; harmless to leave on for Qwen-VL.
@@ -77,7 +77,7 @@ MMSTAR_MEDIA_ROOT="${MMSTAR_MEDIA_ROOT:-/home/wenxuan/mmstar/images}"
 # it to a conversations jsonl via scripts/llava_to_jsonl.py. Set the paths below.
 USE_ALLAVA="${USE_ALLAVA:-1}"
 # Dir that contains allava_laion/ , allava_vflan/ (where images.zip was extracted):
-ALLAVA_IMAGE_ROOT="${ALLAVA_IMAGE_ROOT:-/home/wenxuan_train_dflash/wenxuan/ALLaVA-4V}"
+ALLAVA_IMAGE_ROOT="${ALLAVA_IMAGE_ROOT:-/data/wenxuan/ALLaVA-4V}"
 # One or more ALLaVA json files, space-separated (caption + instruct subsets):
 ALLAVA_INPUTS="${ALLAVA_INPUTS:-$ALLAVA_IMAGE_ROOT/allava_laion/ALLaVA-Caption-LAION-4V.json $ALLAVA_IMAGE_ROOT/allava_laion/ALLaVA-Instruct-LAION-4V.json}"
 
@@ -131,7 +131,7 @@ NUM_LAYERS=5            # draft transformer layers (DFlash typically uses ~5)
 DRAFT_VOCAB_SIZE="${DRAFT_VOCAB_SIZE-32000}"  # empty = full vocab; default scratch uses reduced vocab
 
 # --- Warm-start (continue-training) from a pretrained DFlash --------------
-# Point at a DFlash checkpoint dir (e.g. /home/models/Qwen3.5-9B-DFlash) to
+# Point at a DFlash checkpoint dir (e.g. /data/wenxuan/Qwen3.5-9B-DFlash-spec) to
 # FINE-TUNE it instead of training from scratch. The block below reads its
 # config.json and auto-matches block_size / num_layers / draft_arch / aux
 # target-layer-ids / mask_token_id / FULL vocab. Empty = train from scratch.

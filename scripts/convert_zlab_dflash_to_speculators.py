@@ -12,9 +12,9 @@ z-lab's trained tensors on top, and save_pretrained -> a checkpoint that
 
 Usage:
     python3 scripts/convert_zlab_dflash_to_speculators.py \
-        --src /home/models/Qwen3.5-9B-DFlash \
-        --verifier /home/models/Qwen3.5-9B \
-        --out /home/models/Qwen3.5-9B-DFlash-spec
+        --src /data/wenxuan/Qwen3.5-9B-DFlash \
+        --verifier /data/wenxuan/Qwen3.5-9B \
+        --out /data/wenxuan/Qwen3.5-9B-DFlash-spec
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ from pathlib import Path
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--src", required=True, help="z-lab DFlash checkpoint dir")
-    ap.add_argument("--verifier", required=True, help="verifier dir (e.g. /home/models/Qwen3.5-9B)")
+    ap.add_argument("--verifier", required=True, help="verifier dir (e.g. /data/wenxuan/Qwen3.5-9B)")
     ap.add_argument("--out", required=True, help="output dir (speculators format)")
     args = ap.parse_args()
 
