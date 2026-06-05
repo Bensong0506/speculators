@@ -41,6 +41,7 @@ BASELINE_PORT="${BASELINE_PORT:-8100}"
 DFLASH_PORT="${DFLASH_PORT:-8101}"
 MAX_MODEL_LEN="${MAX_MODEL_LEN:-8192}"
 MAX_NUM_BATCHED_TOKENS="${MAX_NUM_BATCHED_TOKENS:-$MAX_MODEL_LEN}"
+MAX_NUM_SEQS="${MAX_NUM_SEQS:-16}"
 GPU_MEMORY_UTIL="${GPU_MEMORY_UTIL:-0.85}"
 NUM_PROMPTS="${NUM_PROMPTS:-128}"
 MAX_TOKENS="${MAX_TOKENS:-128}"
@@ -178,8 +179,11 @@ wait_for_server() {
         if ! kill -0 "$SERVER_PID" 2>/dev/null; then
             echo "ERROR: $mode vLLM server died during startup. Last 80 log lines:"
             tail -n 80 "$log" || true
-            if grep -qiE "unknown.*dflash|method.*dflash" "$log"; then
+            if grep -qiE "unknown.*dflash|unsupported.*dflash|unrecognized.*dflash" "$log"; then
                 echo "DIAGNOSIS: this vLLM build does not have DFlash inference."
+            elif grep -qiE "max_num_scheduled_tokens|additional draft token slots" "$log"; then
+                echo "DIAGNOSIS: vLLM speculative scheduling budget is too small."
+                echo "           Lower MAX_NUM_SEQS/MAX_SPEC tokens, or raise MAX_NUM_BATCHED_TOKENS."
             elif grep -qiE "m-?rope|multimodal.*spec|does not support" "$log"; then
                 echo "DIAGNOSIS: this vLLM build likely lacks multimodal/M-RoPE spec support."
             fi
@@ -217,6 +221,7 @@ start_server() {
         --tensor-parallel-size "$TP"
         --max-model-len "$MAX_MODEL_LEN"
         --max-num-batched-tokens "$MAX_NUM_BATCHED_TOKENS"
+        --max-num-seqs "$MAX_NUM_SEQS"
         --gpu-memory-utilization "$GPU_MEMORY_UTIL"
         --trust-remote-code
         --allowed-local-media-path "$MEDIA_ROOT"
@@ -244,6 +249,7 @@ start_server() {
     echo "  num_spec:   $spec_tokens"
     echo "  port:       $port"
     echo "  devices:    $GPUS"
+    echo "  max seqs:   $MAX_NUM_SEQS"
     echo "  media_root: $MEDIA_ROOT"
     echo "  log:        $log"
     printf '[cmd]'
