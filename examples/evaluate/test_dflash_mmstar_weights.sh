@@ -1,15 +1,16 @@
 #!/bin/bash
-# End-to-end MMStar smoke test for a trained Qwen3.5-9B DFlash checkpoint.
+# End-to-end MMStar comparison for Qwen3.5-9B DFlash checkpoints.
 #
-# This script answers a narrow question: "does my trained draft checkpoint load,
-# run as a DFlash speculator, and produce non-trivial acceptance on held-out
-# multimodal prompts?" It runs two servers, baseline then dflash, against the
-# same MMStar prompts and writes all outputs under RUN_DIR.
+# This script answers a narrow question: "did my continued-training DFlash
+# checkpoint improve over the native/downloaded DFlash checkpoint?" It runs two
+# DFlash servers, native baseline then trained candidate, against the same
+# MMStar prompts and writes all outputs under RUN_DIR.
 #
 # Usage:
 #   bash examples/evaluate/test_dflash_mmstar_weights.sh
 #
 # Common overrides:
+#   BASELINE_DRAFT=/data/wenxuan/Qwen3.5-9B-DFlash-spec \
 #   DRAFT=/path/to/checkpoint_best \
 #   MMSTAR_SRC=/data/wenxuan/mmstar/mmstar_answers.json \
 #   NUM_PROMPTS=128 \
@@ -24,6 +25,7 @@ cd "$REPO_ROOT"
 STAMP="$(date +%Y%m%d_%H%M%S)"
 
 MODEL="${MODEL:-/data/wenxuan/Qwen3.5-9B}"
+BASELINE_DRAFT="${BASELINE_DRAFT:-/data/wenxuan/Qwen3.5-9B-DFlash-spec}"
 MMSTAR_SRC="${MMSTAR_SRC:-/data/wenxuan/mmstar/mmstar_answers.json}"
 MMSTAR_JSONL="${MMSTAR_JSONL:-$REPO_ROOT/data/mmstar/mmstar_eval.jsonl}"
 MMSTAR_IMAGE_DIR="${MMSTAR_IMAGE_DIR:-$REPO_ROOT/data/mmstar/images}"
@@ -67,7 +69,9 @@ cleanup_server() {
 trap cleanup_server EXIT
 
 checkpoint_json() {
-    python3 - "$MODEL" "$DRAFT" <<'PY'
+    local label="$1"
+    local draft_path="$2"
+    python3 - "$MODEL" "$draft_path" "$label" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -76,15 +80,18 @@ from safetensors import safe_open
 
 model = sys.argv[1]
 draft = Path(sys.argv[2])
+label = sys.argv[3]
 if not draft.exists():
-    raise SystemExit(f"[fatal] DRAFT does not exist: {draft}")
+    raise SystemExit(f"[fatal] {label} DFlash draft does not exist: {draft}")
 
 cfg_path = draft / "config.json"
 weights_path = draft / "model.safetensors"
 if not cfg_path.exists():
-    raise SystemExit(f"[fatal] missing config.json under DRAFT: {draft}")
+    raise SystemExit(f"[fatal] missing config.json under {label} DFlash draft: {draft}")
 if not weights_path.exists():
-    raise SystemExit(f"[fatal] missing model.safetensors under DRAFT: {draft}")
+    raise SystemExit(
+        f"[fatal] missing model.safetensors under {label} DFlash draft: {draft}"
+    )
 
 cfg = json.loads(cfg_path.read_text())
 if cfg.get("speculators_model_type") != "dflash":
@@ -127,9 +134,9 @@ if not layer_keys:
     raise SystemExit("[fatal] no draft layer weights found under layers.*")
 
 if verifier and verifier != model:
-    print(f"[warn] checkpoint verifier path differs: {verifier} != {model}")
+    print(f"[warn] {label} verifier path differs: {verifier} != {model}")
 
-print("Checkpoint sanity OK")
+print(f"Checkpoint sanity OK ({label})")
 print(f"  draft:      {draft}")
 print(f"  block_size: {block}")
 print(f"  num_spec:   {max(0, block - 1)}")
@@ -142,9 +149,15 @@ PY
 }
 
 echo "=== Checkpoint sanity ==="
-CHECKPOINT_INFO="$(checkpoint_json)"
-printf '%s\n' "$CHECKPOINT_INFO" | tee "$RUN_DIR/checkpoint_sanity.txt"
-DFLASH_SPEC="${DFLASH_SPEC:-$(printf '%s\n' "$CHECKPOINT_INFO" | awk -F= '/^NUM_SPEC_TOKENS=/{print $2}')}"
+BASELINE_INFO="$(checkpoint_json native "$BASELINE_DRAFT")"
+DFLASH_INFO="$(checkpoint_json trained "$DRAFT")"
+{
+    printf '%s\n' "$BASELINE_INFO"
+    echo
+    printf '%s\n' "$DFLASH_INFO"
+} | tee "$RUN_DIR/checkpoint_sanity.txt"
+BASELINE_SPEC="${BASELINE_SPEC:-$(printf '%s\n' "$BASELINE_INFO" | awk -F= '/^NUM_SPEC_TOKENS=/{print $2}')}"
+DFLASH_SPEC="${DFLASH_SPEC:-$(printf '%s\n' "$DFLASH_INFO" | awk -F= '/^NUM_SPEC_TOKENS=/{print $2}')}"
 
 echo "=== Preparing MMStar conversations jsonl ==="
 if [ -s "$MMSTAR_JSONL" ]; then
@@ -187,6 +200,8 @@ start_server() {
     local mode="$1"
     local port="$2"
     local log="$3"
+    local draft_path="$4"
+    local spec_tokens="$5"
 
     cleanup_server
     if curl -sf "http://localhost:${port}/health" >/dev/null 2>&1; then
@@ -218,16 +233,15 @@ start_server() {
         args+=(--attention-backend "$ATTENTION_BACKEND")
     fi
 
-    if [ "$mode" = "dflash" ]; then
-        args+=(
-            --speculative-config "{\"method\":\"dflash\",\"model\":\"$DRAFT\",\"num_speculative_tokens\":$DFLASH_SPEC}"
-        )
-    fi
+    args+=(
+        --speculative-config "{\"method\":\"dflash\",\"model\":\"$draft_path\",\"num_speculative_tokens\":$spec_tokens}"
+    )
 
     echo
     echo "=== Starting $mode server ==="
     echo "  model:      $MODEL"
-    echo "  draft:      ${DRAFT:-none}"
+    echo "  draft:      $draft_path"
+    echo "  num_spec:   $spec_tokens"
     echo "  port:       $port"
     echo "  devices:    $GPUS"
     echo "  media_root: $MEDIA_ROOT"
@@ -253,27 +267,36 @@ run_client() {
         --max-tokens "$MAX_TOKENS"
 }
 
+parse_acceptance() {
+    local mode="$1"
+    local log="$2"
+    local out="$RUN_DIR/${mode}_acceptance_from_log.txt"
+
+    echo
+    echo "=== ${mode} log acceptance parse ==="
+    if ! python3 examples/evaluate/eval-guidellm/scripts/parse_logs.py "$log" \
+        > "$out" 2>&1; then
+        echo "(No parseable 'SpecDecoding metrics:' lines found. Showing spec-related log tail.)"
+        grep -iE "spec|accept|draft" "$log" | tail -n 40 || true
+    else
+        cat "$out"
+    fi
+}
+
 BASELINE_LOG="$RUN_DIR/baseline_vllm.log"
 DFLASH_LOG="$RUN_DIR/dflash_vllm.log"
 
-start_server baseline "$BASELINE_PORT" "$BASELINE_LOG"
+start_server native "$BASELINE_PORT" "$BASELINE_LOG" "$BASELINE_DRAFT" "$BASELINE_SPEC"
 run_client baseline "$BASELINE_PORT"
 cleanup_server
 sleep 5
 
-start_server dflash "$DFLASH_PORT" "$DFLASH_LOG"
+start_server trained "$DFLASH_PORT" "$DFLASH_LOG" "$DRAFT" "$DFLASH_SPEC"
 run_client dflash "$DFLASH_PORT"
 sleep 3
 
-echo
-echo "=== DFlash log acceptance parse ==="
-if ! python3 examples/evaluate/eval-guidellm/scripts/parse_logs.py "$DFLASH_LOG" \
-    > "$RUN_DIR/dflash_acceptance_from_log.txt" 2>&1; then
-    echo "(No parseable 'SpecDecoding metrics:' lines found. Showing spec-related log tail.)"
-    grep -iE "spec|accept|draft" "$DFLASH_LOG" | tail -n 40 || true
-else
-    cat "$RUN_DIR/dflash_acceptance_from_log.txt"
-fi
+parse_acceptance native "$BASELINE_LOG"
+parse_acceptance trained "$DFLASH_LOG"
 
 echo
 echo "=== Final comparison ==="
@@ -282,51 +305,81 @@ import json
 import sys
 from pathlib import Path
 
-baseline = json.loads(Path(sys.argv[1]).read_text())
-dflash = json.loads(Path(sys.argv[2]).read_text())
+native = json.loads(Path(sys.argv[1]).read_text())
+trained = json.loads(Path(sys.argv[2]).read_text())
 
 def fmt(value, suffix=""):
     if value is None:
         return "n/a"
     return f"{value:.3f}{suffix}" if isinstance(value, float) else f"{value}{suffix}"
 
-b_tps = baseline.get("output_tok_per_sec")
-d_tps = dflash.get("output_tok_per_sec")
-speedup = d_tps / b_tps if b_tps and d_tps else None
-baseline_draft_tokens = baseline.get("spec_draft_tokens_total", 0) or 0
+def ratio(numerator, denominator):
+    return numerator / denominator if numerator is not None and denominator else None
 
-print(f"baseline completed: {baseline['completed']}/{baseline['num_requested']}")
-print(f"dflash completed:   {dflash['completed']}/{dflash['num_requested']}")
-print(f"baseline tok/s:     {fmt(b_tps)}")
-print(f"dflash tok/s:       {fmt(d_tps)}")
-print(f"speedup:            {fmt(speedup)}")
-print(f"baseline ref hit:   {fmt(baseline.get('reference_contains_rate'))}")
-print(f"dflash ref hit:     {fmt(dflash.get('reference_contains_rate'))}")
-print(f"baseline draft tok: {fmt(baseline_draft_tokens)}")
-print(f"spec draft steps:   {fmt(dflash.get('spec_draft_steps_total'))}")
-print(f"spec draft tokens:  {fmt(dflash.get('spec_draft_tokens_total'))}")
-print(f"spec accepted:      {fmt(dflash.get('spec_accepted_tokens_total'))}")
-print(f"token accept rate:  {fmt(dflash.get('spec_token_acceptance_rate'))}")
-print(f"first-pos accept:   {fmt(dflash.get('spec_first_position_acceptance_rate'))}")
-print(f"mean accept/draft:  {fmt(dflash.get('spec_mean_accepted_tokens_per_draft'))}")
+def spec(summary, key):
+    return summary.get(key, 0) or 0
+
+native_tps = native.get("output_tok_per_sec")
+trained_tps = trained.get("output_tok_per_sec")
+speedup = ratio(trained_tps, native_tps)
+
+native_accept_rate = native.get("spec_token_acceptance_rate")
+trained_accept_rate = trained.get("spec_token_acceptance_rate")
+accept_rate_ratio = ratio(trained_accept_rate, native_accept_rate)
+
+native_mean_accept = native.get("spec_mean_accepted_tokens_per_draft")
+trained_mean_accept = trained.get("spec_mean_accepted_tokens_per_draft")
+mean_accept_ratio = ratio(trained_mean_accept, native_mean_accept)
+
+print(f"native completed:   {native['completed']}/{native['num_requested']}")
+print(f"trained completed:  {trained['completed']}/{trained['num_requested']}")
+print(f"native tok/s:       {fmt(native_tps)}")
+print(f"trained tok/s:      {fmt(trained_tps)}")
+print(f"trained/native:     {fmt(speedup)}")
+print(f"native ref hit:     {fmt(native.get('reference_contains_rate'))}")
+print(f"trained ref hit:    {fmt(trained.get('reference_contains_rate'))}")
 
 print()
-if baseline_draft_tokens > 0:
-    print("VERDICT: BAD - baseline emitted speculative draft metrics.")
-    print("         Baseline is not a clean no-draft run; check baseline_vllm.log.")
-elif dflash["completed"] == 0:
-    print("VERDICT: BAD - dflash server accepted no requests.")
-elif dflash.get("spec_draft_tokens_total", 0) <= 0:
-    print("VERDICT: INCONCLUSIVE - dflash served, but /metrics did not show draft counters.")
-    print("         Check dflash_vllm.log and dflash_acceptance_from_log.txt.")
-elif dflash.get("spec_accepted_tokens_total", 0) <= 0:
-    print("VERDICT: SUSPICIOUS - draft counters advanced but no accepted draft tokens.")
-elif speedup is not None and speedup < 1.0:
-    print("VERDICT: LOADS BUT NOT EFFECTIVE - throughput regressed.")
-    print("         Draft acceptance is too low to pay for DFlash overhead.")
+print("native DFlash spec metrics:")
+print(f"  draft steps:      {fmt(spec(native, 'spec_draft_steps_total'))}")
+print(f"  draft tokens:     {fmt(spec(native, 'spec_draft_tokens_total'))}")
+print(f"  accepted:         {fmt(spec(native, 'spec_accepted_tokens_total'))}")
+print(f"  token accept:     {fmt(native_accept_rate)}")
+print(f"  first-pos accept: {fmt(native.get('spec_first_position_acceptance_rate'))}")
+print(f"  mean accept/draft:{fmt(native_mean_accept):>8}")
+
+print()
+print("trained DFlash spec metrics:")
+print(f"  draft steps:      {fmt(spec(trained, 'spec_draft_steps_total'))}")
+print(f"  draft tokens:     {fmt(spec(trained, 'spec_draft_tokens_total'))}")
+print(f"  accepted:         {fmt(spec(trained, 'spec_accepted_tokens_total'))}")
+print(f"  token accept:     {fmt(trained_accept_rate)}")
+print(f"  first-pos accept: {fmt(trained.get('spec_first_position_acceptance_rate'))}")
+print(f"  mean accept/draft:{fmt(trained_mean_accept):>8}")
+
+print()
+print(f"accept-rate ratio:  {fmt(accept_rate_ratio)}")
+print(f"mean-accept ratio:  {fmt(mean_accept_ratio)}")
+
+print()
+if native["completed"] == 0:
+    print("VERDICT: BAD - native DFlash baseline accepted no requests.")
+elif trained["completed"] == 0:
+    print("VERDICT: BAD - trained DFlash candidate accepted no requests.")
+elif spec(native, "spec_draft_tokens_total") <= 0:
+    print("VERDICT: BAD - native baseline emitted no DFlash draft metrics.")
+    print("         Check BASELINE_DRAFT, baseline_vllm.log, and vLLM DFlash support.")
+elif spec(trained, "spec_draft_tokens_total") <= 0:
+    print("VERDICT: BAD - trained candidate emitted no DFlash draft metrics.")
+    print("         Check DRAFT, dflash_vllm.log, and vLLM DFlash support.")
+elif spec(trained, "spec_accepted_tokens_total") <= 0:
+    print("VERDICT: SUSPICIOUS - trained candidate drafted but accepted no tokens.")
+elif speedup is not None and speedup > 1.0:
+    print("VERDICT: IMPROVED - trained DFlash is faster than native DFlash.")
+elif mean_accept_ratio is not None and mean_accept_ratio > 1.0:
+    print("VERDICT: MIXED - trained DFlash accepts more, but throughput did not improve.")
 else:
-    print("VERDICT: PASS - checkpoint loads and improves throughput on this run.")
-    print("         Use speedup/ref-hit as quality signals, not as strict pass/fail.")
+    print("VERDICT: NOT IMPROVED - trained DFlash did not beat native DFlash.")
 PY
 
 echo
