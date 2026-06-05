@@ -12,6 +12,7 @@
 # Common overrides:
 #   BASELINE_DRAFT=/data/wenxuan/Qwen3.5-9B-DFlash \
 #   DRAFT=/path/to/checkpoint_best \
+#   INFER_NUM_SPEC=7 \
 #   MMSTAR_SRC=/data/wenxuan/mmstar/mmstar_answers.json \
 #   NUM_PROMPTS=128 \
 #   bash examples/evaluate/test_dflash_mmstar_weights.sh
@@ -45,7 +46,9 @@ MAX_NUM_SEQS="${MAX_NUM_SEQS:-16}"
 GPU_MEMORY_UTIL="${GPU_MEMORY_UTIL:-0.85}"
 NUM_PROMPTS="${NUM_PROMPTS:-128}"
 MAX_TOKENS="${MAX_TOKENS:-128}"
-REQUIRE_BLOCK_SIZE="${REQUIRE_BLOCK_SIZE:-8}"
+INFER_NUM_SPEC="${INFER_NUM_SPEC:-7}"
+BASELINE_SPEC="${BASELINE_SPEC:-$INFER_NUM_SPEC}"
+DFLASH_SPEC="${DFLASH_SPEC:-$INFER_NUM_SPEC}"
 SERVED_MODEL_NAME="${SERVED_MODEL_NAME:-qwen3.5-9b-mmstar-weight-test}"
 ENFORCE_EAGER="${ENFORCE_EAGER:-1}"
 ATTENTION_BACKEND="${ATTENTION_BACKEND:-}"
@@ -73,7 +76,8 @@ trap cleanup_server EXIT
 checkpoint_json() {
     local label="$1"
     local draft_path="$2"
-    python3 - "$MODEL" "$draft_path" "$label" "$REQUIRE_BLOCK_SIZE" <<'PY'
+    local requested_spec="$3"
+    python3 - "$MODEL" "$draft_path" "$label" "$requested_spec" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -83,7 +87,7 @@ from safetensors import safe_open
 model = sys.argv[1]
 draft = Path(sys.argv[2])
 label = sys.argv[3]
-required_block = int(sys.argv[4])
+requested_spec = int(sys.argv[4])
 if not draft.exists():
     raise SystemExit(f"[fatal] {label} DFlash draft does not exist: {draft}")
 
@@ -116,6 +120,7 @@ hidden = cfg.get("transformer_layer_config", {}).get("hidden_size") or cfg.get(
     "hidden_size"
 )
 block = int(cfg.get("block_size", 0))
+max_spec = block - 1
 verifier = (
     cfg.get("speculators_config", {})
     .get("verifier", {})
@@ -141,10 +146,14 @@ if hidden and aux and fc_shape != (hidden, hidden * len(aux)):
     )
 if not layer_keys:
     raise SystemExit("[fatal] no draft layer weights found under layers.*")
-if required_block > 0 and block != required_block:
+if block <= 0:
+    raise SystemExit(f"[fatal] {label} has invalid block_size={block}: {draft}")
+if requested_spec <= 0:
+    raise SystemExit(f"[fatal] requested num_speculative_tokens must be positive: {requested_spec}")
+if requested_spec > max_spec:
     raise SystemExit(
-        f"[fatal] {label} block_size={block}, expected block_size={required_block}. "
-        "Set REQUIRE_BLOCK_SIZE=0 to allow mismatched block sizes."
+        f"[fatal] {label} config block_size={block} only supports "
+        f"num_speculative_tokens <= {max_spec}, requested {requested_spec}."
     )
 
 if verifier and verifier != model:
@@ -154,25 +163,24 @@ print(f"Checkpoint sanity OK ({label})")
 print(f"  draft:      {draft}")
 print(f"  format:     {'speculators' if is_speculators_dflash else 'raw'}")
 print(f"  block_size: {block}")
-print(f"  num_spec:   {max(0, block - 1)}")
+print(f"  max_spec:   {max_spec}")
+print(f"  infer_spec: {requested_spec}")
 print(f"  aux_layers: {aux}")
 print(f"  hidden:     {hidden}")
 print(f"  fc.weight:  {fc_shape}")
 print(f"  layers.*:   {len(layer_keys)} tensors")
-print(f"NUM_SPEC_TOKENS={max(1, block - 1)}")
+print(f"NUM_SPEC_TOKENS={requested_spec}")
 PY
 }
 
 echo "=== Checkpoint sanity ==="
-BASELINE_INFO="$(checkpoint_json native "$BASELINE_DRAFT")"
-DFLASH_INFO="$(checkpoint_json trained "$DRAFT")"
+BASELINE_INFO="$(checkpoint_json native "$BASELINE_DRAFT" "$BASELINE_SPEC")"
+DFLASH_INFO="$(checkpoint_json trained "$DRAFT" "$DFLASH_SPEC")"
 {
     printf '%s\n' "$BASELINE_INFO"
     echo
     printf '%s\n' "$DFLASH_INFO"
 } | tee "$RUN_DIR/checkpoint_sanity.txt"
-BASELINE_SPEC="${BASELINE_SPEC:-$(printf '%s\n' "$BASELINE_INFO" | awk -F= '/^NUM_SPEC_TOKENS=/{print $2}')}"
-DFLASH_SPEC="${DFLASH_SPEC:-$(printf '%s\n' "$DFLASH_INFO" | awk -F= '/^NUM_SPEC_TOKENS=/{print $2}')}"
 
 echo "=== Preparing MMStar conversations jsonl ==="
 if [ -s "$MMSTAR_JSONL" ]; then
@@ -197,7 +205,7 @@ wait_for_server() {
                 echo "DIAGNOSIS: this vLLM build does not have DFlash inference."
             elif grep -qiE "max_num_scheduled_tokens|additional draft token slots" "$log"; then
                 echo "DIAGNOSIS: vLLM speculative scheduling budget is too small."
-                echo "           Lower MAX_NUM_SEQS/MAX_SPEC tokens, or raise MAX_NUM_BATCHED_TOKENS."
+                echo "           Lower MAX_NUM_SEQS/INFER_NUM_SPEC, or raise MAX_NUM_BATCHED_TOKENS."
             elif grep -qiE "m-?rope|multimodal.*spec|does not support" "$log"; then
                 echo "DIAGNOSIS: this vLLM build likely lacks multimodal/M-RoPE spec support."
             fi
