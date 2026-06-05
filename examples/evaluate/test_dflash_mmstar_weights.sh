@@ -10,7 +10,7 @@
 #   bash examples/evaluate/test_dflash_mmstar_weights.sh
 #
 # Common overrides:
-#   BASELINE_DRAFT=/data/wenxuan/Qwen3.5-9B-DFlash-spec \
+#   BASELINE_DRAFT=/data/wenxuan/Qwen3.5-9B-DFlash \
 #   DRAFT=/path/to/checkpoint_best \
 #   MMSTAR_SRC=/data/wenxuan/mmstar/mmstar_answers.json \
 #   NUM_PROMPTS=128 \
@@ -25,7 +25,7 @@ cd "$REPO_ROOT"
 STAMP="$(date +%Y%m%d_%H%M%S)"
 
 MODEL="${MODEL:-/data/wenxuan/Qwen3.5-9B}"
-BASELINE_DRAFT="${BASELINE_DRAFT:-/data/wenxuan/Qwen3.5-9B-DFlash-spec}"
+BASELINE_DRAFT="${BASELINE_DRAFT:-/data/wenxuan/Qwen3.5-9B-DFlash}"
 MMSTAR_SRC="${MMSTAR_SRC:-/data/wenxuan/mmstar/mmstar_answers.json}"
 MMSTAR_JSONL="${MMSTAR_JSONL:-$REPO_ROOT/data/mmstar/mmstar_eval.jsonl}"
 MMSTAR_IMAGE_DIR="${MMSTAR_IMAGE_DIR:-$REPO_ROOT/data/mmstar/images}"
@@ -45,6 +45,7 @@ MAX_NUM_SEQS="${MAX_NUM_SEQS:-16}"
 GPU_MEMORY_UTIL="${GPU_MEMORY_UTIL:-0.85}"
 NUM_PROMPTS="${NUM_PROMPTS:-128}"
 MAX_TOKENS="${MAX_TOKENS:-128}"
+REQUIRE_BLOCK_SIZE="${REQUIRE_BLOCK_SIZE:-8}"
 SERVED_MODEL_NAME="${SERVED_MODEL_NAME:-qwen3.5-9b-mmstar-weight-test}"
 ENFORCE_EAGER="${ENFORCE_EAGER:-1}"
 ATTENTION_BACKEND="${ATTENTION_BACKEND:-}"
@@ -72,7 +73,7 @@ trap cleanup_server EXIT
 checkpoint_json() {
     local label="$1"
     local draft_path="$2"
-    python3 - "$MODEL" "$draft_path" "$label" <<'PY'
+    python3 - "$MODEL" "$draft_path" "$label" "$REQUIRE_BLOCK_SIZE" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -82,6 +83,7 @@ from safetensors import safe_open
 model = sys.argv[1]
 draft = Path(sys.argv[2])
 label = sys.argv[3]
+required_block = int(sys.argv[4])
 if not draft.exists():
     raise SystemExit(f"[fatal] {label} DFlash draft does not exist: {draft}")
 
@@ -133,6 +135,11 @@ if hidden and aux and fc_shape != (hidden, hidden * len(aux)):
     )
 if not layer_keys:
     raise SystemExit("[fatal] no draft layer weights found under layers.*")
+if required_block > 0 and block != required_block:
+    raise SystemExit(
+        f"[fatal] {label} block_size={block}, expected block_size={required_block}. "
+        "Set REQUIRE_BLOCK_SIZE=0 to allow mismatched block sizes."
+    )
 
 if verifier and verifier != model:
     print(f"[warn] {label} verifier path differs: {verifier} != {model}")
