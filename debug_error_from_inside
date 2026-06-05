@@ -1,6 +1,3 @@
 root@devserver-bms-250cfc86-tmp1108:/data/wenxuan/speculators# bash examples/evaluate/test_dflash_mmstar_weights.sh 
 === Checkpoint sanity ===
-[fatal] checkpoint is not a speculators DFlash model: speculators_model_type=None
-root@devserver-bms-250cfc86-tmp1108:/data/wenxuan/speculators# bash examples/evaluate/test_dflash_mmstar_weights.sh 
-=== Checkpoint sanity ===
-[fatal] checkpoint is not a speculators DFlash model: speculators_model_type=None
+[fatal] native block_size=16, expected block_size=8. Set REQUIRE_BLOCK_SIZE=0 to allow mismatched block sizes.
