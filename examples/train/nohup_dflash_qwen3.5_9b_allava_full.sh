@@ -1,6 +1,6 @@
 #!/bin/bash
 # Detached long-run launcher for Qwen3.5-9B multimodal DFlash on ALLaVA LAION.
-# Defaults to a 10k-sample ALLaVA warm-start run from a converted DFlash model.
+# Defaults to a 100k-sample ALLaVA warm-start run from a converted DFlash model.
 
 set -euo pipefail
 
@@ -9,7 +9,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$REPO_ROOT"
 
 STAMP="$(date +%Y%m%d_%H%M%S)"
-RUN_NAME="${RUN_NAME:-dflash_qwen35_9b_allava_10k_continue_dflash_${STAMP}}"
+RUN_NAME="${RUN_NAME:-dflash_qwen35_9b_allava_100k_continue_dflash_${STAMP}}"
 NOHUP_LOG_DIR="${NOHUP_LOG_DIR:-$REPO_ROOT/run_logs}"
 NOHUP_LOG_PATH="${NOHUP_LOG_PATH:-$NOHUP_LOG_DIR/${RUN_NAME}.nohup.log}"
 PID_PATH="${PID_PATH:-$NOHUP_LOG_DIR/${RUN_NAME}.pid}"
@@ -20,12 +20,12 @@ export FINETUNE_FROM="${FINETUNE_FROM:-/data/wenxuan/Qwen3.5-9B-DFlash-spec}"
 export CONVERTED_DFLASH_OUT="${CONVERTED_DFLASH_OUT:-}"
 export AUTO_CONVERT_DFLASH="${AUTO_CONVERT_DFLASH:-0}"
 export REQUIRE_PRETRAINED_WEIGHTS="${REQUIRE_PRETRAINED_WEIGHTS:-1}"
-export OUTPUT_DIR="${OUTPUT_DIR:-./output/dflash_qwen3.5_9b_mm_10k}"
-export SAVE_PATH="${SAVE_PATH:-./output/dflash_qwen3.5_9b_mm_10k_continue_dflash/${RUN_NAME}/checkpoints}"
+export OUTPUT_DIR="${OUTPUT_DIR:-./output/dflash_qwen3.5_9b_mm_100k}"
+export SAVE_PATH="${SAVE_PATH:-./output/dflash_qwen3.5_9b_mm_100k_continue_dflash/${RUN_NAME}/checkpoints}"
 export ALLAVA_IMAGE_ROOT="${ALLAVA_IMAGE_ROOT:-/data/wenxuan/ALLaVA-4V}"
 export ALLAVA_INPUTS="${ALLAVA_INPUTS:-$ALLAVA_IMAGE_ROOT/allava_laion/ALLaVA-Caption-LAION-4V.json $ALLAVA_IMAGE_ROOT/allava_laion/ALLaVA-Instruct-LAION-4V.json}"
 
-export MAX_SAMPLES="${MAX_SAMPLES:-10000}"
+export MAX_SAMPLES="${MAX_SAMPLES:-100000}"
 export EPOCHS="${EPOCHS:-1000}"
 export CHECKPOINT_FREQ="${CHECKPOINT_FREQ:-5}"
 export LR="${LR:-1e-4}"
