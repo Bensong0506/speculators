@@ -1,229 +1,53 @@
-Summary
-{
-  "endpoint": "http://localhost:8101/v1",
-  "model": "qwen3.5-9b-mmstar-weight-test",
-  "num_requested": 128,
-  "completed": 128,
-  "failed": 0,
-  "completion_tokens": 16384,
-  "wall_sec": 274.1545645300066,
-  "output_tok_per_sec": 59.76190849890718,
-  "mean_latency_sec": 2.141741900983334,
-  "reference_contains_rate": 0.234375,
-  "reference_count": 128,
-  "spec_metrics_delta": {
-    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\"}": 6430.0,
-    "vllm:spec_decode_num_drafts_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\"}": 0.0,
-    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\"}": 45010.0,
-    "vllm:spec_decode_num_draft_tokens_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\"}": 10003.0,
-    "vllm:spec_decode_num_accepted_tokens_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"0\"}": 4436.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"1\"}": 2673.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"2\"}": 1409.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"3\"}": 683.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"4\"}": 395.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"5\"}": 255.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"6\"}": 152.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"0\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"1\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"2\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"3\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"4\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"5\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"6\"}": 0.0
-  },
-  "spec_draft_steps_total": 6430.0,
-  "spec_draft_tokens_total": 45010.0,
-  "spec_accepted_tokens_total": 10003.0,
-  "spec_accepted_tokens_by_position": {
-    "0": 4436.0,
-    "1": 2673.0,
-    "2": 1409.0,
-    "3": 683.0,
-    "4": 395.0,
-    "5": 255.0,
-    "6": 152.0
-  },
-  "spec_token_acceptance_rate": 0.22223950233281492,
-  "spec_first_position_acceptance_rate": 0.689891135303266,
-  "spec_mean_accepted_tokens_per_draft": 1.5556765163297046
-}
+CHECKPOINT_FIND_ROOT=/data/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_100k_continue_dflash \
+bash examples/evaluate/sweep_dflash_mmstar_checkpoints.sh
+[fatal] CHECKPOINT_FIND_ROOT does not exist: /data/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_100k_continue_dflash
+[fatal] no speculators-format DFlash checkpoints found under /data/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_100k_continue_dflash
+        Set CHECKPOINT_FIND_ROOT or CHECKPOINT_LIST explicitly.
+root@devserver-bms-250cfc86-tmp1108:/data/wenxuan/speculators# INFER_NUM_SPEC=7 \
+CHECKPOINT_FIND_ROOT=/data/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_10k_continue_dflash/dflash_qwen35_9b_allava_10k_continue_dflash_20260605_031136/checkpoints/ \
+bash examples/evaluate/sweep_dflash_mmstar_checkpoints.sh
+=== MMStar DFlash checkpoint sweep ===
+  checkpoints:       8
+  checkpoint list:   /data/wenxuan/speculators/output/mmstar_checkpoint_sweeps/20260605_093430/checkpoints.txt
+  infer_num_spec:    7
+  baseline_draft:    /data/wenxuan/Qwen3.5-9B-DFlash
+  num_prompts:       128
+  sweep root:        /data/wenxuan/speculators/output/mmstar_checkpoint_sweeps/20260605_093430
+  results csv:       /data/wenxuan/speculators/output/mmstar_checkpoint_sweeps/20260605_093430/results.csv
 
-=== native log acceptance parse ===
-======================================================================
-Speculative Decoding Acceptance Analysis
-======================================================================
+=== [1/8] testing /data/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_10k_continue_dflash/dflash_qwen35_9b_allava_10k_continue_dflash_20260605_031136/checkpoints/0 ===
+    exit_status=0
+{"checkpoint": "/data/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_10k_continue_dflash/dflash_qwen35_9b_allava_10k_continue_dflash_20260605_031136/checkpoints/0", "run_dir": "/data/wenxuan/speculators/output/mmstar_checkpoint_sweeps/20260605_093430/001_dflash_qwen35_9b_allava_10k_continue_dflash_20260605_031136_0", "infer_num_spec": 7, "exit_status": 0, "verdict": "not_improved", "native_tok_s": 70.15143891012448, "trained_tok_s": 56.81629875154081, "trained_native_ratio": 0.8099092425507027, "native_mean_accept_per_draft": 2.094728943912962, "trained_mean_accept_per_draft": 1.3904567937154495, "mean_accept_ratio": 0.6637884093576665, "native_token_accept_rate": 0.299246991987566, "trained_token_accept_rate": 0.1986366848164928, "token_accept_ratio": 0.6637884093576665, "native_first_pos_accept": 0.7662727443256425, "trained_first_pos_accept": 0.5688100087285424, "native_ref_hit": 0.234375, "trained_ref_hit": 0.234375, "native_draft_steps": 5331.0, "trained_draft_steps": 6874.0, "native_draft_tokens": 37317.0, "trained_draft_tokens": 48118.0, "native_accepted_tokens": 11167.0, "trained_accepted_tokens": 9558.0}
 
-Total samples: 24
-Total drafted tokens: 36967
-Average drafted tokens: 1540.29
+=== [2/8] testing /data/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_10k_continue_dflash/dflash_qwen35_9b_allava_10k_continue_dflash_20260605_031136/checkpoints/4 ===
+    exit_status=0
+{"checkpoint": "/data/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_10k_continue_dflash/dflash_qwen35_9b_allava_10k_continue_dflash_20260605_031136/checkpoints/4", "run_dir": "/data/wenxuan/speculators/output/mmstar_checkpoint_sweeps/20260605_093430/002_dflash_qwen35_9b_allava_10k_continue_dflash_20260605_031136_4", "infer_num_spec": 7, "exit_status": 0, "verdict": "not_improved", "native_tok_s": 69.26081374932832, "trained_tok_s": 59.49464270660976, "trained_native_ratio": 0.8589942780911483, "native_mean_accept_per_draft": 2.0924259467566553, "trained_mean_accept_per_draft": 1.5229681978798586, "mean_accept_ratio": 0.727848075216483, "native_token_accept_rate": 0.2989179923938079, "trained_token_accept_rate": 0.21756688541140837, "token_accept_ratio": 0.727848075216483, "native_first_pos_accept": 0.7647169103862017, "trained_first_pos_accept": 0.6719926255953296, "native_ref_hit": 0.234375, "trained_ref_hit": 0.234375, "native_draft_steps": 5334.0, "trained_draft_steps": 6509.0, "native_draft_tokens": 37338.0, "trained_draft_tokens": 45563.0, "native_accepted_tokens": 11161.0, "trained_accepted_tokens": 9913.0}
 
-Weighted per-position acceptance rates:
-[0.763 0.483 0.298 0.2   0.148 0.119 0.082]
+=== [3/8] testing /data/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_10k_continue_dflash/dflash_qwen35_9b_allava_10k_continue_dflash_20260605_031136/checkpoints/9 ===
+    exit_status=0
+{"checkpoint": "/data/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_10k_continue_dflash/dflash_qwen35_9b_allava_10k_continue_dflash_20260605_031136/checkpoints/9", "run_dir": "/data/wenxuan/speculators/output/mmstar_checkpoint_sweeps/20260605_093430/003_dflash_qwen35_9b_allava_10k_continue_dflash_20260605_031136_9", "infer_num_spec": 7, "exit_status": 0, "verdict": "not_improved", "native_tok_s": 68.22074895621029, "trained_tok_s": 59.28510184400613, "trained_native_ratio": 0.8690186307110203, "native_mean_accept_per_draft": 2.0945768436854943, "trained_mean_accept_per_draft": 1.5562305295950156, "mean_accept_ratio": 0.7429808719057373, "native_token_accept_rate": 0.2992252633836421, "trained_token_accept_rate": 0.22231864708500224, "token_accept_ratio": 0.7429808719057371, "native_first_pos_accept": 0.7643085006567837, "trained_first_pos_accept": 0.6942367601246106, "native_ref_hit": 0.234375, "trained_ref_hit": 0.234375, "native_draft_steps": 5329.0, "trained_draft_steps": 6420.0, "native_draft_tokens": 37303.0, "trained_draft_tokens": 44940.0, "native_accepted_tokens": 11162.0, "trained_accepted_tokens": 9991.0}
 
-Conditional acceptance rates:
-[0.763 0.633 0.616 0.671 0.743 0.799 0.693]
-======================================================================
+=== [4/8] testing /data/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_10k_continue_dflash/dflash_qwen35_9b_allava_10k_continue_dflash_20260605_031136/checkpoints/14 ===
+    exit_status=0
+{"checkpoint": "/data/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_10k_continue_dflash/dflash_qwen35_9b_allava_10k_continue_dflash_20260605_031136/checkpoints/14", "run_dir": "/data/wenxuan/speculators/output/mmstar_checkpoint_sweeps/20260605_093430/004_dflash_qwen35_9b_allava_10k_continue_dflash_20260605_031136_14", "infer_num_spec": 7, "exit_status": 0, "verdict": "not_improved", "native_tok_s": 71.85818601765139, "trained_tok_s": 60.641958659900716, "trained_native_ratio": 0.8439116267839617, "native_mean_accept_per_draft": 2.0970892018779344, "trained_mean_accept_per_draft": 1.5642667499609557, "mean_accept_ratio": 0.7459228479933813, "native_token_accept_rate": 0.29958417169684776, "trained_token_accept_rate": 0.22346667856585084, "token_accept_ratio": 0.7459228479933814, "native_first_pos_accept": 0.7658215962441315, "trained_first_pos_accept": 0.6998282055286584, "native_ref_hit": 0.234375, "trained_ref_hit": 0.234375, "native_draft_steps": 5325.0, "trained_draft_steps": 6403.0, "native_draft_tokens": 37275.0, "trained_draft_tokens": 44821.0, "native_accepted_tokens": 11167.0, "trained_accepted_tokens": 10016.0}
 
-=== trained log acceptance parse ===
-======================================================================
-Speculative Decoding Acceptance Analysis
-======================================================================
+=== [5/8] testing /data/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_10k_continue_dflash/dflash_qwen35_9b_allava_10k_continue_dflash_20260605_031136/checkpoints/19 ===
+    exit_status=0
+{"checkpoint": "/data/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_10k_continue_dflash/dflash_qwen35_9b_allava_10k_continue_dflash_20260605_031136/checkpoints/19", "run_dir": "/data/wenxuan/speculators/output/mmstar_checkpoint_sweeps/20260605_093430/005_dflash_qwen35_9b_allava_10k_continue_dflash_20260605_031136_19", "infer_num_spec": 7, "exit_status": 0, "verdict": "not_improved", "native_tok_s": 71.04980378562801, "trained_tok_s": 58.93873553280156, "trained_native_ratio": 0.8295411442744014, "native_mean_accept_per_draft": 2.094523630907727, "trained_mean_accept_per_draft": 1.5480217222653219, "mean_accept_ratio": 0.7390805715543245, "native_token_accept_rate": 0.2992176615582467, "trained_token_accept_rate": 0.2211459603236174, "token_accept_ratio": 0.7390805715543246, "native_first_pos_accept": 0.7661290322580645, "trained_first_pos_accept": 0.7005430566330488, "native_ref_hit": 0.234375, "trained_ref_hit": 0.234375, "native_draft_steps": 5332.0, "trained_draft_steps": 6445.0, "native_draft_tokens": 37324.0, "trained_draft_tokens": 45115.0, "native_accepted_tokens": 11168.0, "trained_accepted_tokens": 9977.0}
 
-Total samples: 28
-Total drafted tokens: 45010
-Average drafted tokens: 1607.50
+=== [6/8] testing /data/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_10k_continue_dflash/dflash_qwen35_9b_allava_10k_continue_dflash_20260605_031136/checkpoints/24 ===
+    exit_status=0
+{"checkpoint": "/data/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_10k_continue_dflash/dflash_qwen35_9b_allava_10k_continue_dflash_20260605_031136/checkpoints/24", "run_dir": "/data/wenxuan/speculators/output/mmstar_checkpoint_sweeps/20260605_093430/006_dflash_qwen35_9b_allava_10k_continue_dflash_20260605_031136_24", "infer_num_spec": 7, "exit_status": 0, "verdict": "not_improved", "native_tok_s": 72.24275242369471, "trained_tok_s": 59.15392966063088, "trained_native_ratio": 0.818821648899816, "native_mean_accept_per_draft": 2.087420441782104, "trained_mean_accept_per_draft": 1.5412347207179329, "mean_accept_ratio": 0.7383441734441034, "native_token_accept_rate": 0.2982029202545863, "trained_token_accept_rate": 0.22017638867399042, "token_accept_ratio": 0.7383441734441035, "native_first_pos_accept": 0.7628229127667541, "trained_first_pos_accept": 0.6951879931920161, "native_ref_hit": 0.234375, "trained_ref_hit": 0.234375, "native_draft_steps": 5342.0, "trained_draft_steps": 6463.0, "native_draft_tokens": 37394.0, "trained_draft_tokens": 45241.0, "native_accepted_tokens": 11151.0, "trained_accepted_tokens": 9961.0}
 
-Weighted per-position acceptance rates:
-[0.69  0.416 0.219 0.106 0.061 0.04  0.024]
+=== [7/8] testing /data/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_10k_continue_dflash/dflash_qwen35_9b_allava_10k_continue_dflash_20260605_031136/checkpoints/29 ===
+    exit_status=0
+{"checkpoint": "/data/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_10k_continue_dflash/dflash_qwen35_9b_allava_10k_continue_dflash_20260605_031136/checkpoints/29", "run_dir": "/data/wenxuan/speculators/output/mmstar_checkpoint_sweeps/20260605_093430/007_dflash_qwen35_9b_allava_10k_continue_dflash_20260605_031136_29", "infer_num_spec": 7, "exit_status": 0, "verdict": "not_improved", "native_tok_s": 68.78196957433114, "trained_tok_s": 58.52660881534262, "trained_native_ratio": 0.8509004493117083, "native_mean_accept_per_draft": 2.097670924117205, "trained_mean_accept_per_draft": 1.5475968992248061, "mean_accept_ratio": 0.7377691521734302, "native_token_accept_rate": 0.29966727487388645, "trained_token_accept_rate": 0.22108527131782946, "token_accept_ratio": 0.7377691521734302, "native_first_pos_accept": 0.7655897821187078, "trained_first_pos_accept": 0.6885271317829458, "native_ref_hit": 0.234375, "trained_ref_hit": 0.234375, "native_draft_steps": 5324.0, "trained_draft_steps": 6450.0, "native_draft_tokens": 37268.0, "trained_draft_tokens": 45150.0, "native_accepted_tokens": 11168.0, "trained_accepted_tokens": 9982.0}
 
-Conditional acceptance rates:
-[0.69  0.603 0.527 0.485 0.578 0.647 0.596]
-======================================================================
+=== [8/8] testing /data/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_10k_continue_dflash/dflash_qwen35_9b_allava_10k_continue_dflash_20260605_031136/checkpoints/34 ===
+    exit_status=0
+{"checkpoint": "/data/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_10k_continue_dflash/dflash_qwen35_9b_allava_10k_continue_dflash_20260605_031136/checkpoints/34", "run_dir": "/data/wenxuan/speculators/output/mmstar_checkpoint_sweeps/20260605_093430/008_dflash_qwen35_9b_allava_10k_continue_dflash_20260605_031136_34", "infer_num_spec": 7, "exit_status": 0, "verdict": "not_improved", "native_tok_s": 72.40378901639596, "trained_tok_s": 57.65309397479326, "trained_native_ratio": 0.7962717802204746, "native_mean_accept_per_draft": 2.0939786156443443, "trained_mean_accept_per_draft": 1.520232985898222, "mean_accept_ratio": 0.7260021542437894, "native_token_accept_rate": 0.2991398022349063, "trained_token_accept_rate": 0.21717614084260314, "token_accept_ratio": 0.7260021542437894, "native_first_pos_accept": 0.7643969236540986, "trained_first_pos_accept": 0.6922133660331086, "native_ref_hit": 0.234375, "trained_ref_hit": 0.234375, "native_draft_steps": 5331.0, "trained_draft_steps": 6524.0, "native_draft_tokens": 37317.0, "trained_draft_tokens": 45668.0, "native_accepted_tokens": 11163.0, "trained_accepted_tokens": 9918.0}
 
-=== Final comparison ===
-native completed:   128/128
-trained completed:  128/128
-native tok/s:       68.679
-trained tok/s:      59.762
-trained/native:     0.870
-native ref hit:     0.234
-trained ref hit:    0.234
-
-native DFlash spec metrics:
-  draft steps:      5333.000
-  draft tokens:     37331.000
-  accepted:         11159.000
-  token accept:     0.299
-  first-pos accept: 0.764
-  mean accept/draft:   2.092
-
-trained DFlash spec metrics:
-  draft steps:      6430.000
-  draft tokens:     45010.000
-  accepted:         10003.000
-  token accept:     0.222
-  first-pos accept: 0.690
-  mean accept/draft:   1.556
-
-accept-rate ratio:  0.743
-mean-accept ratio:  0.743
-
-VERDICT: NOT IMPROVED - trained DFlash did not beat native DFlash.
-
-Artifacts:
-  /data/wenxuan/speculators/output/mmstar_weight_tests/20260605_085038
-Stopping vLLM server pid=14066
-
-up is infer_spec = 7
-
-follow is infer_spec = 3
-Summary
-{
-  "endpoint": "http://localhost:8101/v1",
-  "model": "qwen3.5-9b-mmstar-weight-test",
-  "num_requested": 128,
-  "completed": 128,
-  "failed": 0,
-  "completion_tokens": 16384,
-  "wall_sec": 310.9146599759988,
-  "output_tok_per_sec": 52.69613211954937,
-  "mean_latency_sec": 2.4289330449134923,
-  "reference_contains_rate": 0.2265625,
-  "reference_count": 128,
-  "spec_metrics_delta": {
-    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\"}": 7218.0,
-    "vllm:spec_decode_num_drafts_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\"}": 0.0,
-    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\"}": 21654.0,
-    "vllm:spec_decode_num_draft_tokens_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\"}": 9160.0,
-    "vllm:spec_decode_num_accepted_tokens_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"0\"}": 4922.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"1\"}": 2752.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"2\"}": 1486.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"0\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"1\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-weight-test\",position=\"2\"}": 0.0
-  },
-  "spec_draft_steps_total": 7218.0,
-  "spec_draft_tokens_total": 21654.0,
-  "spec_accepted_tokens_total": 9160.0,
-  "spec_accepted_tokens_by_position": {
-    "0": 4922.0,
-    "1": 2752.0,
-    "2": 1486.0
-  },
-  "spec_token_acceptance_rate": 0.4230165327422185,
-  "spec_first_position_acceptance_rate": 0.6819063452479911,
-  "spec_mean_accepted_tokens_per_draft": 1.2690495982266556
-}
-
-=== native log acceptance parse ===
-======================================================================
-Speculative Decoding Acceptance Analysis
-======================================================================
-
-Total samples: 28
-Total drafted tokens: 18669
-Average drafted tokens: 666.75
-
-Weighted per-position acceptance rates:
-[0.777 0.519 0.335]
-
-Conditional acceptance rates:
-[0.777 0.667 0.647]
-======================================================================
-
-=== trained log acceptance parse ===
-======================================================================
-Speculative Decoding Acceptance Analysis
-======================================================================
-
-Total samples: 31
-Total drafted tokens: 21318
-Average drafted tokens: 687.68
-
-Weighted per-position acceptance rates:
-[0.682 0.381 0.206]
-
-Conditional acceptance rates:
-[0.682 0.559 0.541]
-======================================================================
-
-=== Final comparison ===
-native completed:   128/128
-trained completed:  128/128
-native tok/s:       59.322
-trained tok/s:      52.696
-trained/native:     0.888
-native ref hit:     0.227
-trained ref hit:    0.227
-
-native DFlash spec metrics:
-  draft steps:      6228.000
-  draft tokens:     18684.000
-  accepted:         10158.000
-  token accept:     0.544
-  first-pos accept: 0.777
-  mean accept/draft:   1.631
-
-trained DFlash spec metrics:
-  draft steps:      7218.000
-  draft tokens:     21654.000
-  accepted:         9160.000
-  token accept:     0.423
-  first-pos accept: 0.682
-  mean accept/draft:   1.269
-
-accept-rate ratio:  0.778
-mean-accept ratio:  0.778
-
-VERDICT: NOT IMPROVED - trained DFlash did not beat native DFlash.
-
-Artifacts:
-  /data/wenxuan/speculators/output/mmstar_weight_tests/20260605_090300
-Stopping vLLM server pid=16119
-
-
-
+=== Sweep complete ===
+  results csv:   /data/wenxuan/speculators/output/mmstar_checkpoint_sweeps/20260605_093430/results.csv
+  results jsonl: /data/wenxuan/speculators/output/mmstar_checkpoint_sweeps/20260605_093430/results.jsonl
+  sweep root:    /data/wenxuan/speculators/output/mmstar_checkpoint_sweeps/20260605_093430
