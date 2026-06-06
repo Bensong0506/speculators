@@ -136,7 +136,7 @@ DRAFT_VOCAB_SIZE="${DRAFT_VOCAB_SIZE-32000}"  # empty = full vocab; default scra
 # config.json and auto-matches block_size / num_layers / draft_arch / aux
 # target-layer-ids / mask_token_id / FULL vocab. Empty = train from scratch.
 FINETUNE_FROM="${FINETUNE_FROM:-}"
-LR_FT="${LR_FT:-1e-4}"   # lower LR used when warm-starting (vs 3e-4 from scratch)
+LR_FT="${LR_FT:-1e-5}"   # conservative LR used when warm-starting (vs 3e-4 from scratch)
 
 # Target text-decoder layers to extract hidden states from. Leave EMPTY to
 # auto-compute the repo-default "2  L/2  L-3" (L = text num_hidden_layers);

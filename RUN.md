@@ -110,7 +110,10 @@ and writes `run_logs/<run_name>.nohup.log` plus a PID file:
 bash examples/train/nohup_dflash_qwen3.5_9b_allava_full.sh
 tail -f run_logs/dflash_qwen35_9b_allava_full_*.nohup.log
 ```
-Defaults: `MAX_SAMPLES=937340 EPOCHS=1000 CHECKPOINT_FREQ=5 MAX_ANCHORS=512 LOGGER=wandb`.
+Defaults: `MAX_SAMPLES=100000 EPOCHS=20 CHECKPOINT_FREQ=1 LR_FT=1e-5 MAX_ANCHORS=512 LOGGER=wandb`.
+These defaults are meant for an early-checkpoint sweep: evaluate each saved
+checkpoint with `INFER_NUM_SPEC=7` instead of trusting training validation loss
+or `checkpoint_best` alone.
 
 ### 1d. Watch training (loss + per-position acceptance)
 ```bash
