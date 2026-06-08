@@ -1,124 +1,24 @@
-Summary
-{
-  "endpoint": "http://localhost:8101/v1",
-  "model": "qwen3.5-9b-mmstar-10image-test",
-  "num_groups_requested": 16,
-  "images_per_prompt": 10,
-  "completed": 16,
-  "failed": 0,
-  "total_images_completed": 160,
-  "completion_tokens": 8192,
-  "wall_sec": 114.02003426797455,
-  "output_tok_per_sec": 71.84702278502063,
-  "images_per_sec": 1.403262163769934,
-  "mean_latency_sec": 7.1259962163021555,
-  "reference_contains_rate": 0.19375,
-  "reference_count": 160,
-  "spec_metrics_delta": {
-    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-10image-test\"}": 2613.0,
-    "vllm:spec_decode_num_drafts_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-10image-test\"}": 0.0,
-    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-10image-test\"}": 18291.0,
-    "vllm:spec_decode_num_draft_tokens_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-10image-test\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-10image-test\"}": 5594.0,
-    "vllm:spec_decode_num_accepted_tokens_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-10image-test\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-10image-test\",position=\"0\"}": 1968.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-10image-test\",position=\"1\"}": 1258.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-10image-test\",position=\"2\"}": 842.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-10image-test\",position=\"3\"}": 582.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-10image-test\",position=\"4\"}": 426.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-10image-test\",position=\"5\"}": 303.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-10image-test\",position=\"6\"}": 215.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-10image-test\",position=\"0\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-10image-test\",position=\"1\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-10image-test\",position=\"2\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-10image-test\",position=\"3\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-10image-test\",position=\"4\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-10image-test\",position=\"5\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-10image-test\",position=\"6\"}": 0.0
-  },
-  "spec_draft_steps_total": 2613.0,
-  "spec_draft_tokens_total": 18291.0,
-  "spec_accepted_tokens_total": 5594.0,
-  "spec_accepted_tokens_by_position": {
-    "0": 1968.0,
-    "1": 1258.0,
-    "2": 842.0,
-    "3": 582.0,
-    "4": 426.0,
-    "5": 303.0,
-    "6": 215.0
-  },
-  "spec_token_acceptance_rate": 0.3058334700125745,
-  "spec_first_position_acceptance_rate": 0.7531572904707233,
-  "spec_mean_accepted_tokens_per_draft": 2.1408342900880215
-}
-
-=== native log acceptance parse ===
-======================================================================
-Speculative Decoding Acceptance Analysis
-======================================================================
-
-Total samples: 9
-Total drafted tokens: 14014
-Average drafted tokens: 1557.11
-
-Weighted per-position acceptance rates:
-[0.801 0.563 0.425 0.334 0.257 0.21  0.179]
-
-Conditional acceptance rates:
-[0.801 0.703 0.754 0.786 0.771 0.817 0.85 ]
-======================================================================
-
-=== trained log acceptance parse ===
-======================================================================
-Speculative Decoding Acceptance Analysis
-======================================================================
-
-Total samples: 12
-Total drafted tokens: 18291
-Average drafted tokens: 1524.25
-
-Weighted per-position acceptance rates:
-[0.753 0.481 0.322 0.223 0.163 0.116 0.082]
-
-Conditional acceptance rates:
-[0.753 0.639 0.669 0.691 0.732 0.711 0.71 ]
-======================================================================
-
-=== Final 10-image comparison ===
-native completed groups:  16/16
-trained completed groups: 16/16
-images per prompt:        10
-native tok/s:             85.542
-trained tok/s:            71.847
-trained/native tok/s:     0.840
-native images/s:          1.671
-trained images/s:         1.403
-trained/native images/s:  0.840
-native ref hit:           0.194
-trained ref hit:          0.194
-
-native DFlash spec metrics:
-  draft steps:       2186.000
-  draft tokens:      15302.000
-  accepted:          6021.000
-  token accept:      0.393
-  first-pos accept:  0.798
-  mean accept/draft: 2.754
-
-trained DFlash spec metrics:
-  draft steps:       2613.000
-  draft tokens:      18291.000
-  accepted:          5594.000
-  token accept:      0.306
-  first-pos accept:  0.753
-  mean accept/draft: 2.141
-
-accept-rate ratio:   0.777
-mean-accept ratio:   0.777
-
-VERDICT: NOT IMPROVED - trained DFlash did not beat native DFlash.
-
-Artifacts:
-  /data/wenxuan/speculators/output/mmstar_10image_weight_tests/20260608_064439
-Stopping vLLM server pid=40375
+平台	环境	CANN	代码	数据集	工具	模型	其他	时间统计	投机模式	投机数量	并发-8											
+											吞吐	起草次数	接受率（5.21数据）	draft_token	prepare input	forward	post process	sample_token				
+NPU-图模式	单机TP8	9.1.0.Beta	刘晨冰 5.21版本	math500_50	vllm bench serve	qwen3.5-122b-a10b	请求4，并发8	Self Time	dflash	7	127.33	832	43.45%	9ms257us160ns	11ms498us850ns	2ms774us50ns	234us950ns	711us10ns				
+NPU-图模式	单机TP8	9.1.0.Beta	刘晨冰 5.21版本	math500_50	vllm bench serve	qwen3.5-122b-a10b	请求4，并发8	Self Time	mtp	7	264.1	448	68.80%	7ms722us360ns	5ms610us250ns	2ms638us610ns	226us600ns	655us260ns				
+																						
+											问题1：为什么prepare_input是两倍？					答1：结合agent深入理解一下。						
+											问题2：起草次数也是将近两倍？这样叠加起来岂不是四倍了？但是吞吐依旧是2倍。					答2：限制输出长度，并关注接受率和接受长度，观察输出，改一下env将结果保存到不同的json里。						
+																答2-1：With Stack的也看一下						
+											问题3：应该用Self还是Wall，最后的数据要跟TPOT对起来吗？					答3：答2执行好了应该是能一一计算对的。						
+											看Wall。											
+平台	环境	CANN	代码	数据集	是否带堆栈信息	模型	其他	时间统计	投机模式	投机数量	并发-1											
+											吞吐	前向次数	接受率	draft_token	prepare input	forward	post process	sample_token	TPOT	TTFT	decode单元	decode核心总长
+NPU-图模式	单机TP2	9.1.0.Beta	刘晨冰 5.21版本	math500_50	否	qwen3.5-35b-a3b	请求1,Token总256	Wall Time	无投机	/	75.52	256	/	/	5ms724us960ns	3ms864us440ns	553us250ns	402us390ns	11.75	392.04	11.7	2995.2
+NPU-图模式	单机TP2	9.1.0.Beta	刘晨冰 5.21版本	math500_50	否	qwen3.5-35b-a3b	请求1,Token总256	Wall Time	dflash	7	92.48	57	50.88%	15ms218us120ns	18ms713us300ns	3ms237us290ns	665us700ns	1ms65us240ns	9.14	436.36	40.8	2325.6
+NPU-图模式	单机TP2	9.1.0.Beta	刘晨冰 5.21版本	math500_50	否	qwen3.5-35b-a3b	请求1,Token总256	Wall Time	mtp	7	106.38	51	58.26%	15ms676us230ns	16ms51us550ns	3ms377us190ns	665us790ns	1ms173us150ns	7.58	473.65	37.5	1912.5
+NPU-图模式	单机TP2	9.1.0.Beta	刘晨冰 5.21版本	math500_50	否	qwen3.5-35b-a3b	请求1,Token总256	Wall Time	mtp	3	97.28	77	78.35%	7ms839us310ns	13ms807us760ns	3ms115us670ns	590us470ns	988us630ns	8.75	400.35	28.3	2179.1
+NPU-图模式	单机TP2	9.1.0.Beta	刘晨冰 5.21版本	math500_50	否	qwen3.5-35b-a3b	请求1,Token总256	Wall Time	dflash-层5变层3	7	106.07	57	/	10ms218us120ns	/	/	/	/	/	/	34.8	1983.6
+NPU-图模式											多并发MTP最优解											
+NPU-图模式											降2层训，纯文本											
+											实际											
+											1.多模态拉了			层5变层3，draft_token阶段能带来40%的收益，到decode单元这一块的收益变成12.5%。								
+											补一下TTFT/TPOT			不考虑Prefill的情况下，吞吐若也增幅12.5%，则可以几乎跟MTP打平								
+											DFlash简单讲两句											
+											baseline也要补											
