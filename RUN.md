@@ -218,6 +218,30 @@ CHECKPOINT_FIND_ROOT=/data/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_100k_
 bash examples/evaluate/sweep_dflash_mmstar_checkpoints.sh
 ```
 
+### 10-image MMStar grouped comparison
+
+This compares original/native DFlash
+`/data/wenxuan/Qwen3.5-9B-DFlash` against the best trained checkpoint selected
+from the latest MMStar checkpoint sweep result. It groups 10 MMStar images into
+each request, so this is mainly a multi-image throughput/acceptance probe.
+
+```bash
+cd /data/wenxuan/speculators
+
+INFER_NUM_SPEC=7 \
+NUM_GROUPS=16 \
+IMAGES_PER_PROMPT=10 \
+bash examples/evaluate/test_dflash_mmstar_10image_weights.sh
+```
+
+To pin a specific trained checkpoint instead of auto-selecting:
+
+```bash
+DRAFT=/data/wenxuan/speculators/output/.../checkpoints/14 \
+INFER_NUM_SPEC=7 \
+bash examples/evaluate/test_dflash_mmstar_10image_weights.sh
+```
+
 ---
 
 ## Files
@@ -228,6 +252,8 @@ bash examples/evaluate/sweep_dflash_mmstar_checkpoints.sh
 | ALLaVA/LLaVA → conversations jsonl | `scripts/llava_to_jsonl.py` |
 | ALLaVA image extractor · finder | `examples/train/extract_allava_images.sh` · `examples/train/find_allava.sh` |
 | MMStar → conversations jsonl | `scripts/mmstar_to_jsonl.py` |
+| MMStar original-vs-trained DFlash eval | `examples/evaluate/test_dflash_mmstar_weights.sh` |
+| MMStar 10-image DFlash eval | `examples/evaluate/test_dflash_mmstar_10image_weights.sh` |
 | Training curves (TensorBoard) | `examples/train/view_tensorboard.sh` |
 | Serve on GPU (baseline/mtp/dflash) | `examples/serve/run_qwen35_9b_gpu.sh` |
 | Quick serve test (text · image) | `examples/serve/test_trained_dflash_gpu.sh` · `examples/serve/test_trained_dflash_mm_gpu.sh` |
