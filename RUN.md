@@ -120,7 +120,7 @@ This removes the original ALLaVA/GT assistant answers, asks Qwen3.5-9B to answer
 the same image prompts, and writes a training-ready conversations jsonl.
 
 ```bash
-cd /home/wexuan/speculators
+cd /home/wenxuan/speculators
 
 bash examples/train/distill_allava_qwen35_10k.sh
 ```
@@ -128,7 +128,7 @@ bash examples/train/distill_allava_qwen35_10k.sh
 Default output:
 
 ```bash
-/home/wexuan/speculators/data/allava/allava_qwen35_distill_10k.jsonl
+/home/wenxuan/speculators/data/allava/allava_qwen35_distill_10k.jsonl
 ```
 
 The script is resumable by default. To reuse an existing verifier server:
@@ -141,7 +141,7 @@ bash examples/train/distill_allava_qwen35_10k.sh
 
 ### 1e. Train on 10k Qwen-distilled ALLaVA
 ```bash
-cd /home/wexuan/speculators
+cd /home/wenxuan/speculators
 
 bash examples/train/nohup_dflash_qwen3.5_9b_allava_distilled_10k.sh
 ```

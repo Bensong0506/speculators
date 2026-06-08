@@ -20,9 +20,9 @@ NOHUP_LOG_PATH="${NOHUP_LOG_PATH:-$NOHUP_LOG_DIR/${RUN_NAME}.nohup.log}"
 PID_PATH="${PID_PATH:-$NOHUP_LOG_DIR/${RUN_NAME}.pid}"
 mkdir -p "$NOHUP_LOG_DIR"
 
-export MODEL="${MODEL:-/home/wexuan/Qwen3.5-9B}"
-export FINETUNE_FROM="${FINETUNE_FROM:-/home/wexuan/Qwen3.5-9B-DFlash-spec}"
-export ALLAVA_IMAGE_ROOT="${ALLAVA_IMAGE_ROOT:-/home/wexuan/ALLaVA-4V}"
+export MODEL="${MODEL:-/home/wenxuan/Qwen3.5-9B}"
+export FINETUNE_FROM="${FINETUNE_FROM:-/home/wenxuan/Qwen3.5-9B-DFlash-spec}"
+export ALLAVA_IMAGE_ROOT="${ALLAVA_IMAGE_ROOT:-/home/wenxuan/ALLaVA-4V}"
 export DISTILLED_ALLAVA_JSONL="${DISTILLED_ALLAVA_JSONL:-$REPO_ROOT/data/allava/allava_qwen35_distill_10k.jsonl}"
 
 if [ ! -s "$DISTILLED_ALLAVA_JSONL" ]; then

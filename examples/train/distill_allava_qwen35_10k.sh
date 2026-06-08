@@ -19,8 +19,8 @@ cd "$REPO_ROOT"
 
 STAMP="$(date +%Y%m%d_%H%M%S)"
 
-MODEL="${MODEL:-/home/wexuan/Qwen3.5-9B}"
-ALLAVA_IMAGE_ROOT="${ALLAVA_IMAGE_ROOT:-/home/wexuan/ALLaVA-4V}"
+MODEL="${MODEL:-/home/wenxuan/Qwen3.5-9B}"
+ALLAVA_IMAGE_ROOT="${ALLAVA_IMAGE_ROOT:-/home/wenxuan/ALLaVA-4V}"
 ALLAVA_INPUTS="${ALLAVA_INPUTS:-$ALLAVA_IMAGE_ROOT/allava_laion/ALLaVA-Caption-LAION-4V.json $ALLAVA_IMAGE_ROOT/allava_laion/ALLaVA-Instruct-LAION-4V.json}"
 OUT_JSONL="${OUT_JSONL:-$REPO_ROOT/data/allava/allava_qwen35_distill_10k.jsonl}"
 
