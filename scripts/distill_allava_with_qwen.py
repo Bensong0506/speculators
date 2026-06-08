@@ -144,6 +144,18 @@ def main() -> None:
     parser.add_argument("--max-samples", type=int, default=10000)
     parser.add_argument("--skip-samples", type=int, default=0)
     parser.add_argument("--stride", type=int, default=1)
+    parser.add_argument(
+        "--total-samples",
+        type=int,
+        default=None,
+        help=(
+            "Global post-skip sample budget before sharding. When set with "
+            "--num-shards/--shard-index, each shard covers its own slice of "
+            "this global budget."
+        ),
+    )
+    parser.add_argument("--num-shards", type=int, default=1)
+    parser.add_argument("--shard-index", type=int, default=0)
     parser.add_argument("--max-tokens", type=int, default=512)
     parser.add_argument("--temperature", type=float, default=0.0)
     parser.add_argument("--top-p", type=float, default=1.0)
@@ -159,12 +171,23 @@ def main() -> None:
         raise SystemExit("--skip-samples must be non-negative")
     if args.stride <= 0:
         raise SystemExit("--stride must be positive")
+    if args.num_shards <= 0:
+        raise SystemExit("--num-shards must be positive")
+    if args.shard_index < 0 or args.shard_index >= args.num_shards:
+        raise SystemExit("--shard-index must be in [0, --num-shards)")
+    if args.total_samples is not None and args.total_samples <= 0:
+        raise SystemExit("--total-samples must be positive when set")
 
     import openai  # noqa: PLC0415
 
     args.out_jsonl.parent.mkdir(parents=True, exist_ok=True)
     existing = _count_existing(args.out_jsonl) if args.resume else 0
-    if existing >= args.max_samples:
+    target_rows = args.max_samples
+    if args.total_samples is not None:
+        selected_total = (args.total_samples + args.stride - 1) // args.stride
+        remaining = selected_total - args.shard_index
+        target_rows = 0 if remaining <= 0 else (remaining + args.num_shards - 1) // args.num_shards
+    if existing >= target_rows:
         print(f"Already have {existing} rows in {args.out_jsonl}; nothing to do.")
         return
 
@@ -177,7 +200,10 @@ def main() -> None:
     print(f"  image_root:   {args.image_root}")
     print(f"  out_jsonl:    {args.out_jsonl}")
     print(f"  max_samples:  {args.max_samples}")
+    print(f"  total_samples:{args.total_samples}")
     print(f"  skip_samples: {args.skip_samples}")
+    print(f"  shard:        {args.shard_index}/{args.num_shards}")
+    print(f"  target_rows:  {target_rows}")
     print(f"  resume rows:  {existing}")
 
     prompts = _iter_prompt_records(
@@ -196,10 +222,16 @@ def main() -> None:
             if skipped_valid < args.skip_samples:
                 skipped_valid += 1
                 continue
-            if after_skip % args.stride != 0:
-                after_skip += 1
-                continue
+            global_idx = after_skip
             after_skip += 1
+
+            if args.total_samples is not None and global_idx >= args.total_samples:
+                break
+            if global_idx % args.stride != 0:
+                continue
+            sharded_idx = global_idx // args.stride
+            if sharded_idx % args.num_shards != args.shard_index:
+                continue
 
             if skipped_existing < existing:
                 skipped_existing += 1
@@ -235,11 +267,11 @@ def main() -> None:
                 elapsed = time.perf_counter() - started
                 rate = generated_this_run / elapsed if elapsed > 0 else 0.0
                 print(
-                    f"[{written}/{args.max_samples}] "
+                    f"[{written}/{target_rows}] "
                     f"generated_this_run={generated_this_run} "
                     f"rate={rate:.3f} samples/s"
                 )
-            if written >= args.max_samples:
+            if written >= target_rows:
                 break
 
     if written == 0:

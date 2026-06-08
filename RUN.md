@@ -122,7 +122,7 @@ the same image prompts, and writes a training-ready conversations jsonl.
 ```bash
 cd /home/wenxuan/speculators
 
-bash examples/train/distill_allava_qwen35_10k.sh
+bash examples/train/distill_allava_qwen35_10k_8gpu.sh
 ```
 
 Default output:
@@ -131,7 +131,17 @@ Default output:
 /home/wenxuan/speculators/data/allava/allava_qwen35_distill_10k.jsonl
 ```
 
-The script is resumable by default. To reuse an existing verifier server:
+The 8-GPU launcher starts one verifier server per GPU on ports `8100..8107`,
+writes shard files under `data/allava/allava_qwen35_distill_10k_shards/`, then
+merges them back into the default output path. It is resumable by default.
+
+Single-GPU fallback:
+
+```bash
+bash examples/train/distill_allava_qwen35_10k.sh
+```
+
+To reuse an existing verifier server:
 
 ```bash
 START_SERVER=0 \
@@ -247,6 +257,7 @@ RUN_MODE=dflash   ... bash examples/serve/run_qwen35_9b_gpu.sh   # then eval -> 
 |---|---|
 | Train (multimodal DFlash, online + warm-start) | `examples/train/dflash_qwen3.5_9b_multimodal_online.sh` |
 | Distill 10k ALLaVA with Qwen | `examples/train/distill_allava_qwen35_10k.sh` |
+| Distill 10k ALLaVA with Qwen on 8 GPUs | `examples/train/distill_allava_qwen35_10k_8gpu.sh` |
 | Train on Qwen-distilled 10k ALLaVA | `examples/train/nohup_dflash_qwen3.5_9b_allava_distilled_10k.sh` |
 | ALLaVA Qwen distillation client | `scripts/distill_allava_with_qwen.py` |
 | ALLaVA/LLaVA → conversations jsonl | `scripts/llava_to_jsonl.py` |

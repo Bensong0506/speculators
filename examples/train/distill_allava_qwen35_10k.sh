@@ -25,8 +25,11 @@ ALLAVA_INPUTS="${ALLAVA_INPUTS:-$ALLAVA_IMAGE_ROOT/allava_laion/ALLaVA-Caption-L
 OUT_JSONL="${OUT_JSONL:-$REPO_ROOT/data/allava/allava_qwen35_distill_10k.jsonl}"
 
 MAX_SAMPLES="${MAX_SAMPLES:-10000}"
+TOTAL_SAMPLES="${TOTAL_SAMPLES:-}"
 SKIP_SAMPLES="${SKIP_SAMPLES:-0}"
 STRIDE="${STRIDE:-1}"
+NUM_SHARDS="${NUM_SHARDS:-1}"
+SHARD_INDEX="${SHARD_INDEX:-0}"
 MAX_TOKENS="${MAX_TOKENS:-512}"
 TEMPERATURE="${TEMPERATURE:-0}"
 TOP_P="${TOP_P:-1}"
@@ -117,6 +120,8 @@ start_server() {
     echo "  image_root:   $ALLAVA_IMAGE_ROOT"
     echo "  out_jsonl:    $OUT_JSONL"
     echo "  max_samples:  $MAX_SAMPLES"
+    echo "  total_samples:${TOTAL_SAMPLES:-unset}"
+    echo "  shard:        $SHARD_INDEX/$NUM_SHARDS"
     echo "  port:         $PORT"
     echo "  gpus:         $GPUS"
     echo "  log:          $SERVER_LOG"
@@ -149,6 +154,8 @@ DISTILL_ARGS=(
     --max-samples "$MAX_SAMPLES"
     --skip-samples "$SKIP_SAMPLES"
     --stride "$STRIDE"
+    --num-shards "$NUM_SHARDS"
+    --shard-index "$SHARD_INDEX"
     --max-tokens "$MAX_TOKENS"
     --temperature "$TEMPERATURE"
     --top-p "$TOP_P"
@@ -156,6 +163,9 @@ DISTILL_ARGS=(
 )
 if [ "$RESUME" = "1" ]; then
     DISTILL_ARGS+=(--resume)
+fi
+if [ -n "$TOTAL_SAMPLES" ]; then
+    DISTILL_ARGS+=(--total-samples "$TOTAL_SAMPLES")
 fi
 
 echo "=== Distilling ALLaVA prompts with Qwen ==="
