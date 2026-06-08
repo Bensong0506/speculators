@@ -115,7 +115,40 @@ These defaults are meant for an early-checkpoint sweep: evaluate each saved
 checkpoint with `INFER_NUM_SPEC=7` instead of trusting training validation loss
 or `checkpoint_best` alone.
 
-### 1d. Watch training (loss + per-position acceptance)
+### 1d. Build 10k Qwen-distilled ALLaVA data
+This removes the original ALLaVA/GT assistant answers, asks Qwen3.5-9B to answer
+the same image prompts, and writes a training-ready conversations jsonl.
+
+```bash
+cd /home/wexuan/speculators
+
+bash examples/train/distill_allava_qwen35_10k.sh
+```
+
+Default output:
+
+```bash
+/home/wexuan/speculators/data/allava/allava_qwen35_distill_10k.jsonl
+```
+
+The script is resumable by default. To reuse an existing verifier server:
+
+```bash
+START_SERVER=0 \
+ENDPOINT=http://localhost:8100/v1 \
+bash examples/train/distill_allava_qwen35_10k.sh
+```
+
+### 1e. Train on 10k Qwen-distilled ALLaVA
+```bash
+cd /home/wexuan/speculators
+
+bash examples/train/nohup_dflash_qwen3.5_9b_allava_distilled_10k.sh
+```
+
+Defaults: `MAX_SAMPLES=10000 EPOCHS=20 CHECKPOINT_FREQ=1 LR_FT=1e-5`.
+
+### 1f. Watch training (loss + per-position acceptance)
 ```bash
 bash examples/train/view_tensorboard.sh
 # from your laptop:  ssh -N -L 6006:localhost:6006 <user>@<gpu-box>  -> http://localhost:6006
@@ -213,6 +246,9 @@ RUN_MODE=dflash   ... bash examples/serve/run_qwen35_9b_gpu.sh   # then eval -> 
 | What | Path |
 |---|---|
 | Train (multimodal DFlash, online + warm-start) | `examples/train/dflash_qwen3.5_9b_multimodal_online.sh` |
+| Distill 10k ALLaVA with Qwen | `examples/train/distill_allava_qwen35_10k.sh` |
+| Train on Qwen-distilled 10k ALLaVA | `examples/train/nohup_dflash_qwen3.5_9b_allava_distilled_10k.sh` |
+| ALLaVA Qwen distillation client | `scripts/distill_allava_with_qwen.py` |
 | ALLaVA/LLaVA → conversations jsonl | `scripts/llava_to_jsonl.py` |
 | ALLaVA image extractor · finder | `examples/train/extract_allava_images.sh` · `examples/train/find_allava.sh` |
 | MMStar → conversations jsonl | `scripts/mmstar_to_jsonl.py` |
