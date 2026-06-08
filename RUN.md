@@ -84,8 +84,8 @@ FINETUNE_FROM=/home/models/Qwen3.5-9B-DFlash \
 # FORCE_PREPROCESS=1; this clears only preprocessing artifacts and keeps checkpoints.
 # vLLM request access logs are filtered by the shell so repeated 200 OK lines do
 # not hide errors, without relying on version-specific vLLM CLI flags.
-# the run prints "Warm-start: aligning ..." -> eyeball block_size=16 / 5 layers /
-#   qwen3 / aux=[1,8,15,22,29] / mask=248070 / full vocab before it continues.
+# the run prints "Aligning recipe ..." -> eyeball block_size / num_layers / qwen3 /
+#   aux=[1,8,15,22,29] / mask=248070 / full vocab before it continues.
 # NOTE: MAX_SAMPLES caps TOTAL in input order (Caption first). The two local
 #   LAION files are 468,670 caption + 468,670 instruct = 937,340 rows total, so
 #   MAX_SAMPLES must be >468670 to include instruct. Re-convert after changing
@@ -115,7 +115,28 @@ These defaults are meant for an early-checkpoint sweep: evaluate each saved
 checkpoint with `INFER_NUM_SPEC=7` instead of trusting training validation loss
 or `checkpoint_best` alone.
 
-### 1d. Watch training (loss + per-position acceptance)
+### 1d. 3-layer pruned DFlash 10k warm-start
+This first prunes the 5-layer speculators-format DFlash checkpoint to 3 draft
+layers by keeping original layers `0 2 4`, then runs a 10k ALLaVA continue
+training job from that pruned checkpoint.
+
+```bash
+cd /data/wenxuan/speculators
+
+bash examples/train/nohup_dflash_qwen3.5_9b_allava_10k_prune3.sh
+```
+
+Useful overrides:
+
+```bash
+KEEP_LAYERS="0 3 4" \
+PRUNED_DFLASH_OUT=/data/wenxuan/Qwen3.5-9B-DFlash-spec-3layers-034 \
+bash examples/train/nohup_dflash_qwen3.5_9b_allava_10k_prune3.sh
+```
+
+Defaults: `MAX_SAMPLES=10000 EPOCHS=20 CHECKPOINT_FREQ=1 LR_FT=1e-5`.
+
+### 1e. Watch training (loss + per-position acceptance)
 ```bash
 bash examples/train/view_tensorboard.sh
 # from your laptop:  ssh -N -L 6006:localhost:6006 <user>@<gpu-box>  -> http://localhost:6006
@@ -213,6 +234,9 @@ RUN_MODE=dflash   ... bash examples/serve/run_qwen35_9b_gpu.sh   # then eval -> 
 | What | Path |
 |---|---|
 | Train (multimodal DFlash, online + warm-start) | `examples/train/dflash_qwen3.5_9b_multimodal_online.sh` |
+| Detached 100k warm-start run | `examples/train/nohup_dflash_qwen3.5_9b_allava_full.sh` |
+| Detached 10k pruned-3-layer warm-start run | `examples/train/nohup_dflash_qwen3.5_9b_allava_10k_prune3.sh` |
+| Prune DFlash draft layers | `scripts/prune_dflash_layers.py` |
 | ALLaVA/LLaVA → conversations jsonl | `scripts/llava_to_jsonl.py` |
 | ALLaVA image extractor · finder | `examples/train/extract_allava_images.sh` · `examples/train/find_allava.sh` |
 | MMStar → conversations jsonl | `scripts/mmstar_to_jsonl.py` |

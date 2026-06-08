@@ -194,12 +194,17 @@ PY
     eval "$(python3 - "$FINETUNE_FROM/config.json" <<'PY'
 import json, sys
 c = json.load(open(sys.argv[1]))
+tl = c.get("transformer_layer_config") or {}
 df = c.get("dflash_config", {})
 tli = df.get("target_layer_ids") or c.get("aux_hidden_state_layer_ids") or []
 mt = df.get("mask_token_id", c.get("mask_token_id"))
+layer_types = c.get("layer_types") or tl.get("layer_types") or []
+draft_arch = tl.get("model_type") or c.get("model_type") or "qwen3"
+if draft_arch == "dflash":
+    draft_arch = "qwen3"
 print(f'BLOCK_SIZE={c.get("block_size", 16)}')
-print(f'NUM_LAYERS={c.get("num_hidden_layers") or len(c.get("layer_types", [])) or 5}')
-print(f'DRAFT_ARCH={c.get("model_type", "qwen3")}')
+print(f'NUM_LAYERS={c.get("num_hidden_layers") or tl.get("num_hidden_layers") or len(layer_types) or 5}')
+print(f'DRAFT_ARCH={draft_arch}')
 print('TARGET_LAYER_IDS="%s"' % " ".join(str(x) for x in tli))
 print(f'MASK_TOKEN_ID={mt}' if mt is not None else 'MASK_TOKEN_ID=')
 print(f'SPEC_FORMAT={1 if "speculators_model_type" in c else 0}')
