@@ -218,6 +218,31 @@ CHECKPOINT_FIND_ROOT=/data/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_100k_
 bash examples/evaluate/sweep_dflash_mmstar_checkpoints.sh
 ```
 
+### ALLaVA triple comparison: MTP vs original DFlash vs trained DFlash
+
+Defaults in this branch use `/home/wexuan/...` paths. The script builds a small
+ALLaVA eval jsonl by skipping the first 100k valid image records, then compares
+native MTP, original/raw DFlash, and the trained DFlash checkpoint on the exact
+same prompts.
+
+```bash
+cd /home/wexuan/speculators
+
+bash examples/evaluate/test_allava_mtp_dflash_triple.sh
+```
+
+Pin a specific trained checkpoint:
+
+```bash
+DRAFT=/home/wexuan/speculators/output/.../checkpoints/14 \
+ALLAVA_EVAL_SAMPLES=256 \
+MTP_SPEC=7 \
+DFLASH_SPEC=7 \
+bash examples/evaluate/test_allava_mtp_dflash_triple.sh
+```
+
+Results are written to `output/allava_triple_tests/<timestamp>/`.
+
 ### 10-image MMStar grouped comparison
 
 This compares original/native DFlash
@@ -251,6 +276,8 @@ bash examples/evaluate/test_dflash_mmstar_10image_weights.sh
 | Train (multimodal DFlash, online + warm-start) | `examples/train/dflash_qwen3.5_9b_multimodal_online.sh` |
 | ALLaVA/LLaVA → conversations jsonl | `scripts/llava_to_jsonl.py` |
 | ALLaVA image extractor · finder | `examples/train/extract_allava_images.sh` · `examples/train/find_allava.sh` |
+| ALLaVA eval jsonl builder | `scripts/allava_eval_to_jsonl.py` |
+| ALLaVA MTP/original/trained eval | `examples/evaluate/test_allava_mtp_dflash_triple.sh` |
 | MMStar → conversations jsonl | `scripts/mmstar_to_jsonl.py` |
 | MMStar original-vs-trained DFlash eval | `examples/evaluate/test_dflash_mmstar_weights.sh` |
 | MMStar 10-image DFlash eval | `examples/evaluate/test_dflash_mmstar_10image_weights.sh` |
