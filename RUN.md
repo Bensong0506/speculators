@@ -287,6 +287,33 @@ The sweep writes stable, resumable results under
 `summary.json` files are skipped, and matching results from previous
 `test_mtp_vs_dflash_original_mmstar.sh` runs are reused automatically.
 
+### Trained DFlash best checkpoint vs the six baselines
+
+This first sweeps the current trained checkpoints with `SELECT_SPEC=7`, selects
+the best checkpoint by trained `tok/s`, then evaluates that checkpoint at
+`num_spec=3/5/7` and merges the rows with the six baseline rows
+(`MTP@3/5/7`, `original_dflash@3/5/7`). Checkpoint folders named `0`, `4`, `9`,
+`14`, ... and `checkpoint_best` are both supported.
+
+```bash
+cd /home/wenxuan/speculators
+git checkout test_result
+git pull
+
+CHECKPOINT_FIND_ROOT=/home/wenxuan/speculators/output/<your_run>/checkpoints \
+SELECT_SPEC=7 \
+TRAINED_SPECS="3 5 7" \
+NUM_PROMPTS=128 \
+bash examples/evaluate/eval_trained_dflash_best_vs_baselines.sh
+```
+
+If `CHECKPOINT_FIND_ROOT` is omitted, the script auto-discovers the newest
+speculators-format DFlash checkpoints under `output/`. Results are written under
+`output/mmstar_trained_dflash_best_vs_baselines/single_n128_tok128/<run_tag>/`,
+especially `final_results.md`, `final_results.csv`, and `final_results.jsonl`.
+Use `FORCE_CHECKPOINT_SWEEP=1`, `FORCE_TRAINED_SPEC_SWEEP=1`, or
+`FORCE_BASELINE_SWEEP=1` to rerun cached stages.
+
 ---
 
 ## Files
@@ -302,6 +329,7 @@ The sweep writes stable, resumable results under
 | MMStar native MTP-vs-original DFlash eval | `examples/evaluate/test_mtp_vs_dflash_original_mmstar.sh` |
 | MMStar MTP/DFlash spec sweep | `examples/evaluate/sweep_mtp_dflash_original_mmstar_specs.sh` |
 | MMStar MTP/DFlash spec sweep summary | `examples/evaluate/mmstar_mtp_dflash_spec_sweep_summary.md` |
+| MMStar trained-best-vs-baselines eval | `examples/evaluate/eval_trained_dflash_best_vs_baselines.sh` |
 | Training curves (TensorBoard) | `examples/train/view_tensorboard.sh` |
 | Serve on GPU (baseline/mtp/dflash) | `examples/serve/run_qwen35_9b_gpu.sh` |
 | Quick serve test (text · image) | `examples/serve/test_trained_dflash_gpu.sh` · `examples/serve/test_trained_dflash_mm_gpu.sh` |

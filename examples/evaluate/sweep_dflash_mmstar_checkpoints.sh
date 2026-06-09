@@ -27,6 +27,16 @@ cd "$REPO_ROOT"
 
 STAMP="$(date +%Y%m%d_%H%M%S)"
 
+DEFAULT_ROOT="${DEFAULT_ROOT:-/home/wenxuan}"
+if [ ! -d "$DEFAULT_ROOT/Qwen3.5-9B" ] && [ -d /data/wenxuan/Qwen3.5-9B ]; then
+    DEFAULT_ROOT="/data/wenxuan"
+fi
+
+DEFAULT_MMSTAR_ROOT="${MMSTAR_ROOT:-$DEFAULT_ROOT/mmstar}"
+if [ ! -s "$DEFAULT_MMSTAR_ROOT/mmstar_answers.json" ] && [ -s /data/wenxuan/mmstar/mmstar_answers.json ]; then
+    DEFAULT_MMSTAR_ROOT="/data/wenxuan/mmstar"
+fi
+
 TEST_SCRIPT="${TEST_SCRIPT:-$REPO_ROOT/examples/evaluate/test_dflash_mmstar_weights.sh}"
 CHECKPOINT_FIND_ROOT="${CHECKPOINT_FIND_ROOT:-$REPO_ROOT/output}"
 CHECKPOINT_LIST="${CHECKPOINT_LIST:-}"
@@ -35,13 +45,23 @@ RESULTS_JSONL="$SWEEP_ROOT/results.jsonl"
 RESULTS_CSV="$SWEEP_ROOT/results.csv"
 
 INFER_NUM_SPEC="${INFER_NUM_SPEC:-7}"
-BASELINE_DRAFT="${BASELINE_DRAFT:-/data/wenxuan/Qwen3.5-9B-DFlash}"
+MODEL="${MODEL:-$DEFAULT_ROOT/Qwen3.5-9B}"
+BASELINE_DRAFT="${BASELINE_DRAFT:-$DEFAULT_ROOT/Qwen3.5-9B-DFlash}"
+MMSTAR_SRC="${MMSTAR_SRC:-$DEFAULT_MMSTAR_ROOT/mmstar_answers.json}"
+MMSTAR_JSONL="${MMSTAR_JSONL:-$REPO_ROOT/data/mmstar/mmstar_eval.jsonl}"
+MMSTAR_IMAGE_DIR="${MMSTAR_IMAGE_DIR:-$REPO_ROOT/data/mmstar/images}"
+MEDIA_ROOT="${MEDIA_ROOT:-$DEFAULT_MMSTAR_ROOT/images}"
 NUM_PROMPTS="${NUM_PROMPTS:-128}"
 MAX_TOKENS="${MAX_TOKENS:-128}"
 GPUS="${GPUS:-0}"
 TP="${TP:-1}"
 BASELINE_PORT="${BASELINE_PORT:-8100}"
 DFLASH_PORT="${DFLASH_PORT:-8101}"
+MAX_MODEL_LEN="${MAX_MODEL_LEN:-8192}"
+MAX_NUM_SEQS="${MAX_NUM_SEQS:-16}"
+MIN_BATCHED_TOKENS="$((MAX_MODEL_LEN + MAX_NUM_SEQS * INFER_NUM_SPEC))"
+MAX_NUM_BATCHED_TOKENS="${MAX_NUM_BATCHED_TOKENS:-$MIN_BATCHED_TOKENS}"
+GPU_MEMORY_UTIL="${GPU_MEMORY_UTIL:-0.85}"
 CONTINUE_ON_FAIL="${CONTINUE_ON_FAIL:-1}"
 INCLUDE_BEST="${INCLUDE_BEST:-1}"
 DEDUP_REALPATH="${DEDUP_REALPATH:-1}"
@@ -262,7 +282,10 @@ echo "=== MMStar DFlash checkpoint sweep ==="
 echo "  checkpoints:       $TOTAL"
 echo "  checkpoint list:   $SWEEP_ROOT/checkpoints.txt"
 echo "  infer_num_spec:    $INFER_NUM_SPEC"
+echo "  model:             $MODEL"
 echo "  baseline_draft:    $BASELINE_DRAFT"
+echo "  mmstar_src:        $MMSTAR_SRC"
+echo "  media_root:        $MEDIA_ROOT"
 echo "  num_prompts:       $NUM_PROMPTS"
 echo "  sweep root:        $SWEEP_ROOT"
 echo "  results csv:       $RESULTS_CSV"
@@ -290,16 +313,25 @@ PY
 
     echo "=== [$index/$TOTAL] testing $checkpoint ==="
     env \
+        MODEL="$MODEL" \
         DRAFT="$checkpoint" \
         RUN_DIR="$run_dir" \
         INFER_NUM_SPEC="$INFER_NUM_SPEC" \
         BASELINE_DRAFT="$BASELINE_DRAFT" \
+        MMSTAR_SRC="$MMSTAR_SRC" \
+        MMSTAR_JSONL="$MMSTAR_JSONL" \
+        MMSTAR_IMAGE_DIR="$MMSTAR_IMAGE_DIR" \
+        MEDIA_ROOT="$MEDIA_ROOT" \
         NUM_PROMPTS="$NUM_PROMPTS" \
         MAX_TOKENS="$MAX_TOKENS" \
         GPUS="$GPUS" \
         TP="$TP" \
         BASELINE_PORT="$BASELINE_PORT" \
         DFLASH_PORT="$DFLASH_PORT" \
+        MAX_MODEL_LEN="$MAX_MODEL_LEN" \
+        MAX_NUM_BATCHED_TOKENS="$MAX_NUM_BATCHED_TOKENS" \
+        MAX_NUM_SEQS="$MAX_NUM_SEQS" \
+        GPU_MEMORY_UTIL="$GPU_MEMORY_UTIL" \
         bash "$TEST_SCRIPT" > "$run_dir/sweep_stdout.log" 2>&1
     status=$?
 
