@@ -12,6 +12,7 @@
 #
 # Usage:
 #   CHECKPOINT_FIND_ROOT=/path/to/current/run/checkpoints \
+#   EVAL_GPU_GROUPS="0 1 2 3 4 5 6 7" \
 #   bash examples/evaluate/eval_trained_dflash_best_vs_baselines.sh
 
 set -euo pipefail
@@ -52,6 +53,7 @@ TP="${TP:-1}"
 PORT="${PORT:-8100}"
 BASELINE_PORT="${BASELINE_PORT:-8100}"
 DFLASH_PORT="${DFLASH_PORT:-8101}"
+PORT_STRIDE="${PORT_STRIDE:-20}"
 SERVED_MODEL_NAME="${SERVED_MODEL_NAME:-qwen3.5-9b-trained-dflash-spec-sweep}"
 ENFORCE_EAGER="${ENFORCE_EAGER:-1}"
 DTYPE="${DTYPE:-bfloat16}"
@@ -80,9 +82,43 @@ print(max(vals) if vals else 1)
 PY
 }
 
+normalize_gpu_groups() {
+    python3 - "$1" "$2" <<'PY'
+import sys
+
+raw = sys.argv[1].strip()
+tp = int(sys.argv[2])
+if not raw:
+    print("0")
+elif " " not in raw and "," in raw and tp == 1:
+    print(" ".join(part.strip() for part in raw.split(",") if part.strip()))
+else:
+    print(raw)
+PY
+}
+
+gpu_group_count() {
+    python3 - "$1" <<'PY'
+import sys
+
+print(len([part for part in sys.argv[1].split() if part]))
+PY
+}
+
+first_gpu_group() {
+    python3 - "$1" <<'PY'
+import sys
+
+parts = [part for part in sys.argv[1].split() if part]
+print(parts[0] if parts else "0")
+PY
+}
+
 MAX_REQUESTED_SPEC="$(max_spec "$TRAINED_SPECS" "$SELECT_SPEC" "$MTP_SPECS" "$DFLASH_SPECS")"
 MIN_BATCHED_TOKENS="$((MAX_MODEL_LEN + MAX_NUM_SEQS * MAX_REQUESTED_SPEC))"
 MAX_NUM_BATCHED_TOKENS="${MAX_NUM_BATCHED_TOKENS:-$MIN_BATCHED_TOKENS}"
+EVAL_GPU_GROUPS="${EVAL_GPU_GROUPS:-$(normalize_gpu_groups "$GPUS" "$TP")}"
+TRAINED_SPEC_GPU_GROUPS="${TRAINED_SPEC_GPU_GROUPS:-$EVAL_GPU_GROUPS}"
 TRAINED_SWEEP_STATUS=0
 
 SERVER_PID=""
@@ -200,7 +236,7 @@ run_baseline_sweep_if_needed() {
             MAX_NUM_BATCHED_TOKENS="$MAX_NUM_BATCHED_TOKENS" \
             MAX_NUM_SEQS="$MAX_NUM_SEQS" \
             GPU_MEMORY_UTIL="$GPU_MEMORY_UTIL" \
-            GPUS="$GPUS" \
+            GPUS="$(first_gpu_group "$EVAL_GPU_GROUPS")" \
             TP="$TP" \
             PORT="$PORT" \
             OUTPUT_ROOT="$REPO_ROOT/output/mmstar_mtp_dflash_spec_sweeps" \
@@ -209,6 +245,150 @@ run_baseline_sweep_if_needed() {
     else
         echo "[info] reusing baseline results: $BASELINE_RESULTS_JSONL"
     fi
+}
+
+discover_checkpoint_list() {
+    local out="$1"
+    python3 - "$CHECKPOINT_FIND_ROOT" "$out" <<'PY'
+import json
+import re
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1])
+out = Path(sys.argv[2])
+if not root.exists():
+    raise SystemExit(f"[fatal] CHECKPOINT_FIND_ROOT does not exist: {root}")
+
+items = []
+for path in root.rglob("*"):
+    if not path.is_dir():
+        continue
+    name = path.name
+    step_match = re.match(r"checkpoint[_-]?(\d+)$", name) or re.match(r"(\d+)$", name)
+    if name != "checkpoint_best" and not step_match:
+        continue
+    cfg_path = path / "config.json"
+    weights_path = path / "model.safetensors"
+    if not cfg_path.exists() or not weights_path.exists():
+        continue
+    try:
+        cfg = json.loads(cfg_path.read_text())
+    except Exception:
+        continue
+    if cfg.get("speculators_model_type") != "dflash":
+        continue
+    step = int(step_match.group(1)) if step_match else 10**18
+    items.append(
+        {
+            "key": str(path.resolve()),
+            "parent": str(path.parent.parent),
+            "step": step,
+            "is_best": name == "checkpoint_best",
+            "path": str(path),
+        }
+    )
+
+deduped = {}
+for item in items:
+    current = deduped.get(item["key"])
+    if current is None or (current["is_best"] and not item["is_best"]):
+        deduped[item["key"]] = item
+
+items = sorted(
+    deduped.values(),
+    key=lambda x: (x["parent"], x["step"], x["is_best"], x["path"]),
+)
+if not items:
+    raise SystemExit(f"[fatal] no speculators-format DFlash checkpoints under {root}")
+
+out.parent.mkdir(parents=True, exist_ok=True)
+out.write_text("\n".join(item["path"] for item in items) + "\n", encoding="utf-8")
+print(len(items))
+PY
+}
+
+split_checkpoint_list() {
+    local source_list="$1"
+    local shard_dir="$2"
+    local workers="$3"
+    python3 - "$source_list" "$shard_dir" "$workers" <<'PY'
+import sys
+from pathlib import Path
+
+source = Path(sys.argv[1])
+shard_dir = Path(sys.argv[2])
+workers = int(sys.argv[3])
+items = [line.strip() for line in source.read_text().splitlines() if line.strip()]
+shard_dir.mkdir(parents=True, exist_ok=True)
+for idx in range(workers):
+    shard_items = items[idx::workers]
+    path = shard_dir / f"shard_{idx}.txt"
+    path.write_text("\n".join(shard_items) + ("\n" if shard_items else ""), encoding="utf-8")
+PY
+}
+
+merge_checkpoint_sweep_results() {
+    local shards_root="$1"
+    local out_jsonl="$2"
+    local out_csv="$3"
+    python3 - "$shards_root" "$out_jsonl" "$out_csv" <<'PY'
+import csv
+import json
+import sys
+from pathlib import Path
+
+shards_root = Path(sys.argv[1])
+out_jsonl = Path(sys.argv[2])
+out_csv = Path(sys.argv[3])
+rows = []
+for result_path in sorted(shards_root.glob("shard_*/results.jsonl")):
+    for line in result_path.read_text().splitlines():
+        if line.strip():
+            rows.append(json.loads(line))
+
+if not rows:
+    raise SystemExit(f"[fatal] no shard results found under {shards_root}")
+
+out_jsonl.parent.mkdir(parents=True, exist_ok=True)
+with out_jsonl.open("w", encoding="utf-8") as handle:
+    for row in rows:
+        handle.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+fields = [
+    "checkpoint",
+    "run_dir",
+    "infer_num_spec",
+    "exit_status",
+    "verdict",
+    "native_tok_s",
+    "trained_tok_s",
+    "trained_native_ratio",
+    "native_mean_accept_per_draft",
+    "trained_mean_accept_per_draft",
+    "mean_accept_ratio",
+    "native_token_accept_rate",
+    "trained_token_accept_rate",
+    "token_accept_ratio",
+    "native_first_pos_accept",
+    "trained_first_pos_accept",
+    "native_ref_hit",
+    "trained_ref_hit",
+    "native_draft_steps",
+    "trained_draft_steps",
+    "native_draft_tokens",
+    "trained_draft_tokens",
+    "native_accepted_tokens",
+    "trained_accepted_tokens",
+]
+with out_csv.open("w", encoding="utf-8", newline="") as handle:
+    writer = csv.DictWriter(handle, fieldnames=fields)
+    writer.writeheader()
+    for row in rows:
+        writer.writerow({field: row.get(field) for field in fields})
+
+print(f"[info] merged {len(rows)} checkpoint rows into {out_jsonl}")
+PY
 }
 
 run_checkpoint_sweep_if_needed() {
@@ -222,6 +402,78 @@ run_checkpoint_sweep_if_needed() {
 
     echo
     echo "=== Sweeping trained checkpoints to select best checkpoint ==="
+    local worker_count
+    worker_count="$(gpu_group_count "$EVAL_GPU_GROUPS")"
+    if [ "$worker_count" -gt 1 ]; then
+        local all_list shard_lists shards_root
+        local idx group list shard_dir baseline_port dflash_port pid
+        local failed=0
+        all_list="$CHECKPOINT_SWEEP_ROOT/all_checkpoints.txt"
+        shard_lists="$CHECKPOINT_SWEEP_ROOT/shard_lists"
+        shards_root="$CHECKPOINT_SWEEP_ROOT/shards"
+        rm -rf "$shard_lists" "$shards_root"
+        mkdir -p "$CHECKPOINT_SWEEP_ROOT" "$shard_lists" "$shards_root"
+        local total
+        total="$(discover_checkpoint_list "$all_list")"
+        split_checkpoint_list "$all_list" "$shard_lists" "$worker_count"
+        echo "[info] parallel checkpoint sweep: $total checkpoints across $worker_count workers"
+
+        idx=0
+        for group in $EVAL_GPU_GROUPS; do
+            list="$shard_lists/shard_${idx}.txt"
+            if [ ! -s "$list" ]; then
+                echo "[info] worker $idx gpu=$group has no checkpoint shard; skipping"
+                idx=$((idx + 1))
+                continue
+            fi
+            shard_dir="$shards_root/shard_${idx}"
+            mkdir -p "$shard_dir"
+            baseline_port=$((BASELINE_PORT + idx * PORT_STRIDE))
+            dflash_port=$((DFLASH_PORT + idx * PORT_STRIDE))
+            echo "[info] worker $idx gpu=$group ports=$baseline_port/$dflash_port list=$list"
+            env \
+                MODEL="$MODEL" \
+                CHECKPOINT_LIST="$list" \
+                SWEEP_ROOT="$shard_dir" \
+                INFER_NUM_SPEC="$SELECT_SPEC" \
+                BASELINE_DRAFT="$BASELINE_DRAFT" \
+                MMSTAR_SRC="$MMSTAR_SRC" \
+                MMSTAR_JSONL="$MMSTAR_JSONL" \
+                MMSTAR_IMAGE_DIR="$MMSTAR_IMAGE_DIR" \
+                MEDIA_ROOT="$MEDIA_ROOT" \
+                NUM_PROMPTS="$NUM_PROMPTS" \
+                MAX_TOKENS="$MAX_TOKENS" \
+                MAX_MODEL_LEN="$MAX_MODEL_LEN" \
+                MAX_NUM_BATCHED_TOKENS="$MAX_NUM_BATCHED_TOKENS" \
+                MAX_NUM_SEQS="$MAX_NUM_SEQS" \
+                GPU_MEMORY_UTIL="$GPU_MEMORY_UTIL" \
+                GPUS="$group" \
+                TP="$TP" \
+                BASELINE_PORT="$baseline_port" \
+                DFLASH_PORT="$dflash_port" \
+                bash examples/evaluate/sweep_dflash_mmstar_checkpoints.sh \
+                > "$shard_dir/worker_stdout.log" 2>&1 &
+            pid=$!
+            echo "$pid" > "$shard_dir/worker.pid"
+            idx=$((idx + 1))
+        done
+
+        for pid_file in "$shards_root"/shard_*/worker.pid; do
+            [ -e "$pid_file" ] || continue
+            pid="$(cat "$pid_file")"
+            if ! wait "$pid"; then
+                echo "[warn] checkpoint sweep worker failed: $pid_file"
+                failed=1
+            fi
+        done
+
+        merge_checkpoint_sweep_results "$shards_root" "$CHECKPOINT_SWEEP_ROOT/results.jsonl" "$CHECKPOINT_SWEEP_ROOT/results.csv"
+        if [ "$failed" != "0" ]; then
+            echo "[warn] at least one checkpoint sweep worker failed; merged successful rows only."
+        fi
+        return 0
+    fi
+
     env \
         MODEL="$MODEL" \
         CHECKPOINT_FIND_ROOT="$CHECKPOINT_FIND_ROOT" \
@@ -238,7 +490,7 @@ run_checkpoint_sweep_if_needed() {
         MAX_NUM_BATCHED_TOKENS="$MAX_NUM_BATCHED_TOKENS" \
         MAX_NUM_SEQS="$MAX_NUM_SEQS" \
         GPU_MEMORY_UTIL="$GPU_MEMORY_UTIL" \
-        GPUS="$GPUS" \
+        GPUS="$(first_gpu_group "$EVAL_GPU_GROUPS")" \
         TP="$TP" \
         BASELINE_PORT="$BASELINE_PORT" \
         DFLASH_PORT="$DFLASH_PORT" \
@@ -325,7 +577,8 @@ PY
 wait_for_server() {
     local log="$1"
     local mode="$2"
-    echo "Waiting for $mode server on :$PORT (log: $log)"
+    local port="${3:-$PORT}"
+    echo "Waiting for $mode server on :$port (log: $log)"
     for _ in $(seq 1 180); do
         if ! kill -0 "$SERVER_PID" 2>/dev/null; then
             echo "ERROR: $mode vLLM server died during startup. Last 100 log lines:"
@@ -340,7 +593,7 @@ wait_for_server() {
             fi
             return 1
         fi
-        if curl -sf "http://localhost:${PORT}/health" >/dev/null 2>&1; then
+        if curl -sf "http://localhost:${port}/health" >/dev/null 2>&1; then
             echo "$mode server ready."
             return 0
         fi
@@ -355,10 +608,12 @@ start_trained_server() {
     local checkpoint="$1"
     local spec="$2"
     local log="$3"
+    local port="${4:-$PORT}"
+    local gpus="${5:-$GPUS}"
 
     cleanup_server
-    if curl -sf "http://localhost:${PORT}/health" >/dev/null 2>&1; then
-        echo "ERROR: port $PORT already has a healthy server before starting trained_dflash@$spec."
+    if curl -sf "http://localhost:${port}/health" >/dev/null 2>&1; then
+        echo "ERROR: port $port already has a healthy server before starting trained_dflash@$spec."
         echo "       Stop the old vLLM process or choose a different PORT."
         return 1
     fi
@@ -377,7 +632,7 @@ start_trained_server() {
         --limit-mm-per-prompt '{"image":1}'
         --generation-config vllm
         --host 0.0.0.0
-        --port "$PORT"
+        --port "$port"
     )
 
     if [ "$ENFORCE_EAGER" = "1" ]; then
@@ -402,23 +657,24 @@ start_trained_server() {
     echo "  max_model_len:     $MAX_MODEL_LEN"
     echo "  max batched toks:  $MAX_NUM_BATCHED_TOKENS"
     echo "  max seqs:          $MAX_NUM_SEQS"
-    echo "  port:              $PORT"
-    echo "  devices:           $GPUS"
+    echo "  port:              $port"
+    echo "  devices:           $gpus"
     echo "  media_root:        $MEDIA_ROOT"
     echo "  log:               $log"
     printf '[cmd]'
-    printf ' %q' env CUDA_VISIBLE_DEVICES="$GPUS" "${args[@]}"
+    printf ' %q' env CUDA_VISIBLE_DEVICES="$gpus" "${args[@]}"
     echo
 
-    env CUDA_VISIBLE_DEVICES="$GPUS" "${args[@]}" >"$log" 2>&1 &
+    env CUDA_VISIBLE_DEVICES="$gpus" "${args[@]}" >"$log" 2>&1 &
     SERVER_PID=$!
-    wait_for_server "$log" "trained_dflash@$spec"
+    wait_for_server "$log" "trained_dflash@$spec" "$port"
 }
 
 run_client() {
     local out_dir="$1"
+    local port="${2:-$PORT}"
     python3 examples/evaluate/mmstar_weight_client.py \
-        --endpoint "http://localhost:${PORT}/v1" \
+        --endpoint "http://localhost:${port}/v1" \
         --data-jsonl "$MMSTAR_JSONL" \
         --out-jsonl "$out_dir/responses.jsonl" \
         --summary-json "$out_dir/summary.json" \
@@ -459,44 +715,88 @@ Path(path).write_text(
 PY
 }
 
+run_trained_spec_one() {
+    local checkpoint="$1"
+    local spec="$2"
+    local gpus="$3"
+    local port="$4"
+    local out_dir log acceptance
+
+    out_dir="$TRAINED_SPEC_SWEEP_DIR/trained_dflash_spec${spec}"
+    log="$out_dir/vllm.log"
+    acceptance="$out_dir/acceptance_from_log.txt"
+    mkdir -p "$out_dir"
+    printf '%s\n' "$checkpoint" > "$out_dir/checkpoint_path.txt"
+
+    if [ "$FORCE_TRAINED_SPEC_SWEEP" != "1" ] && [ -s "$out_dir/summary.json" ]; then
+        echo
+        echo "=== Skipping trained_dflash@$spec: existing $out_dir/summary.json ==="
+        return 0
+    fi
+
+    echo
+    echo "=== Running trained_dflash@$spec on gpu_group=$gpus port=$port ==="
+    if ! start_trained_server "$checkpoint" "$spec" "$log" "$port" "$gpus"; then
+        write_status "$out_dir" "failed_startup" "$spec" "server failed during startup"
+        cleanup_server
+        return 1
+    fi
+
+    if ! run_client "$out_dir" "$port"; then
+        write_status "$out_dir" "failed_client" "$spec" "client failed"
+        cleanup_server
+        return 1
+    fi
+
+    cleanup_server
+    sleep 5
+    parse_acceptance "$log" "$acceptance"
+    write_status "$out_dir" "ok" "$spec"
+}
+
 run_trained_spec_sweep() {
     local checkpoint="$1"
-    local spec out_dir log acceptance
+    local worker_count
+    worker_count="$(gpu_group_count "$TRAINED_SPEC_GPU_GROUPS")"
+    local spec idx group port pid
     local overall_status=0
+    local pids=()
 
+    if [ "$worker_count" -gt 1 ]; then
+        idx=0
+        for spec in $TRAINED_SPECS; do
+            group="$(python3 - "$TRAINED_SPEC_GPU_GROUPS" "$idx" <<'PY'
+import sys
+
+groups = [part for part in sys.argv[1].split() if part]
+idx = int(sys.argv[2])
+print(groups[idx % len(groups)])
+PY
+)"
+            port=$((PORT + idx * PORT_STRIDE))
+            (
+                SERVER_PID=""
+                run_trained_spec_one "$checkpoint" "$spec" "$group" "$port"
+            ) &
+            pid=$!
+            pids+=("$pid")
+            echo "[info] launched trained_dflash@$spec worker pid=$pid gpu=$group port=$port"
+            idx=$((idx + 1))
+        done
+
+        for pid in "${pids[@]}"; do
+            if ! wait "$pid"; then
+                overall_status=1
+            fi
+        done
+        return "$overall_status"
+    fi
+
+    group="$(first_gpu_group "$TRAINED_SPEC_GPU_GROUPS")"
     for spec in $TRAINED_SPECS; do
-        out_dir="$TRAINED_SPEC_SWEEP_DIR/trained_dflash_spec${spec}"
-        log="$out_dir/vllm.log"
-        acceptance="$out_dir/acceptance_from_log.txt"
-        mkdir -p "$out_dir"
-        printf '%s\n' "$checkpoint" > "$out_dir/checkpoint_path.txt"
-
-        if [ "$FORCE_TRAINED_SPEC_SWEEP" != "1" ] && [ -s "$out_dir/summary.json" ]; then
-            echo
-            echo "=== Skipping trained_dflash@$spec: existing $out_dir/summary.json ==="
-            continue
-        fi
-
-        echo
-        echo "=== Running trained_dflash@$spec ==="
-        if ! start_trained_server "$checkpoint" "$spec" "$log"; then
-            write_status "$out_dir" "failed_startup" "$spec" "server failed during startup"
-            cleanup_server
+        if ! run_trained_spec_one "$checkpoint" "$spec" "$group" "$PORT"; then
             overall_status=1
-            continue
         fi
-
-        if ! run_client "$out_dir"; then
-            write_status "$out_dir" "failed_client" "$spec" "client failed"
-            cleanup_server
-            overall_status=1
-            continue
-        fi
-
-        cleanup_server
-        sleep 5
-        parse_acceptance "$log" "$acceptance"
-        write_status "$out_dir" "ok" "$spec"
     done
 
     return "$overall_status"
@@ -727,6 +1027,9 @@ echo "  original_dflash:      $BASELINE_DRAFT"
 echo "  select_spec:          $SELECT_SPEC"
 echo "  trained_specs:        $TRAINED_SPECS"
 echo "  best_metric:          $BEST_METRIC"
+echo "  eval_gpu_groups:      $EVAL_GPU_GROUPS"
+echo "  trained_gpu_groups:   $TRAINED_SPEC_GPU_GROUPS"
+echo "  port_stride:          $PORT_STRIDE"
 echo "  baseline_results:     $BASELINE_RESULTS_JSONL"
 echo "  num_prompts:          $NUM_PROMPTS"
 echo "  media_root:           $MEDIA_ROOT"

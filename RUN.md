@@ -301,6 +301,7 @@ git checkout test_result
 git pull
 
 CHECKPOINT_FIND_ROOT=/home/wenxuan/speculators/output/<your_run>/checkpoints \
+EVAL_GPU_GROUPS="0 1 2 3 4 5 6 7" \
 SELECT_SPEC=7 \
 TRAINED_SPECS="3 5 7" \
 NUM_PROMPTS=128 \
@@ -313,6 +314,9 @@ speculators-format DFlash checkpoints under `output/`. Results are written under
 especially `final_results.md`, `final_results.csv`, and `final_results.jsonl`.
 Use `FORCE_CHECKPOINT_SWEEP=1`, `FORCE_TRAINED_SPEC_SWEEP=1`, or
 `FORCE_BASELINE_SWEEP=1` to rerun cached stages.
+`EVAL_GPU_GROUPS` is whitespace-separated CUDA device groups. For this 9B eval,
+`"0 1 2 3 4 5 6 7"` runs eight one-GPU workers; for tensor parallel groups use
+values such as `"0,1 2,3 4,5 6,7"` with `TP=2`.
 
 ---
 
