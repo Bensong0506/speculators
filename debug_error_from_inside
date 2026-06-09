@@ -1,1 +1,304 @@
-{"loss_epoch": 0.8247944078947368, "full_acc_epoch": 0.43314048826837903, "position_1_acc_epoch": 0.7656816533720087, "position_2_acc_epoch": 0.6038817420292333, "position_3_acc_epoch": 0.48409440052242525, "position_4_acc_epoch": 0.38917883828333266, "position_5_acc_epoch": 0.31819159114608525, "position_6_acc_epoch": 0.2569622093806044, "position_7_acc_epoch": 0.20892308854557326}
+wandb: For more information, check out the docs at: https://weave-docs.wandb.ai
+[09:16:07] INFO     val/loss_epoch=1.977,                         trainer.py:292
+                    val/full_acc_epoch=0.465,                                   
+                    val/position_1_acc_epoch=0.789,                             
+                    val/position_2_acc_epoch=0.628,                             
+                    val/position_3_acc_epoch=0.512,                             
+                    val/position_4_acc_epoch=0.424,                             
+                    val/position_5_acc_epoch=0.355,                             
+                    val/position_6_acc_epoch=0.293,                             
+                    val/position_7_acc_epoch=0.246, epoch=-1,                   
+                    phase='initial_val'                                         
+[09:16:08] INFO     Initial validation before any training step   trainer.py:350
+                    completed                                                   
+           INFO     Training epoch 1/20 started                   trainer.py:356
+terminate called after throwing an instance of 'terminate called after throwing an instance of 'c10::AcceleratorErrorc10::AcceleratorError'
+'
+  what():  CUDA error: initialization error
+Search for `cudaErrorInitializationError' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Exception raised from ExchangeDevice at /pytorch/c10/cuda/CUDAFunctions.cpp:274 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x9d (0x7f55be97305d in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0xc114 (0x7f55bed73114 in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10_cuda.so)
+frame #2: c10::cuda::ExchangeDevice(signed char) + 0x9a (0x7f55bedad7da in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10_cuda.so)
+frame #3: <unknown function> + 0xcc76e0 (0x7f550ae646e0 in /usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0x7f8e4 (0x7f55be9548e4 in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10.so)
+frame #5: c10::TensorImpl::~TensorImpl() + 0x9 (0x7f55be94e279 in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10.so)
+frame #6: <unknown function> + 0x869d55 (0x7f5537d1dd55 in /usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_python.so)
+frame #7: <unknown function> + 0x869df1 (0x7f5537d1ddf1 in /usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_python.so)
+frame #8: /usr/bin/python3() [0x59dc66]
+frame #9: /usr/bin/python3() [0x53dd34]
+frame #10: /usr/bin/python3() [0x57ebc0]
+frame #11: /usr/bin/python3() [0x57eb81]
+frame #12: /usr/bin/python3() [0x57eb81]
+frame #13: /usr/bin/python3() [0x57eb81]
+frame #14: /usr/bin/python3() [0x57eb81]
+frame #15: /usr/bin/python3() [0x57eb81]
+frame #16: /usr/bin/python3() [0x57eb81]
+frame #17: /usr/bin/python3() [0x57eb81]
+frame #18: /usr/bin/python3() [0x57eb81]
+frame #19: /usr/bin/python3() [0x57eb81]
+frame #20: /usr/bin/python3() [0x57eb81]
+frame #21: /usr/bin/python3() [0x57eb81]
+frame #22: /usr/bin/python3() [0x57eb81]
+frame #23: /usr/bin/python3() [0x57eb81]
+frame #24: /usr/bin/python3() [0x57eb81]
+frame #25: /usr/bin/python3() [0x57eb81]
+frame #26: /usr/bin/python3() [0x57eb81]
+frame #27: /usr/bin/python3() [0x57eb81]
+frame #28: /usr/bin/python3() [0x57eb81]
+frame #29: /usr/bin/python3() [0x57eb81]
+frame #30: /usr/bin/python3() [0x57eb81]
+frame #31: /usr/bin/python3() [0x57eb81]
+frame #32: /usr/bin/python3() [0x57eb81]
+frame #33: /usr/bin/python3() [0x57eb81]
+frame #34: /usr/bin/python3() [0x57eb81]
+frame #35: /usr/bin/python3() [0x57dbf6]
+frame #36: /usr/bin/python3() [0x535cda]
+frame #37: /usr/bin/python3() [0x559cf6]
+frame #38: /usr/bin/python3() [0x61f8de]
+frame #39: /usr/bin/python3() [0x61f7f2]
+frame #40: _PyEval_EvalFrameDefault + 0x9ef6 (0x5537d6 in /usr/bin/python3)
+frame #41: _PyObject_FastCallDictTstate + 0x1d8 (0x541b48 in /usr/bin/python3)
+frame #42: /usr/bin/python3() [0x59cb46]
+frame #43: _PyObject_MakeTpCall + 0x1c7 (0x53f177 in /usr/bin/python3)
+frame #44: /usr/bin/python3() [0x620874]
+frame #45: /usr/bin/python3() [0x56248c]
+frame #46: PyObject_Vectorcall + 0x36 (0x562386 in /usr/bin/python3)
+frame #47: _PyEval_EvalFrameDefault + 0x700 (0x549fe0 in /usr/bin/python3)
+frame #48: PyEval_EvalCode + 0x99 (0x61f469 in /usr/bin/python3)
+frame #49: /usr/bin/python3() [0x63dbec]
+frame #50: /usr/bin/python3() [0x56248c]
+frame #51: _PyEval_EvalFrameDefault + 0x4fd7 (0x54e8b7 in /usr/bin/python3)
+frame #52: /usr/bin/python3() [0x56c89d]
+frame #53: PyObject_CallMethodObjArgs + 0xe1 (0x598ee1 in /usr/bin/python3)
+frame #54: PyImport_ImportModuleLevelObject + 0x8c4 (0x597af4 in /usr/bin/python3)
+frame #55: _PyEval_EvalFrameDefault + 0x6da5 (0x550685 in /usr/bin/python3)
+frame #56: PyEval_EvalCode + 0x99 (0x61f469 in /usr/bin/python3)
+frame #57: /usr/bin/python3() [0x63dbec]
+frame #58: /usr/bin/python3() [0x56248c]
+frame #59: _PyEval_EvalFrameDefault + 0x4fd7 (0x54e8b7 in /usr/bin/python3)
+frame #60: /usr/bin/python3() [0x56c89d]
+frame #61: PyObject_CallMethodObjArgs + 0xe1 (0x598ee1 in /usr/bin/python3)
+frame #62: PyImport_ImportModuleLevelObject + 0x8c4 (0x597af4 in /usr/bin/python3)
+
+  what():  CUDA error: initialization error
+Search for `cudaErrorInitializationError' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Exception raised from ExchangeDevice at /pytorch/c10/cuda/CUDAFunctions.cpp:274 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x9d (0x7f55be97305d in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0xc114 (0x7f55bed73114 in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10_cuda.so)
+frame #2: c10::cuda::ExchangeDevice(signed char) + 0x9a (0x7f55bedad7da in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10_cuda.so)
+frame #3: <unknown function> + 0xcc76e0 (0x7f550ae646e0 in /usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0x7f8e4 (0x7f55be9548e4 in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10.so)
+frame #5: c10::TensorImpl::~TensorImpl() + 0x9 (0x7f55be94e279 in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10.so)
+frame #6: <unknown function> + 0x869d55 (0x7f5537d1dd55 in /usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_python.so)
+frame #7: <unknown function> + 0x869df1 (0x7f5537d1ddf1 in /usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_python.so)
+frame #8: /usr/bin/python3() [0x59dc66]
+frame #9: /usr/bin/python3() [0x53dd34]
+frame #10: /usr/bin/python3() [0x57ebc0]
+frame #11: /usr/bin/python3() [0x57eb81]
+frame #12: /usr/bin/python3() [0x57eb81]
+frame #13: /usr/bin/python3() [0x57eb81]
+frame #14: /usr/bin/python3() [0x57eb81]
+frame #15: /usr/bin/python3() [0x57eb81]
+frame #16: /usr/bin/python3() [0x57eb81]
+frame #17: /usr/bin/python3() [0x57eb81]
+frame #18: /usr/bin/python3() [0x57eb81]
+frame #19: /usr/bin/python3() [0x57eb81]
+frame #20: /usr/bin/python3() [0x57eb81]
+frame #21: /usr/bin/python3() [0x57eb81]
+frame #22: /usr/bin/python3() [0x57eb81]
+frame #23: /usr/bin/python3() [0x57eb81]
+frame #24: /usr/bin/python3() [0x57eb81]
+frame #25: /usr/bin/python3() [0x57eb81]
+frame #26: /usr/bin/python3() [0x57eb81]
+frame #27: /usr/bin/python3() [0x57eb81]
+frame #28: /usr/bin/python3() [0x57eb81]
+frame #29: /usr/bin/python3() [0x57eb81]
+frame #30: /usr/bin/python3() [0x57eb81]
+frame #31: /usr/bin/python3() [0x57eb81]
+frame #32: /usr/bin/python3() [0x57eb81]
+frame #33: /usr/bin/python3() [0x57eb81]
+frame #34: /usr/bin/python3() [0x57eb81]
+frame #35: /usr/bin/python3() [0x57dbf6]
+frame #36: /usr/bin/python3() [0x535cda]
+frame #37: /usr/bin/python3() [0x559cf6]
+frame #38: /usr/bin/python3() [0x61f8de]
+frame #39: /usr/bin/python3() [0x61f7f2]
+frame #40: _PyEval_EvalFrameDefault + 0x9ef6 (0x5537d6 in /usr/bin/python3)
+frame #41: _PyObject_FastCallDictTstate + 0x1d8 (0x541b48 in /usr/bin/python3)
+frame #42: /usr/bin/python3() [0x59cb46]
+frame #43: _PyObject_MakeTpCall + 0x1c7 (0x53f177 in /usr/bin/python3)
+frame #44: /usr/bin/python3() [0x620874]
+frame #45: /usr/bin/python3() [0x56248c]
+frame #46: PyObject_Vectorcall + 0x36 (0x562386 in /usr/bin/python3)
+frame #47: _PyEval_EvalFrameDefault + 0x700 (0x549fe0 in /usr/bin/python3)
+frame #48: PyEval_EvalCode + 0x99 (0x61f469 in /usr/bin/python3)
+frame #49: /usr/bin/python3() [0x63dbec]
+frame #50: /usr/bin/python3() [0x56248c]
+frame #51: _PyEval_EvalFrameDefault + 0x4fd7 (0x54e8b7 in /usr/bin/python3)
+frame #52: /usr/bin/python3() [0x56c89d]
+frame #53: PyObject_CallMethodObjArgs + 0xe1 (0x598ee1 in /usr/bin/python3)
+frame #54: PyImport_ImportModuleLevelObject + 0x8c4 (0x597af4 in /usr/bin/python3)
+frame #55: _PyEval_EvalFrameDefault + 0x6da5 (0x550685 in /usr/bin/python3)
+frame #56: PyEval_EvalCode + 0x99 (0x61f469 in /usr/bin/python3)
+frame #57: /usr/bin/python3() [0x63dbec]
+frame #58: /usr/bin/python3() [0x56248c]
+frame #59: _PyEval_EvalFrameDefault + 0x4fd7 (0x54e8b7 in /usr/bin/python3)
+frame #60: /usr/bin/python3() [0x56c89d]
+frame #61: PyObject_CallMethodObjArgs + 0xe1 (0x598ee1 in /usr/bin/python3)
+frame #62: PyImport_ImportModuleLevelObject + 0x8c4 (0x597af4 in /usr/bin/python3)
+
+terminate called after throwing an instance of 'c10::AcceleratorError'
+terminate called after throwing an instance of 'c10::AcceleratorError'
+  what():  CUDA error: initialization error
+Search for `cudaErrorInitializationError' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Exception raised from ExchangeDevice at /pytorch/c10/cuda/CUDAFunctions.cpp:274 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x9d (0x7f55be97305d in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0xc114 (0x7f55bed73114 in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10_cuda.so)
+frame #2: c10::cuda::ExchangeDevice(signed char) + 0x9a (0x7f55bedad7da in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10_cuda.so)
+frame #3: <unknown function> + 0xcc76e0 (0x7f550ae646e0 in /usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0x7f8e4 (0x7f55be9548e4 in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10.so)
+frame #5: c10::TensorImpl::~TensorImpl() + 0x9 (0x7f55be94e279 in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10.so)
+frame #6: <unknown function> + 0x869d55 (0x7f5537d1dd55 in /usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_python.so)
+frame #7: <unknown function> + 0x869df1 (0x7f5537d1ddf1 in /usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_python.so)
+frame #8: /usr/bin/python3() [0x59dc66]
+frame #9: /usr/bin/python3() [0x53dd34]
+frame #10: /usr/bin/python3() [0x57ebc0]
+frame #11: /usr/bin/python3() [0x57eb81]
+frame #12: /usr/bin/python3() [0x57eb81]
+frame #13: /usr/bin/python3() [0x57eb81]
+frame #14: /usr/bin/python3() [0x57eb81]
+frame #15: /usr/bin/python3() [0x57eb81]
+frame #16: /usr/bin/python3() [0x57eb81]
+frame #17: /usr/bin/python3() [0x57eb81]
+frame #18: /usr/bin/python3() [0x57eb81]
+frame #19: /usr/bin/python3() [0x57eb81]
+frame #20: /usr/bin/python3() [0x57eb81]
+frame #21: /usr/bin/python3() [0x57eb81]
+frame #22: /usr/bin/python3() [0x57eb81]
+frame #23: /usr/bin/python3() [0x57eb81]
+frame #24: /usr/bin/python3() [0x57eb81]
+frame #25: /usr/bin/python3() [0x57eb81]
+frame #26: /usr/bin/python3() [0x57eb81]
+frame #27: /usr/bin/python3() [0x57eb81]
+frame #28: /usr/bin/python3() [0x57eb81]
+frame #29: /usr/bin/python3() [0x57eb81]
+frame #30: /usr/bin/python3() [0x57eb81]
+frame #31: /usr/bin/python3() [0x57eb81]
+frame #32: /usr/bin/python3() [0x57eb81]
+frame #33: /usr/bin/python3() [0x57eb81]
+frame #34: /usr/bin/python3() [0x57eb81]
+frame #35: /usr/bin/python3() [0x57dbf6]
+frame #36: /usr/bin/python3() [0x535cda]
+frame #37: /usr/bin/python3() [0x559cf6]
+frame #38: /usr/bin/python3() [0x61f8de]
+frame #39: /usr/bin/python3() [0x61f7f2]
+frame #40: _PyEval_EvalFrameDefault + 0x9ef6 (0x5537d6 in /usr/bin/python3)
+frame #41: _PyObject_FastCallDictTstate + 0x1d8 (0x541b48 in /usr/bin/python3)
+frame #42: /usr/bin/python3() [0x59cb46]
+frame #43: _PyObject_MakeTpCall + 0x1c7 (0x53f177 in /usr/bin/python3)
+frame #44: /usr/bin/python3() [0x620874]
+frame #45: /usr/bin/python3() [0x56248c]
+frame #46: PyObject_Vectorcall + 0x36 (0x562386 in /usr/bin/python3)
+frame #47: _PyEval_EvalFrameDefault + 0x700 (0x549fe0 in /usr/bin/python3)
+frame #48: PyEval_EvalCode + 0x99 (0x61f469 in /usr/bin/python3)
+frame #49: /usr/bin/python3() [0x63dbec]
+frame #50: /usr/bin/python3() [0x56248c]
+frame #51: _PyEval_EvalFrameDefault + 0x4fd7 (0x54e8b7 in /usr/bin/python3)
+frame #52: /usr/bin/python3() [0x56c89d]
+frame #53: PyObject_CallMethodObjArgs + 0xe1 (0x598ee1 in /usr/bin/python3)
+frame #54: PyImport_ImportModuleLevelObject + 0x8c4 (0x597af4 in /usr/bin/python3)
+frame #55: _PyEval_EvalFrameDefault + 0x6da5 (0x550685 in /usr/bin/python3)
+frame #56: PyEval_EvalCode + 0x99 (0x61f469 in /usr/bin/python3)
+frame #57: /usr/bin/python3() [0x63dbec]
+frame #58: /usr/bin/python3() [0x56248c]
+frame #59: _PyEval_EvalFrameDefault + 0x4fd7 (0x54e8b7 in /usr/bin/python3)
+frame #60: /usr/bin/python3() [0x56c89d]
+frame #61: PyObject_CallMethodObjArgs + 0xe1 (0x598ee1 in /usr/bin/python3)
+frame #62: PyImport_ImportModuleLevelObject + 0x8c4 (0x597af4 in /usr/bin/python3)
+
+  what():  CUDA error: initialization error
+Search for `cudaErrorInitializationError' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Exception raised from ExchangeDevice at /pytorch/c10/cuda/CUDAFunctions.cpp:274 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x9d (0x7f55be97305d in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0xc114 (0x7f55bed73114 in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10_cuda.so)
+frame #2: c10::cuda::ExchangeDevice(signed char) + 0x9a (0x7f55bedad7da in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10_cuda.so)
+frame #3: <unknown function> + 0xcc76e0 (0x7f550ae646e0 in /usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0x7f8e4 (0x7f55be9548e4 in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10.so)
+frame #5: c10::TensorImpl::~TensorImpl() + 0x9 (0x7f55be94e279 in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10.so)
+frame #6: <unknown function> + 0x869d55 (0x7f5537d1dd55 in /usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_python.so)
+frame #7: <unknown function> + 0x869df1 (0x7f5537d1ddf1 in /usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_python.so)
+frame #8: /usr/bin/python3() [0x59dc66]
+frame #9: /usr/bin/python3() [0x53dd34]
+frame #10: /usr/bin/python3() [0x57ebc0]
+frame #11: /usr/bin/python3() [0x57eb81]
+frame #12: /usr/bin/python3() [0x57eb81]
+frame #13: /usr/bin/python3() [0x57eb81]
+frame #14: /usr/bin/python3() [0x57eb81]
+frame #15: /usr/bin/python3() [0x57eb81]
+frame #16: /usr/bin/python3() [0x57eb81]
+frame #17: /usr/bin/python3() [0x57eb81]
+frame #18: /usr/bin/python3() [0x57eb81]
+frame #19: /usr/bin/python3() [0x57eb81]
+frame #20: /usr/bin/python3() [0x57eb81]
+frame #21: /usr/bin/python3() [0x57eb81]
+frame #22: /usr/bin/python3() [0x57eb81]
+frame #23: /usr/bin/python3() [0x57eb81]
+frame #24: /usr/bin/python3() [0x57eb81]
+frame #25: /usr/bin/python3() [0x57eb81]
+frame #26: /usr/bin/python3() [0x57eb81]
+frame #27: /usr/bin/python3() [0x57eb81]
+frame #28: /usr/bin/python3() [0x57eb81]
+frame #29: /usr/bin/python3() [0x57eb81]
+frame #30: /usr/bin/python3() [0x57eb81]
+frame #31: /usr/bin/python3() [0x57eb81]
+frame #32: /usr/bin/python3() [0x57eb81]
+frame #33: /usr/bin/python3() [0x57eb81]
+frame #34: /usr/bin/python3() [0x57eb81]
+frame #35: /usr/bin/python3() [0x57dbf6]
+frame #36: /usr/bin/python3() [0x535cda]
+frame #37: /usr/bin/python3() [0x559cf6]
+frame #38: /usr/bin/python3() [0x61f8de]
+frame #39: /usr/bin/python3() [0x61f7f2]
+frame #40: _PyEval_EvalFrameDefault + 0x9ef6 (0x5537d6 in /usr/bin/python3)
+frame #41: _PyObject_FastCallDictTstate + 0x1d8 (0x541b48 in /usr/bin/python3)
+frame #42: /usr/bin/python3() [0x59cb46]
+frame #43: _PyObject_MakeTpCall + 0x1c7 (0x53f177 in /usr/bin/python3)
+frame #44: /usr/bin/python3() [0x620874]
+frame #45: /usr/bin/python3() [0x56248c]
+frame #46: PyObject_Vectorcall + 0x36 (0x562386 in /usr/bin/python3)
+frame #47: _PyEval_EvalFrameDefault + 0x700 (0x549fe0 in /usr/bin/python3)
+frame #48: PyEval_EvalCode + 0x99 (0x61f469 in /usr/bin/python3)
+frame #49: /usr/bin/python3() [0x63dbec]
+frame #50: /usr/bin/python3() [0x56248c]
+frame #51: _PyEval_EvalFrameDefault + 0x4fd7 (0x54e8b7 in /usr/bin/python3)
+frame #52: /usr/bin/python3() [0x56c89d]
+frame #53: PyObject_CallMethodObjArgs + 0xe1 (0x598ee1 in /usr/bin/python3)
+frame #54: PyImport_ImportModuleLevelObject + 0x8c4 (0x597af4 in /usr/bin/python3)
+frame #55: _PyEval_EvalFrameDefault + 0x6da5 (0x550685 in /usr/bin/python3)
+frame #56: PyEval_EvalCode + 0x99 (0x61f469 in /usr/bin/python3)
+frame #57: /usr/bin/python3() [0x63dbec]
+frame #58: /usr/bin/python3() [0x56248c]
+frame #59: _PyEval_EvalFrameDefault + 0x4fd7 (0x54e8b7 in /usr/bin/python3)
+frame #60: /usr/bin/python3() [0x56c89d]
+frame #61: PyObject_CallMethodObjArgs + 0xe1 (0x598ee1 in /usr/bin/python3)
+frame #62: PyImport_ImportModuleLevelObject + 0x8c4 (0x597af4 in /usr/bin/python3)
+
+terminate called after throwing an instance of 'terminate called after throwing an instance of 'c10::AcceleratorErrorc10::AcceleratorError'
+'
