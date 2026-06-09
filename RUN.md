@@ -301,6 +301,7 @@ The sweep writes stable, resumable results under
 | MMStar 10-image DFlash eval | `examples/evaluate/test_dflash_mmstar_10image_weights.sh` |
 | MMStar native MTP-vs-original DFlash eval | `examples/evaluate/test_mtp_vs_dflash_original_mmstar.sh` |
 | MMStar MTP/DFlash spec sweep | `examples/evaluate/sweep_mtp_dflash_original_mmstar_specs.sh` |
+| MMStar MTP/DFlash spec sweep summary | `examples/evaluate/mmstar_mtp_dflash_spec_sweep_summary.md` |
 | Training curves (TensorBoard) | `examples/train/view_tensorboard.sh` |
 | Serve on GPU (baseline/mtp/dflash) | `examples/serve/run_qwen35_9b_gpu.sh` |
 | Quick serve test (text · image) | `examples/serve/test_trained_dflash_gpu.sh` · `examples/serve/test_trained_dflash_mm_gpu.sh` |
