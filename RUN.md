@@ -359,6 +359,7 @@ Results are written to `output/allava_val_weight_tests/<timestamp>/`, especially
 | MMStar MTP/DFlash spec sweep summary | `examples/evaluate/mmstar_mtp_dflash_spec_sweep_summary.md` |
 | MMStar trained-best-vs-baselines eval | `examples/evaluate/eval_trained_dflash_best_vs_baselines.sh` |
 | ALLaVA val four-way eval | `examples/evaluate/test_dflash_allava_val_weights.sh` |
+| ALLaVA val four-way summary | `examples/evaluate/allava_val_four_way_summary.md` |
 | Training curves (TensorBoard) | `examples/train/view_tensorboard.sh` |
 | Serve on GPU (baseline/mtp/dflash) | `examples/serve/run_qwen35_9b_gpu.sh` |
 | Quick serve test (text · image) | `examples/serve/test_trained_dflash_gpu.sh` · `examples/serve/test_trained_dflash_mm_gpu.sh` |
