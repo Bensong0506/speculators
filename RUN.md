@@ -318,12 +318,11 @@ Use `FORCE_CHECKPOINT_SWEEP=1`, `FORCE_TRAINED_SPEC_SWEEP=1`, or
 `"0 1 2 3 4 5 6 7"` runs eight one-GPU workers; for tensor parallel groups use
 values such as `"0,1 2,3 4,5 6,7"` with `TP=2`.
 
-### ALLaVA validation-tail original vs trained DFlash
+### ALLaVA validation-tail four-way benchmark
 
 This uses the same split convention as training: first 90% train, last 10% val.
-Use this to check whether a continued DFlash checkpoint improves in-domain
-acceptance/throughput on the ALLaVA distilled validation tail, even if it does
-not transfer to MMStar.
+It compares four configs on the same ALLaVA distilled validation tail:
+`baseline` (no spec), `MTP`, `original DFlash`, and `trained DFlash`.
 
 ```bash
 cd /home/wenxuan/speculators
@@ -333,13 +332,15 @@ git pull
 DRAFT=/data/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_distilled_10k_continue_dflash/dflash_qwen35_9b_allava_distilled_10k_continue_dflash_20260609_012511/checkpoints/6 \
 ALLAVA_JSONL="$(pwd)/data/allava/allava_10000.jsonl" \
 INFER_NUM_SPEC=7 \
+MTP_SPEC=7 \
 NUM_PROMPTS=128 \
 bash examples/evaluate/test_dflash_allava_val_weights.sh
 ```
 
 If the distilled training jsonl has a different path, replace `ALLAVA_JSONL`.
 Results are written to `output/allava_val_weight_tests/<timestamp>/`, especially
-`allava_val_summary.md`.
+`allava_val_summary.md`, `allava_val_four_way_summary.csv`, and
+`allava_val_four_way_summary.jsonl`.
 
 ---
 
@@ -357,7 +358,7 @@ Results are written to `output/allava_val_weight_tests/<timestamp>/`, especially
 | MMStar MTP/DFlash spec sweep | `examples/evaluate/sweep_mtp_dflash_original_mmstar_specs.sh` |
 | MMStar MTP/DFlash spec sweep summary | `examples/evaluate/mmstar_mtp_dflash_spec_sweep_summary.md` |
 | MMStar trained-best-vs-baselines eval | `examples/evaluate/eval_trained_dflash_best_vs_baselines.sh` |
-| ALLaVA val original-vs-trained DFlash eval | `examples/evaluate/test_dflash_allava_val_weights.sh` |
+| ALLaVA val four-way eval | `examples/evaluate/test_dflash_allava_val_weights.sh` |
 | Training curves (TensorBoard) | `examples/train/view_tensorboard.sh` |
 | Serve on GPU (baseline/mtp/dflash) | `examples/serve/run_qwen35_9b_gpu.sh` |
 | Quick serve test (text · image) | `examples/serve/test_trained_dflash_gpu.sh` · `examples/serve/test_trained_dflash_mm_gpu.sh` |
