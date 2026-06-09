@@ -103,6 +103,7 @@ LR="${LR:-3e-4}"
 CHECKPOINT_FREQ="${CHECKPOINT_FREQ:-5}"  # save every N epochs
 FORCE_EAGER="${FORCE_EAGER:-0}"          # set 1 to disable torch.compile in training
 DFLASH_COMPILE="${DFLASH_COMPILE:-1}"    # keep on for flex-attention memory efficiency
+VALIDATE_INITIAL="${VALIDATE_INITIAL:-0}" # set 1 to run true step-0 validation before training
 
 # --- Experiment tracking (loss / acceptance curves) -----------------------
 # tensorboard = local, intranet-friendly (view via SSH tunnel — see RUN.md /
@@ -256,6 +257,10 @@ if [ "$FORCE_EAGER" = "1" ]; then
     FORCE_EAGER_FLAG=(--force-eager)
     DFLASH_COMPILE=0
 fi
+VALIDATE_INITIAL_FLAG=()
+if [ "$VALIDATE_INITIAL" = "1" ]; then
+    VALIDATE_INITIAL_FLAG=(--validate-initial)
+fi
 export SPECULATORS_DFLASH_COMPILE="$DFLASH_COMPILE"
 
 # Auto-compute TARGET_LAYER_IDS from the verifier's *text* config if unset,
@@ -303,6 +308,7 @@ echo "    auto_convert_dflash: $AUTO_CONVERT_DFLASH"
 echo "    require_pretrained_weights: $REQUIRE_PRETRAINED_WEIGHTS"
 echo "    force_eager_training: $FORCE_EAGER"
 echo "    dflash_compile_training: $DFLASH_COMPILE"
+echo "    validate_initial: $VALIDATE_INITIAL"
 echo "    target_layer_ids: $TARGET_LAYER_IDS"
 
 # Step 0 (optional): build a `conversations` jsonl from the chosen data source.
@@ -486,6 +492,7 @@ CUDA_VISIBLE_DEVICES="$TRAIN_GPUS" torchrun \
     "${MASK_FLAG[@]}" \
     "${NO_RESUME_FLAG[@]}" \
     "${FORCE_EAGER_FLAG[@]}" \
+    "${VALIDATE_INITIAL_FLAG[@]}" \
     --epochs "$EPOCHS" \
     --checkpoint-freq "$CHECKPOINT_FREQ" \
     --lr "$LR" \

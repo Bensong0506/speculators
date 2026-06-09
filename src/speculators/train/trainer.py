@@ -49,6 +49,7 @@ class TrainerConfig(NamedTuple):
     save_best: bool = False
     hidden_states_dtype: torch.dtype = torch.bfloat16
     log_freq: int = 1
+    validate_initial: bool = False
 
 
 class Trainer:
@@ -248,12 +249,16 @@ class Trainer:
                 self.maybe_save_checkpoint(epoch)
 
     @torch.no_grad()
-    def val_epoch(self, epoch: int) -> dict[str, float] | None:
+    def val_epoch(
+        self, epoch: int, phase: str = "val", sampler_epoch: int | None = None
+    ) -> dict[str, float] | None:
         if self.val_loader is None:
             return None
         self.model.eval()
         if hasattr(self.val_loader.batch_sampler, "set_epoch"):
-            self.val_loader.batch_sampler.set_epoch(epoch)  # type: ignore[union-attr]
+            self.val_loader.batch_sampler.set_epoch(  # type: ignore[union-attr]
+                epoch if sampler_epoch is None else sampler_epoch
+            )
         val_loader = self.val_loader
         if self.local_rank == 0:
             val_loader = tqdm(val_loader, desc=f"Epoch {epoch}")  # type: ignore[assignment]
@@ -285,7 +290,8 @@ class Trainer:
         val_metrics = {f"{k}_epoch": v for k, v in val_metrics.items()}
 
         metric_logger.info(
-            {"val": val_metrics, "epoch": epoch}, extra={"step": self.global_step}
+            {"val": val_metrics, "epoch": epoch, "phase": phase},
+            extra={"step": self.global_step},
         )
 
         return val_metrics
@@ -335,6 +341,17 @@ class Trainer:
     @with_graceful_shutdown()
     def run_training(self):
         n_epochs = self.config.num_epochs
+        if self.config.validate_initial and self.current_epoch == 0:
+            if self.val_loader is None:
+                root_logger.warning("No val loader, skipping initial validation")
+            else:
+                root_logger.info("Initial validation before any training step started")
+                self.val_epoch(-1, phase="initial_val", sampler_epoch=0)
+                root_logger.info("Initial validation before any training step completed")
+
+            if self.is_distributed:
+                dist.barrier()
+
         for epoch in range(self.current_epoch, n_epochs):
             root_logger.info(f"Training epoch {epoch + 1}/{n_epochs} started")
             self.train_epoch(epoch)

@@ -514,6 +514,7 @@ def main(args: argparse.Namespace):
         save_best=args.save_best,
         hidden_states_dtype=hidden_states_dtype,
         log_freq=args.log_freq,
+        validate_initial=args.validate_initial,
     )
     trainer = Trainer(draft_model, trainer_config, train_loader, val_loader)
 
@@ -656,6 +657,15 @@ def parse_args():
         type=int,
         default=1,
         help="Log training metrics every N steps (default: 1)",
+    )
+    parser.add_argument(
+        "--validate-initial",
+        action="store_true",
+        default=False,
+        help=(
+            "Run one validation pass before any optimizer step. Metrics are logged "
+            "at global_step=0 with phase='initial_val'."
+        ),
     )
     parser.add_argument("--log-dir", type=str, default="./logs")
     parser.add_argument("--run-name", type=str, default=None)
