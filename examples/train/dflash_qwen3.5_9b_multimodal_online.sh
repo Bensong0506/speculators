@@ -505,8 +505,8 @@ CUDA_VISIBLE_DEVICES="$TRAIN_GPUS" torchrun \
     --logger "$LOGGER" \
     --run-name "$RUN_NAME" \
     --log-dir "$LOG_DIR" \
-    --on-missing generate \
-    --on-generate delete \
+    --on-missing "${ON_MISSING:-generate}" \
+    --on-generate "${ON_GENERATE:-cache}" \
     "${TRC_FLAG[@]}"
 
 echo "Done. Checkpoints saved to $SAVE_PATH/"

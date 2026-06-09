@@ -99,7 +99,7 @@ def setup_dataloader(
         dataset,
         batch_sampler=batch_sampler,
         num_workers=num_workers,
-        prefetch_factor=prefetch_factor,
+        prefetch_factor=prefetch_factor if num_workers > 0 else None,
         pin_memory=True,
         collate_fn=create_collate_fn(
             args.total_seq_len,
@@ -108,7 +108,15 @@ def setup_dataloader(
             preprocess,
             expected_hidden_states_width=expected_hidden_states_width,
         ),
-        persistent_workers=True,
+        persistent_workers=num_workers > 0,
+        # The parent process already holds a CUDA context (model is on GPU), so
+        # forked DataLoader workers inherit an invalid context; any worker that
+        # touches CUDA -- including the online hidden-state generation path in
+        # ArrowDataset -- then dies with `cudaErrorInitializationError`. Use
+        # 'spawn' so each worker starts with a clean context. This requires the
+        # dataset and collate_fn to be picklable (collate_fn is _CollateFn, a
+        # module-level callable, for exactly this reason).
+        multiprocessing_context="spawn" if num_workers > 0 else None,
     )
 
 

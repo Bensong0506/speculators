@@ -474,17 +474,36 @@ class SampleFileDataset(BaseDataset):
         )
 
 
-def create_collate_fn(
-    max_len: int,
-    hidden_size: int,
-    dtype: torch.dtype = torch.bfloat16,
-    preprocess: Callable[[BatchType], BatchType] | None = None,
-    expected_hidden_states_width: int | None = None,
-):
-    def collate_fn(batch: list[BatchType | None]) -> BatchType:
+class _CollateFn:
+    """Picklable collate callable for the training/validation DataLoaders.
+
+    Implemented as a module-level class (rather than a closure returned by a
+    factory) so that instances can be pickled and sent to DataLoader workers
+    under the ``spawn`` multiprocessing context. A nested ``def collate_fn``
+    closure cannot be pickled and would raise
+    ``Can't pickle local object ...`` when ``multiprocessing_context="spawn"``.
+    Behaviour is identical to the previous closure implementation.
+    """
+
+    def __init__(
+        self,
+        max_len: int,
+        hidden_size: int,
+        dtype: torch.dtype = torch.bfloat16,
+        preprocess: Callable[[BatchType], BatchType] | None = None,
+        expected_hidden_states_width: int | None = None,
+    ):
+        self.max_len = max_len
+        self.hidden_size = hidden_size
+        self.dtype = dtype
+        self.preprocess = preprocess
+        self.expected_hidden_states_width = expected_hidden_states_width
+
+    def __call__(self, batch: list[BatchType | None]) -> BatchType:
+        preprocess = self.preprocess
         # Apply per-sample preprocessing and filter failed samples
         batch = [preprocess(b) if preprocess else b for b in batch if b is not None]
-        expected_width = expected_hidden_states_width or 3 * hidden_size
+        expected_width = self.expected_hidden_states_width or 3 * self.hidden_size
         filtered_batch = []
         for sample in batch:
             hidden_states = sample.get("hidden_states")
@@ -509,8 +528,8 @@ def create_collate_fn(
             # weights vs fp32 default placeholders).
             batch = [
                 create_empty_sample(
-                    hidden_size,
-                    dtype=dtype,
+                    self.hidden_size,
+                    dtype=self.dtype,
                     hidden_states_width=expected_width,
                 )
             ]
@@ -524,7 +543,7 @@ def create_collate_fn(
             if key != "lengths":
                 # Slice and pad on seq (0th) dimension to max_len
                 collated_data[key] = slice_and_pad_to_length(
-                    collated_data[key], max_len
+                    collated_data[key], self.max_len
                 ).unsqueeze(0)
                 # shape: [1, max_len, ...]
 
@@ -535,12 +554,26 @@ def create_collate_fn(
         new_lengths = []
         cum_length = 0
         for length in lengths:
-            if length + cum_length >= max_len:
-                new_lengths.append(max_len - cum_length)
+            if length + cum_length >= self.max_len:
+                new_lengths.append(self.max_len - cum_length)
                 break
             new_lengths.append(length)
             cum_length += length
         collated_data["lengths"] = torch.tensor(new_lengths, dtype=torch.long)
         return collated_data
 
-    return collate_fn
+
+def create_collate_fn(
+    max_len: int,
+    hidden_size: int,
+    dtype: torch.dtype = torch.bfloat16,
+    preprocess: Callable[[BatchType], BatchType] | None = None,
+    expected_hidden_states_width: int | None = None,
+) -> "_CollateFn":
+    return _CollateFn(
+        max_len,
+        hidden_size,
+        dtype=dtype,
+        preprocess=preprocess,
+        expected_hidden_states_width=expected_hidden_states_width,
+    )
