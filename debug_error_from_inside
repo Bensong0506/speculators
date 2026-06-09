@@ -1,118 +1,22 @@
-Summary
-{
-  "endpoint": "http://localhost:8101/v1",
-  "model": "qwen3.5-9b-mmstar-baseline",
-  "num_requested": 128,
-  "completed": 128,
-  "failed": 0,
-  "completion_tokens": 16384,
-  "wall_sec": 228.73462229402503,
-  "output_tok_per_sec": 71.62885896189044,
-  "mean_latency_sec": 1.7869027419769736,
-  "reference_contains_rate": 0.234375,
-  "reference_count": 128,
-  "spec_metrics_delta": {
-    "vllm:spec_decode_num_drafts_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-baseline\"}": 5331.0,
-    "vllm:spec_decode_num_drafts_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-baseline\"}": 0.0,
-    "vllm:spec_decode_num_draft_tokens_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-baseline\"}": 37317.0,
-    "vllm:spec_decode_num_draft_tokens_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-baseline\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-baseline\"}": 11177.0,
-    "vllm:spec_decode_num_accepted_tokens_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-baseline\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-baseline\",position=\"0\"}": 4089.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-baseline\",position=\"1\"}": 2572.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-baseline\",position=\"2\"}": 1595.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-baseline\",position=\"3\"}": 1062.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-baseline\",position=\"4\"}": 795.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-baseline\",position=\"5\"}": 631.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-baseline\",position=\"6\"}": 433.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-baseline\",position=\"0\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-baseline\",position=\"1\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-baseline\",position=\"2\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-baseline\",position=\"3\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-baseline\",position=\"4\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-baseline\",position=\"5\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mmstar-baseline\",position=\"6\"}": 0.0
-  },
-  "spec_draft_steps_total": 5331.0,
-  "spec_draft_tokens_total": 37317.0,
-  "spec_accepted_tokens_total": 11177.0,
-  "spec_accepted_tokens_by_position": {
-    "0": 4089.0,
-    "1": 2572.0,
-    "2": 1595.0,
-    "3": 1062.0,
-    "4": 795.0,
-    "5": 631.0,
-    "6": 433.0
-  },
-  "spec_token_acceptance_rate": 0.2995149663692151,
-  "spec_first_position_acceptance_rate": 0.76702307259426,
-  "spec_mean_accepted_tokens_per_draft": 2.0966047645845056
-}
+=== Aggregating sweep results ===
+# MMStar MTP vs Original DFlash Spec Sweep
 
-=== mtp log acceptance parse ===
-======================================================================
-Speculative Decoding Acceptance Analysis
-======================================================================
+| rank | method | spec | status | tok/s | mean accept/draft | token accept | first-pos accept | completed |
+|---:|---|---:|---|---:|---:|---:|---:|---:|
+| 1 | dflash_original | 7 | seeded | 71.629 | 2.097 | 0.300 | 0.767 | 128/128 |
+| 2 | mtp | 7 | ok | 68.965 | 2.822 | 0.403 | 0.828 | 128/128 |
+| 3 | mtp | 5 | ok | 68.424 | 2.600 | 0.520 | 0.837 | 128/128 |
+| 4 | mtp | 3 | seeded | 67.393 | 2.045 | 0.682 | 0.852 | 128/128 |
+| 5 | dflash_original | 5 | ok | 66.930 | 1.944 | 0.389 | 0.766 | 128/128 |
+| 6 | dflash_original | 3 | ok | 61.084 | 1.638 | 0.546 | 0.779 | 128/128 |
 
-Total samples: 24
-Total drafted tokens: 15648
-Average drafted tokens: 652.00
+## Best Tok/S
 
-Weighted per-position acceptance rates:
-[0.851 0.671 0.517]
+`dflash_original@7`: 71.629 tok/s
 
-Conditional acceptance rates:
-[0.851 0.788 0.771]
-======================================================================
-
-=== dflash_original log acceptance parse ===
-======================================================================
-Speculative Decoding Acceptance Analysis
-======================================================================
-
-Total samples: 23
-Total drafted tokens: 36729
-Average drafted tokens: 1596.91
-
-Weighted per-position acceptance rates:
-[0.767 0.483 0.299 0.199 0.149 0.119 0.081]
-
-Conditional acceptance rates:
-[0.767 0.629 0.62  0.665 0.749 0.795 0.687]
-======================================================================
-
-=== Final MTP vs original DFlash comparison ===
-MTP completed:              128/128
-original DFlash completed:  128/128
-MTP tok/s:                  67.393
-original DFlash tok/s:      71.629
-DFlash/MTP tok/s:           1.063
-MTP/DFlash tok/s:           0.941
-MTP ref hit:                0.227
-original DFlash ref hit:    0.234
-
-MTP spec metrics:
-  draft steps:              5390.000
-  draft tokens:             16170.000
-  accepted:                 11024.000
-  token accept:             0.682
-  first-pos accept:         0.852
-  mean accept/draft:        2.045
-
-original DFlash spec metrics:
-  draft steps:              5331.000
-  draft tokens:             37317.000
-  accepted:                 11177.000
-  token accept:             0.300
-  first-pos accept:         0.767
-  mean accept/draft:        2.097
-
-DFlash/MTP token-accept:    0.439
-DFlash/MTP mean-accept:     1.025
-
-VERDICT: original DFlash is faster than MTP on this MMStar slice.
+results_jsonl=/data/wenxuan/speculators/output/mmstar_mtp_dflash_spec_sweeps/single_n128_tok128/results.jsonl
+results_csv=/data/wenxuan/speculators/output/mmstar_mtp_dflash_spec_sweeps/single_n128_tok128/results.csv
+results_md=/data/wenxuan/speculators/output/mmstar_mtp_dflash_spec_sweeps/single_n128_tok128/results.md
 
 Artifacts:
-  /data/wenxuan/speculators/output/mmstar_mtp_vs_dflash_original/20260609_015453
-Stopping vLLM server pid=48232
+  /data/wenxuan/speculators/output/mmstar_mtp_dflash_spec_sweeps/single_n128_tok128
