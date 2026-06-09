@@ -271,6 +271,22 @@ NUM_GROUPS=16 \
 bash examples/evaluate/test_mtp_vs_dflash_original_mmstar.sh
 ```
 
+Spec sweep over `mtp@3/5/7` and `original_dflash@3/5/7`:
+
+```bash
+cd /home/wenxuan/speculators
+
+MTP_SPECS="3 5 7" \
+DFLASH_SPECS="3 5 7" \
+NUM_PROMPTS=128 \
+bash examples/evaluate/sweep_mtp_dflash_original_mmstar_specs.sh
+```
+
+The sweep writes stable, resumable results under
+`output/mmstar_mtp_dflash_spec_sweeps/single_n128_tok128/`. Existing
+`summary.json` files are skipped, and matching results from previous
+`test_mtp_vs_dflash_original_mmstar.sh` runs are reused automatically.
+
 ---
 
 ## Files
@@ -284,6 +300,7 @@ bash examples/evaluate/test_mtp_vs_dflash_original_mmstar.sh
 | MMStar original-vs-trained DFlash eval | `examples/evaluate/test_dflash_mmstar_weights.sh` |
 | MMStar 10-image DFlash eval | `examples/evaluate/test_dflash_mmstar_10image_weights.sh` |
 | MMStar native MTP-vs-original DFlash eval | `examples/evaluate/test_mtp_vs_dflash_original_mmstar.sh` |
+| MMStar MTP/DFlash spec sweep | `examples/evaluate/sweep_mtp_dflash_original_mmstar_specs.sh` |
 | Training curves (TensorBoard) | `examples/train/view_tensorboard.sh` |
 | Serve on GPU (baseline/mtp/dflash) | `examples/serve/run_qwen35_9b_gpu.sh` |
 | Quick serve test (text · image) | `examples/serve/test_trained_dflash_gpu.sh` · `examples/serve/test_trained_dflash_mm_gpu.sh` |
