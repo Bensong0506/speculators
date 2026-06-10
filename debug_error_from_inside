@@ -1,111 +1,46 @@
-[15:48:19] INFO     val/loss_epoch=0.819,                         trainer.py:292
-                    val/full_acc_epoch=0.433,                                   
-                    val/position_1_acc_epoch=0.767,                             
-                    val/position_2_acc_epoch=0.604,                             
-                    val/position_3_acc_epoch=0.482,                             
-                    val/position_4_acc_epoch=0.389,                             
-                    val/position_5_acc_epoch=0.319,                             
-                    val/position_6_acc_epoch=0.259,                             
-                    val/position_7_acc_epoch=0.209, epoch=19,                   
-                    phase='val'                                                 
-           INFO     Validation epoch 20/20 completed              trainer.py:375
-[15:48:19] INFO     Destroyed distributed with local_rank=3,         utils.py:54
-                    world_size=4                                                
-           INFO     Destroyed distributed with local_rank=0,         utils.py:54
-                    world_size=4                                                
-[15:48:19] INFO     Destroyed distributed with local_rank=1,         utils.py:54
-                    world_size=4                                                
-[15:48:19] INFO     Destroyed distributed with local_rank=2,         utils.py:54
-                    world_size=4                                                
-wandb: 
-wandb: 🚀 View run dflash_qwen35_9b_allava_distilled_10k_continue_dflash_20260609_124019 at: http://10.155.156.175:38080/aigc/speculators/runs/3hn27r8q
-Done. Checkpoints saved to ./output/dflash_qwen3.5_9b_mm_distilled_10k_continue_dflash/dflash_qwen35_9b_allava_distilled_10k_continue_dflash_20260609_124019/checkpoints/
-Stopping vLLM server...
-t/completions HTTP/1.1" 400 Bad Request
-(ApiServer_1 pid=162094) INFO:     127.0.0.1:49084 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
-(ApiServer_1 pid=162094) INFO:     127.0.0.1:49094 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
-(ApiServer_1 pid=162094) INFO:     127.0.0.1:39824 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
-(ApiServer_1 pid=162094) INFO:     127.0.0.1:60296 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
-(ApiServer_3 pid=162096) INFO:     127.0.0.1:50124 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
-(ApiServer_2 pid=162095) INFO:     127.0.0.1:50130 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
-(ApiServer_3 pid=162096) INFO:     127.0.0.1:53922 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
-(ApiServer_1 pid=162094) INFO:     127.0.0.1:48418 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
-(ApiServer_1 pid=162094) INFO:     127.0.0.1:55020 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
-(ApiServer_3 pid=162096) INFO:     127.0.0.1:55030 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
-(ApiServer_1 pid=162094) INFO:     127.0.0.1:52040 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
-(ApiServer_1 pid=162094) INFO:     127.0.0.1:49084 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
-(ApiServer_1 pid=162094) INFO:     127.0.0.1:37362 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
-(ApiServer_3 pid=162096) INFO:     127.0.0.1:37370 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
-(ApiServer_1 pid=162094) INFO:     127.0.0.1:59366 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
-(ApiServer_0 pid=162093) INFO:     127.0.0.1:52754 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
-(ApiServer_0 pid=162093) INFO:     127.0.0.1:59290 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
-(ApiServer_1 pid=162094) INFO:     127.0.0.1:44006 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
-(ApiServer_1 pid=162094) INFO:     127.0.0.1:60232 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
-(ApiServer_1 pid=162094) INFO:     127.0.0.1:54864 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
-(ApiServer_3 pid=162096) INFO:     127.0.0.1:47632 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
-(ApiServer_3 pid=162096) INFO:     127.0.0.1:54294 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
-(ApiServer_2 pid=162095) INFO:     127.0.0.1:55098 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
-(ApiServer_2 pid=162095) INFO:     127.0.0.1:42880 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
-(ApiServer_3 pid=162096) INFO:     127.0.0.1:48026 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
-(ApiServer_1 pid=162094) INFO:     127.0.0.1:48042 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
-(ApiServer_2 pid=162095) INFO:     127.0.0.1:38558 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
-INFO 06-09 15:48:34 [serve.py:369] Waiting up to 0 seconds for processes to exit
-(EngineCore_DP0 pid=162089) INFO 06-09 15:48:34 [core.py:1266] Shutdown initiated (timeout=0)
-(EngineCore_DP0 pid=162089) INFO 06-09 15:48:34 [core.py:1289] Shutdown complete
-(EngineCore_DP2 pid=162091) INFO 06-09 15:48:34 [core.py:1266] Shutdown initiated (timeout=0)
-(EngineCore_DP2 pid=162091) INFO 06-09 15:48:34 [core.py:1289] Shutdown complete
-(Worker pid=163714) INFO 06-09 15:48:34 [multiproc_executor.py:775] Parent process exited, terminating worker queues
-(EngineCore_DP3 pid=162092) INFO 06-09 15:48:34 [core.py:1266] Shutdown initiated (timeout=0)
-(EngineCore_DP3 pid=162092) INFO 06-09 15:48:34 [core.py:1289] Shutdown complete
-(Worker pid=163714) INFO 06-09 15:48:34 [multiproc_executor.py:872] WorkerProc shutting down.
-(EngineCore_DP1 pid=162090) INFO 06-09 15:48:34 [core.py:1266] Shutdown initiated (timeout=0)
-(EngineCore_DP1 pid=162090) INFO 06-09 15:48:34 [core.py:1289] Shutdown complete
-(Worker pid=163715) INFO 06-09 15:48:34 [multiproc_executor.py:872] WorkerProc shutting down.
-(Worker pid=163707) INFO 06-09 15:48:34 [multiproc_executor.py:872] WorkerProc shutting down.
-(Worker pid=16__
-(ApiServer_2 pid=162095)     await self.middleware_stack(scope, receive, send)
-(ApiServer_2 pid=162095)   File "/usr/local/lib/python3.12/dist-packages/starlette/routing.py", line 736, in app
-(ApiServer_2 pid=162095)     await route.handle(scope, receive, send)
-(ApiServer_2 pid=162095)   File "/usr/local/lib/python3.12/dist-packages/starlette/routing.py", line 290, in handle
-(ApiServer_2 pid=162095)     await self.app(scope, receive, send)
-(ApiServer_2 pid=162095)   File "/usr/local/lib/python3.12/dist-packages/fastapi/routing.py", line 134, in app
-(ApiServer_2 pid=162095)     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
-(ApiServer_2 pid=162095)   File "/usr/local/lib/python3.12/dist-packages/starlette/_exception_handler.py", line 53, in wrapped_app
-(ApiServer_2 pid=162095)     raise exc
-(ApiServer_2 pid=162095)   File "/usr/local/lib/python3.12/dist-packages/starlette/_exception_handler.py", line 42, in wrapped_app
-(ApiServer_2 pid=162095)     await app(scope, receive, sender)
-(ApiServer_2 pid=162095)   File "/usr/local/lib/python3.12/dist-packages/fastapi/routing.py", line 120, in app
-(ApiServer_2 pid=162095)     response = await f(request)
-(ApiServer_2 pid=162095)                ^^^^^^^^^^^^^^^^
-(ApiServer_2 pid=162095)   File "/usr/local/lib/python3.12/dist-packages/fastapi/routing.py", line 674, in app
-(ApiServer_2 pid=162095)     raw_response = await run_endpoint_function(
-(ApiServer_2 pid=162095)                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-(ApiServer_2 pid=162095)   File "/usr/local/lib/python3.12/dist-packages/fastapi/routing.py", line 328, in run_endpoint_function
-(ApiServer_2 pid=162095)     return await dependant.call(**values)
-(ApiServer_2 pid=162095)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-(ApiServer_2 pid=162095)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/utils.py", line 96, in wrapper
-(ApiServer_2 pid=162095)     return handler_task.result()
-(ApiServer_2 pid=162095)            ^^^^^^^^^^^^^^^^^^^^^
-(ApiServer_2 pid=162095)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/utils.py", line 117, in wrapper
-(ApiServer_2 pid=162095)     return await func(*args, **kwargs)
-(ApiServer_2 pid=162095)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-(ApiServer_2 pid=162095)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/chat_completion/api_router.py", line 61, in create_chat_completion
-(ApiServer_2 pid=162095)     generator = await handler.create_chat_completion(request, raw_request)
-(ApiServer_2 pid=162095)                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-(ApiServer_2 pid=162095)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/chat_completion/serving.py", line 240, in create_chat_completion
-(ApiServer_2 pid=162095)     return await self._with_kv_transfer_rejection_cleanup(
-(ApiServer_2 pid=162095)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-(ApiServer_2 pid=162095)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/engine/serving.py", line 431, in _with_kv_transfer_rejection_cleanup
-(ApiServer_2 pid=162095)     return await awaitable
-(ApiServer_2 pid=162095)            ^^^^^^^^^^^^^^^
-(ApiServer_2 pid=162095)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/chat_completion/serving.py", line 292, in _create_chat_completion
-(ApiServer_2 pid=162095)     max_tokens = get_max_tokens(
-(ApiServer_2 pid=162095)                  ^^^^^^^^^^^^^^^
-(ApiServer_2 pid=162095)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/utils.py", line 190, in get_max_tokens
-(ApiServer_2 pid=162095)     raise ValueError(
-(ApiServer_2 pid=162095) ValueError: Input length (4109) exceeds model's maximum context length (4096).
-/usr/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 4 leaked semaphore objects to clean up at shutdown
-  warnings.warn('resource_tracker: There appear to be %d '
-/usr/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 8 leaked shared_memory objects to clean up at shutdown
-  warnings.warn('resource_tracker: There appear to be %d '
-3716) INFO 06-09 15:48:34 [multiproc_executor.py:872] WorkerProc shutting down.
+\"6\"}": 0.0
+  },
+  "spec_draft_steps_total": 5483.0,
+  "spec_draft_tokens_total": 38381.0,
+  "spec_accepted_tokens_total": 10929.0,
+  "spec_accepted_tokens_by_position": {
+    "0": 3988.0,
+    "1": 2552.0,
+    "2": 1610.0,
+    "3": 1091.0,
+    "4": 809.0,
+    "5": 538.0,
+    "6": 341.0
+  },
+  "spec_token_acceptance_rate": 0.284750267059222,
+  "spec_first_position_acceptance_rate": 0.7273390479664418,
+  "spec_mean_accepted_tokens_per_draft": 1.993251869414554
+}
+Stopping vLLM server pid=181691
+# ALLaVA Val Four-Way Benchmark
+
+| rank | method | tok/s | mean accept/draft | token accept | first-pos accept | completed |
+|---:|---|---:|---:|---:|---:|---:|
+| 1 | mtp | 65.997 | 2.807 | 0.401 | 0.818 | 128/128 |
+| 2 | trained_dflash | 64.197 | 1.993 | 0.285 | 0.727 | 128/128 |
+| 3 | dflash_original | 62.821 | 1.942 | 0.277 | 0.729 | 128/128 |
+| 4 | baseline | 30.704 | n/a | n/a | n/a | 128/128 |
+
+## Key Ratios
+
+- trained/original DFlash tok/s: `1.022`
+- trained/MTP tok/s: `0.973`
+- trained/baseline tok/s: `2.091`
+- original DFlash/baseline tok/s: `2.046`
+- MTP/baseline tok/s: `2.149`
+
+## Verdict
+
+Trained DFlash improves acceptance over original DFlash but is not the fastest config.
+
+summary_jsonl=/home/wenxuan/speculators/output/allava_val_weight_tests/20260610_073126/allava_val_four_way_summary.jsonl
+summary_csv=/home/wenxuan/speculators/output/allava_val_weight_tests/20260610_073126/allava_val_four_way_summary.csv
+summary_md=/home/wenxuan/speculators/output/allava_val_weight_tests/20260610_073126/allava_val_summary.md
+
+Artifacts:
+  /home/wenxuan/speculators/output/allava_val_weight_tests/20260610_073126
