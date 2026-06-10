@@ -1,304 +1,111 @@
-wandb: For more information, check out the docs at: https://weave-docs.wandb.ai
-[09:16:07] INFO     val/loss_epoch=1.977,                         trainer.py:292
-                    val/full_acc_epoch=0.465,                                   
-                    val/position_1_acc_epoch=0.789,                             
-                    val/position_2_acc_epoch=0.628,                             
-                    val/position_3_acc_epoch=0.512,                             
-                    val/position_4_acc_epoch=0.424,                             
-                    val/position_5_acc_epoch=0.355,                             
-                    val/position_6_acc_epoch=0.293,                             
-                    val/position_7_acc_epoch=0.246, epoch=-1,                   
-                    phase='initial_val'                                         
-[09:16:08] INFO     Initial validation before any training step   trainer.py:350
-                    completed                                                   
-           INFO     Training epoch 1/20 started                   trainer.py:356
-terminate called after throwing an instance of 'terminate called after throwing an instance of 'c10::AcceleratorErrorc10::AcceleratorError'
-'
-  what():  CUDA error: initialization error
-Search for `cudaErrorInitializationError' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
-CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
-For debugging consider passing CUDA_LAUNCH_BLOCKING=1
-Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
-
-Exception raised from ExchangeDevice at /pytorch/c10/cuda/CUDAFunctions.cpp:274 (most recent call first):
-frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x9d (0x7f55be97305d in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10.so)
-frame #1: <unknown function> + 0xc114 (0x7f55bed73114 in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10_cuda.so)
-frame #2: c10::cuda::ExchangeDevice(signed char) + 0x9a (0x7f55bedad7da in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10_cuda.so)
-frame #3: <unknown function> + 0xcc76e0 (0x7f550ae646e0 in /usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_cuda.so)
-frame #4: <unknown function> + 0x7f8e4 (0x7f55be9548e4 in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10.so)
-frame #5: c10::TensorImpl::~TensorImpl() + 0x9 (0x7f55be94e279 in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10.so)
-frame #6: <unknown function> + 0x869d55 (0x7f5537d1dd55 in /usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_python.so)
-frame #7: <unknown function> + 0x869df1 (0x7f5537d1ddf1 in /usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_python.so)
-frame #8: /usr/bin/python3() [0x59dc66]
-frame #9: /usr/bin/python3() [0x53dd34]
-frame #10: /usr/bin/python3() [0x57ebc0]
-frame #11: /usr/bin/python3() [0x57eb81]
-frame #12: /usr/bin/python3() [0x57eb81]
-frame #13: /usr/bin/python3() [0x57eb81]
-frame #14: /usr/bin/python3() [0x57eb81]
-frame #15: /usr/bin/python3() [0x57eb81]
-frame #16: /usr/bin/python3() [0x57eb81]
-frame #17: /usr/bin/python3() [0x57eb81]
-frame #18: /usr/bin/python3() [0x57eb81]
-frame #19: /usr/bin/python3() [0x57eb81]
-frame #20: /usr/bin/python3() [0x57eb81]
-frame #21: /usr/bin/python3() [0x57eb81]
-frame #22: /usr/bin/python3() [0x57eb81]
-frame #23: /usr/bin/python3() [0x57eb81]
-frame #24: /usr/bin/python3() [0x57eb81]
-frame #25: /usr/bin/python3() [0x57eb81]
-frame #26: /usr/bin/python3() [0x57eb81]
-frame #27: /usr/bin/python3() [0x57eb81]
-frame #28: /usr/bin/python3() [0x57eb81]
-frame #29: /usr/bin/python3() [0x57eb81]
-frame #30: /usr/bin/python3() [0x57eb81]
-frame #31: /usr/bin/python3() [0x57eb81]
-frame #32: /usr/bin/python3() [0x57eb81]
-frame #33: /usr/bin/python3() [0x57eb81]
-frame #34: /usr/bin/python3() [0x57eb81]
-frame #35: /usr/bin/python3() [0x57dbf6]
-frame #36: /usr/bin/python3() [0x535cda]
-frame #37: /usr/bin/python3() [0x559cf6]
-frame #38: /usr/bin/python3() [0x61f8de]
-frame #39: /usr/bin/python3() [0x61f7f2]
-frame #40: _PyEval_EvalFrameDefault + 0x9ef6 (0x5537d6 in /usr/bin/python3)
-frame #41: _PyObject_FastCallDictTstate + 0x1d8 (0x541b48 in /usr/bin/python3)
-frame #42: /usr/bin/python3() [0x59cb46]
-frame #43: _PyObject_MakeTpCall + 0x1c7 (0x53f177 in /usr/bin/python3)
-frame #44: /usr/bin/python3() [0x620874]
-frame #45: /usr/bin/python3() [0x56248c]
-frame #46: PyObject_Vectorcall + 0x36 (0x562386 in /usr/bin/python3)
-frame #47: _PyEval_EvalFrameDefault + 0x700 (0x549fe0 in /usr/bin/python3)
-frame #48: PyEval_EvalCode + 0x99 (0x61f469 in /usr/bin/python3)
-frame #49: /usr/bin/python3() [0x63dbec]
-frame #50: /usr/bin/python3() [0x56248c]
-frame #51: _PyEval_EvalFrameDefault + 0x4fd7 (0x54e8b7 in /usr/bin/python3)
-frame #52: /usr/bin/python3() [0x56c89d]
-frame #53: PyObject_CallMethodObjArgs + 0xe1 (0x598ee1 in /usr/bin/python3)
-frame #54: PyImport_ImportModuleLevelObject + 0x8c4 (0x597af4 in /usr/bin/python3)
-frame #55: _PyEval_EvalFrameDefault + 0x6da5 (0x550685 in /usr/bin/python3)
-frame #56: PyEval_EvalCode + 0x99 (0x61f469 in /usr/bin/python3)
-frame #57: /usr/bin/python3() [0x63dbec]
-frame #58: /usr/bin/python3() [0x56248c]
-frame #59: _PyEval_EvalFrameDefault + 0x4fd7 (0x54e8b7 in /usr/bin/python3)
-frame #60: /usr/bin/python3() [0x56c89d]
-frame #61: PyObject_CallMethodObjArgs + 0xe1 (0x598ee1 in /usr/bin/python3)
-frame #62: PyImport_ImportModuleLevelObject + 0x8c4 (0x597af4 in /usr/bin/python3)
-
-  what():  CUDA error: initialization error
-Search for `cudaErrorInitializationError' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
-CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
-For debugging consider passing CUDA_LAUNCH_BLOCKING=1
-Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
-
-Exception raised from ExchangeDevice at /pytorch/c10/cuda/CUDAFunctions.cpp:274 (most recent call first):
-frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x9d (0x7f55be97305d in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10.so)
-frame #1: <unknown function> + 0xc114 (0x7f55bed73114 in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10_cuda.so)
-frame #2: c10::cuda::ExchangeDevice(signed char) + 0x9a (0x7f55bedad7da in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10_cuda.so)
-frame #3: <unknown function> + 0xcc76e0 (0x7f550ae646e0 in /usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_cuda.so)
-frame #4: <unknown function> + 0x7f8e4 (0x7f55be9548e4 in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10.so)
-frame #5: c10::TensorImpl::~TensorImpl() + 0x9 (0x7f55be94e279 in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10.so)
-frame #6: <unknown function> + 0x869d55 (0x7f5537d1dd55 in /usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_python.so)
-frame #7: <unknown function> + 0x869df1 (0x7f5537d1ddf1 in /usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_python.so)
-frame #8: /usr/bin/python3() [0x59dc66]
-frame #9: /usr/bin/python3() [0x53dd34]
-frame #10: /usr/bin/python3() [0x57ebc0]
-frame #11: /usr/bin/python3() [0x57eb81]
-frame #12: /usr/bin/python3() [0x57eb81]
-frame #13: /usr/bin/python3() [0x57eb81]
-frame #14: /usr/bin/python3() [0x57eb81]
-frame #15: /usr/bin/python3() [0x57eb81]
-frame #16: /usr/bin/python3() [0x57eb81]
-frame #17: /usr/bin/python3() [0x57eb81]
-frame #18: /usr/bin/python3() [0x57eb81]
-frame #19: /usr/bin/python3() [0x57eb81]
-frame #20: /usr/bin/python3() [0x57eb81]
-frame #21: /usr/bin/python3() [0x57eb81]
-frame #22: /usr/bin/python3() [0x57eb81]
-frame #23: /usr/bin/python3() [0x57eb81]
-frame #24: /usr/bin/python3() [0x57eb81]
-frame #25: /usr/bin/python3() [0x57eb81]
-frame #26: /usr/bin/python3() [0x57eb81]
-frame #27: /usr/bin/python3() [0x57eb81]
-frame #28: /usr/bin/python3() [0x57eb81]
-frame #29: /usr/bin/python3() [0x57eb81]
-frame #30: /usr/bin/python3() [0x57eb81]
-frame #31: /usr/bin/python3() [0x57eb81]
-frame #32: /usr/bin/python3() [0x57eb81]
-frame #33: /usr/bin/python3() [0x57eb81]
-frame #34: /usr/bin/python3() [0x57eb81]
-frame #35: /usr/bin/python3() [0x57dbf6]
-frame #36: /usr/bin/python3() [0x535cda]
-frame #37: /usr/bin/python3() [0x559cf6]
-frame #38: /usr/bin/python3() [0x61f8de]
-frame #39: /usr/bin/python3() [0x61f7f2]
-frame #40: _PyEval_EvalFrameDefault + 0x9ef6 (0x5537d6 in /usr/bin/python3)
-frame #41: _PyObject_FastCallDictTstate + 0x1d8 (0x541b48 in /usr/bin/python3)
-frame #42: /usr/bin/python3() [0x59cb46]
-frame #43: _PyObject_MakeTpCall + 0x1c7 (0x53f177 in /usr/bin/python3)
-frame #44: /usr/bin/python3() [0x620874]
-frame #45: /usr/bin/python3() [0x56248c]
-frame #46: PyObject_Vectorcall + 0x36 (0x562386 in /usr/bin/python3)
-frame #47: _PyEval_EvalFrameDefault + 0x700 (0x549fe0 in /usr/bin/python3)
-frame #48: PyEval_EvalCode + 0x99 (0x61f469 in /usr/bin/python3)
-frame #49: /usr/bin/python3() [0x63dbec]
-frame #50: /usr/bin/python3() [0x56248c]
-frame #51: _PyEval_EvalFrameDefault + 0x4fd7 (0x54e8b7 in /usr/bin/python3)
-frame #52: /usr/bin/python3() [0x56c89d]
-frame #53: PyObject_CallMethodObjArgs + 0xe1 (0x598ee1 in /usr/bin/python3)
-frame #54: PyImport_ImportModuleLevelObject + 0x8c4 (0x597af4 in /usr/bin/python3)
-frame #55: _PyEval_EvalFrameDefault + 0x6da5 (0x550685 in /usr/bin/python3)
-frame #56: PyEval_EvalCode + 0x99 (0x61f469 in /usr/bin/python3)
-frame #57: /usr/bin/python3() [0x63dbec]
-frame #58: /usr/bin/python3() [0x56248c]
-frame #59: _PyEval_EvalFrameDefault + 0x4fd7 (0x54e8b7 in /usr/bin/python3)
-frame #60: /usr/bin/python3() [0x56c89d]
-frame #61: PyObject_CallMethodObjArgs + 0xe1 (0x598ee1 in /usr/bin/python3)
-frame #62: PyImport_ImportModuleLevelObject + 0x8c4 (0x597af4 in /usr/bin/python3)
-
-terminate called after throwing an instance of 'c10::AcceleratorError'
-terminate called after throwing an instance of 'c10::AcceleratorError'
-  what():  CUDA error: initialization error
-Search for `cudaErrorInitializationError' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
-CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
-For debugging consider passing CUDA_LAUNCH_BLOCKING=1
-Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
-
-Exception raised from ExchangeDevice at /pytorch/c10/cuda/CUDAFunctions.cpp:274 (most recent call first):
-frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x9d (0x7f55be97305d in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10.so)
-frame #1: <unknown function> + 0xc114 (0x7f55bed73114 in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10_cuda.so)
-frame #2: c10::cuda::ExchangeDevice(signed char) + 0x9a (0x7f55bedad7da in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10_cuda.so)
-frame #3: <unknown function> + 0xcc76e0 (0x7f550ae646e0 in /usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_cuda.so)
-frame #4: <unknown function> + 0x7f8e4 (0x7f55be9548e4 in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10.so)
-frame #5: c10::TensorImpl::~TensorImpl() + 0x9 (0x7f55be94e279 in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10.so)
-frame #6: <unknown function> + 0x869d55 (0x7f5537d1dd55 in /usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_python.so)
-frame #7: <unknown function> + 0x869df1 (0x7f5537d1ddf1 in /usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_python.so)
-frame #8: /usr/bin/python3() [0x59dc66]
-frame #9: /usr/bin/python3() [0x53dd34]
-frame #10: /usr/bin/python3() [0x57ebc0]
-frame #11: /usr/bin/python3() [0x57eb81]
-frame #12: /usr/bin/python3() [0x57eb81]
-frame #13: /usr/bin/python3() [0x57eb81]
-frame #14: /usr/bin/python3() [0x57eb81]
-frame #15: /usr/bin/python3() [0x57eb81]
-frame #16: /usr/bin/python3() [0x57eb81]
-frame #17: /usr/bin/python3() [0x57eb81]
-frame #18: /usr/bin/python3() [0x57eb81]
-frame #19: /usr/bin/python3() [0x57eb81]
-frame #20: /usr/bin/python3() [0x57eb81]
-frame #21: /usr/bin/python3() [0x57eb81]
-frame #22: /usr/bin/python3() [0x57eb81]
-frame #23: /usr/bin/python3() [0x57eb81]
-frame #24: /usr/bin/python3() [0x57eb81]
-frame #25: /usr/bin/python3() [0x57eb81]
-frame #26: /usr/bin/python3() [0x57eb81]
-frame #27: /usr/bin/python3() [0x57eb81]
-frame #28: /usr/bin/python3() [0x57eb81]
-frame #29: /usr/bin/python3() [0x57eb81]
-frame #30: /usr/bin/python3() [0x57eb81]
-frame #31: /usr/bin/python3() [0x57eb81]
-frame #32: /usr/bin/python3() [0x57eb81]
-frame #33: /usr/bin/python3() [0x57eb81]
-frame #34: /usr/bin/python3() [0x57eb81]
-frame #35: /usr/bin/python3() [0x57dbf6]
-frame #36: /usr/bin/python3() [0x535cda]
-frame #37: /usr/bin/python3() [0x559cf6]
-frame #38: /usr/bin/python3() [0x61f8de]
-frame #39: /usr/bin/python3() [0x61f7f2]
-frame #40: _PyEval_EvalFrameDefault + 0x9ef6 (0x5537d6 in /usr/bin/python3)
-frame #41: _PyObject_FastCallDictTstate + 0x1d8 (0x541b48 in /usr/bin/python3)
-frame #42: /usr/bin/python3() [0x59cb46]
-frame #43: _PyObject_MakeTpCall + 0x1c7 (0x53f177 in /usr/bin/python3)
-frame #44: /usr/bin/python3() [0x620874]
-frame #45: /usr/bin/python3() [0x56248c]
-frame #46: PyObject_Vectorcall + 0x36 (0x562386 in /usr/bin/python3)
-frame #47: _PyEval_EvalFrameDefault + 0x700 (0x549fe0 in /usr/bin/python3)
-frame #48: PyEval_EvalCode + 0x99 (0x61f469 in /usr/bin/python3)
-frame #49: /usr/bin/python3() [0x63dbec]
-frame #50: /usr/bin/python3() [0x56248c]
-frame #51: _PyEval_EvalFrameDefault + 0x4fd7 (0x54e8b7 in /usr/bin/python3)
-frame #52: /usr/bin/python3() [0x56c89d]
-frame #53: PyObject_CallMethodObjArgs + 0xe1 (0x598ee1 in /usr/bin/python3)
-frame #54: PyImport_ImportModuleLevelObject + 0x8c4 (0x597af4 in /usr/bin/python3)
-frame #55: _PyEval_EvalFrameDefault + 0x6da5 (0x550685 in /usr/bin/python3)
-frame #56: PyEval_EvalCode + 0x99 (0x61f469 in /usr/bin/python3)
-frame #57: /usr/bin/python3() [0x63dbec]
-frame #58: /usr/bin/python3() [0x56248c]
-frame #59: _PyEval_EvalFrameDefault + 0x4fd7 (0x54e8b7 in /usr/bin/python3)
-frame #60: /usr/bin/python3() [0x56c89d]
-frame #61: PyObject_CallMethodObjArgs + 0xe1 (0x598ee1 in /usr/bin/python3)
-frame #62: PyImport_ImportModuleLevelObject + 0x8c4 (0x597af4 in /usr/bin/python3)
-
-  what():  CUDA error: initialization error
-Search for `cudaErrorInitializationError' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
-CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
-For debugging consider passing CUDA_LAUNCH_BLOCKING=1
-Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
-
-Exception raised from ExchangeDevice at /pytorch/c10/cuda/CUDAFunctions.cpp:274 (most recent call first):
-frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x9d (0x7f55be97305d in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10.so)
-frame #1: <unknown function> + 0xc114 (0x7f55bed73114 in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10_cuda.so)
-frame #2: c10::cuda::ExchangeDevice(signed char) + 0x9a (0x7f55bedad7da in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10_cuda.so)
-frame #3: <unknown function> + 0xcc76e0 (0x7f550ae646e0 in /usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_cuda.so)
-frame #4: <unknown function> + 0x7f8e4 (0x7f55be9548e4 in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10.so)
-frame #5: c10::TensorImpl::~TensorImpl() + 0x9 (0x7f55be94e279 in /usr/local/lib/python3.12/dist-packages/torch/lib/libc10.so)
-frame #6: <unknown function> + 0x869d55 (0x7f5537d1dd55 in /usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_python.so)
-frame #7: <unknown function> + 0x869df1 (0x7f5537d1ddf1 in /usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_python.so)
-frame #8: /usr/bin/python3() [0x59dc66]
-frame #9: /usr/bin/python3() [0x53dd34]
-frame #10: /usr/bin/python3() [0x57ebc0]
-frame #11: /usr/bin/python3() [0x57eb81]
-frame #12: /usr/bin/python3() [0x57eb81]
-frame #13: /usr/bin/python3() [0x57eb81]
-frame #14: /usr/bin/python3() [0x57eb81]
-frame #15: /usr/bin/python3() [0x57eb81]
-frame #16: /usr/bin/python3() [0x57eb81]
-frame #17: /usr/bin/python3() [0x57eb81]
-frame #18: /usr/bin/python3() [0x57eb81]
-frame #19: /usr/bin/python3() [0x57eb81]
-frame #20: /usr/bin/python3() [0x57eb81]
-frame #21: /usr/bin/python3() [0x57eb81]
-frame #22: /usr/bin/python3() [0x57eb81]
-frame #23: /usr/bin/python3() [0x57eb81]
-frame #24: /usr/bin/python3() [0x57eb81]
-frame #25: /usr/bin/python3() [0x57eb81]
-frame #26: /usr/bin/python3() [0x57eb81]
-frame #27: /usr/bin/python3() [0x57eb81]
-frame #28: /usr/bin/python3() [0x57eb81]
-frame #29: /usr/bin/python3() [0x57eb81]
-frame #30: /usr/bin/python3() [0x57eb81]
-frame #31: /usr/bin/python3() [0x57eb81]
-frame #32: /usr/bin/python3() [0x57eb81]
-frame #33: /usr/bin/python3() [0x57eb81]
-frame #34: /usr/bin/python3() [0x57eb81]
-frame #35: /usr/bin/python3() [0x57dbf6]
-frame #36: /usr/bin/python3() [0x535cda]
-frame #37: /usr/bin/python3() [0x559cf6]
-frame #38: /usr/bin/python3() [0x61f8de]
-frame #39: /usr/bin/python3() [0x61f7f2]
-frame #40: _PyEval_EvalFrameDefault + 0x9ef6 (0x5537d6 in /usr/bin/python3)
-frame #41: _PyObject_FastCallDictTstate + 0x1d8 (0x541b48 in /usr/bin/python3)
-frame #42: /usr/bin/python3() [0x59cb46]
-frame #43: _PyObject_MakeTpCall + 0x1c7 (0x53f177 in /usr/bin/python3)
-frame #44: /usr/bin/python3() [0x620874]
-frame #45: /usr/bin/python3() [0x56248c]
-frame #46: PyObject_Vectorcall + 0x36 (0x562386 in /usr/bin/python3)
-frame #47: _PyEval_EvalFrameDefault + 0x700 (0x549fe0 in /usr/bin/python3)
-frame #48: PyEval_EvalCode + 0x99 (0x61f469 in /usr/bin/python3)
-frame #49: /usr/bin/python3() [0x63dbec]
-frame #50: /usr/bin/python3() [0x56248c]
-frame #51: _PyEval_EvalFrameDefault + 0x4fd7 (0x54e8b7 in /usr/bin/python3)
-frame #52: /usr/bin/python3() [0x56c89d]
-frame #53: PyObject_CallMethodObjArgs + 0xe1 (0x598ee1 in /usr/bin/python3)
-frame #54: PyImport_ImportModuleLevelObject + 0x8c4 (0x597af4 in /usr/bin/python3)
-frame #55: _PyEval_EvalFrameDefault + 0x6da5 (0x550685 in /usr/bin/python3)
-frame #56: PyEval_EvalCode + 0x99 (0x61f469 in /usr/bin/python3)
-frame #57: /usr/bin/python3() [0x63dbec]
-frame #58: /usr/bin/python3() [0x56248c]
-frame #59: _PyEval_EvalFrameDefault + 0x4fd7 (0x54e8b7 in /usr/bin/python3)
-frame #60: /usr/bin/python3() [0x56c89d]
-frame #61: PyObject_CallMethodObjArgs + 0xe1 (0x598ee1 in /usr/bin/python3)
-frame #62: PyImport_ImportModuleLevelObject + 0x8c4 (0x597af4 in /usr/bin/python3)
-
-terminate called after throwing an instance of 'terminate called after throwing an instance of 'c10::AcceleratorErrorc10::AcceleratorError'
-'
+[15:48:19] INFO     val/loss_epoch=0.819,                         trainer.py:292
+                    val/full_acc_epoch=0.433,                                   
+                    val/position_1_acc_epoch=0.767,                             
+                    val/position_2_acc_epoch=0.604,                             
+                    val/position_3_acc_epoch=0.482,                             
+                    val/position_4_acc_epoch=0.389,                             
+                    val/position_5_acc_epoch=0.319,                             
+                    val/position_6_acc_epoch=0.259,                             
+                    val/position_7_acc_epoch=0.209, epoch=19,                   
+                    phase='val'                                                 
+           INFO     Validation epoch 20/20 completed              trainer.py:375
+[15:48:19] INFO     Destroyed distributed with local_rank=3,         utils.py:54
+                    world_size=4                                                
+           INFO     Destroyed distributed with local_rank=0,         utils.py:54
+                    world_size=4                                                
+[15:48:19] INFO     Destroyed distributed with local_rank=1,         utils.py:54
+                    world_size=4                                                
+[15:48:19] INFO     Destroyed distributed with local_rank=2,         utils.py:54
+                    world_size=4                                                
+wandb: 
+wandb: 🚀 View run dflash_qwen35_9b_allava_distilled_10k_continue_dflash_20260609_124019 at: http://10.155.156.175:38080/aigc/speculators/runs/3hn27r8q
+Done. Checkpoints saved to ./output/dflash_qwen3.5_9b_mm_distilled_10k_continue_dflash/dflash_qwen35_9b_allava_distilled_10k_continue_dflash_20260609_124019/checkpoints/
+Stopping vLLM server...
+t/completions HTTP/1.1" 400 Bad Request
+(ApiServer_1 pid=162094) INFO:     127.0.0.1:49084 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
+(ApiServer_1 pid=162094) INFO:     127.0.0.1:49094 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
+(ApiServer_1 pid=162094) INFO:     127.0.0.1:39824 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
+(ApiServer_1 pid=162094) INFO:     127.0.0.1:60296 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
+(ApiServer_3 pid=162096) INFO:     127.0.0.1:50124 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
+(ApiServer_2 pid=162095) INFO:     127.0.0.1:50130 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
+(ApiServer_3 pid=162096) INFO:     127.0.0.1:53922 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
+(ApiServer_1 pid=162094) INFO:     127.0.0.1:48418 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
+(ApiServer_1 pid=162094) INFO:     127.0.0.1:55020 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
+(ApiServer_3 pid=162096) INFO:     127.0.0.1:55030 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
+(ApiServer_1 pid=162094) INFO:     127.0.0.1:52040 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
+(ApiServer_1 pid=162094) INFO:     127.0.0.1:49084 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
+(ApiServer_1 pid=162094) INFO:     127.0.0.1:37362 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
+(ApiServer_3 pid=162096) INFO:     127.0.0.1:37370 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
+(ApiServer_1 pid=162094) INFO:     127.0.0.1:59366 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
+(ApiServer_0 pid=162093) INFO:     127.0.0.1:52754 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
+(ApiServer_0 pid=162093) INFO:     127.0.0.1:59290 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
+(ApiServer_1 pid=162094) INFO:     127.0.0.1:44006 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
+(ApiServer_1 pid=162094) INFO:     127.0.0.1:60232 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
+(ApiServer_1 pid=162094) INFO:     127.0.0.1:54864 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
+(ApiServer_3 pid=162096) INFO:     127.0.0.1:47632 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
+(ApiServer_3 pid=162096) INFO:     127.0.0.1:54294 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
+(ApiServer_2 pid=162095) INFO:     127.0.0.1:55098 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
+(ApiServer_2 pid=162095) INFO:     127.0.0.1:42880 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
+(ApiServer_3 pid=162096) INFO:     127.0.0.1:48026 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
+(ApiServer_1 pid=162094) INFO:     127.0.0.1:48042 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
+(ApiServer_2 pid=162095) INFO:     127.0.0.1:38558 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
+INFO 06-09 15:48:34 [serve.py:369] Waiting up to 0 seconds for processes to exit
+(EngineCore_DP0 pid=162089) INFO 06-09 15:48:34 [core.py:1266] Shutdown initiated (timeout=0)
+(EngineCore_DP0 pid=162089) INFO 06-09 15:48:34 [core.py:1289] Shutdown complete
+(EngineCore_DP2 pid=162091) INFO 06-09 15:48:34 [core.py:1266] Shutdown initiated (timeout=0)
+(EngineCore_DP2 pid=162091) INFO 06-09 15:48:34 [core.py:1289] Shutdown complete
+(Worker pid=163714) INFO 06-09 15:48:34 [multiproc_executor.py:775] Parent process exited, terminating worker queues
+(EngineCore_DP3 pid=162092) INFO 06-09 15:48:34 [core.py:1266] Shutdown initiated (timeout=0)
+(EngineCore_DP3 pid=162092) INFO 06-09 15:48:34 [core.py:1289] Shutdown complete
+(Worker pid=163714) INFO 06-09 15:48:34 [multiproc_executor.py:872] WorkerProc shutting down.
+(EngineCore_DP1 pid=162090) INFO 06-09 15:48:34 [core.py:1266] Shutdown initiated (timeout=0)
+(EngineCore_DP1 pid=162090) INFO 06-09 15:48:34 [core.py:1289] Shutdown complete
+(Worker pid=163715) INFO 06-09 15:48:34 [multiproc_executor.py:872] WorkerProc shutting down.
+(Worker pid=163707) INFO 06-09 15:48:34 [multiproc_executor.py:872] WorkerProc shutting down.
+(Worker pid=16__
+(ApiServer_2 pid=162095)     await self.middleware_stack(scope, receive, send)
+(ApiServer_2 pid=162095)   File "/usr/local/lib/python3.12/dist-packages/starlette/routing.py", line 736, in app
+(ApiServer_2 pid=162095)     await route.handle(scope, receive, send)
+(ApiServer_2 pid=162095)   File "/usr/local/lib/python3.12/dist-packages/starlette/routing.py", line 290, in handle
+(ApiServer_2 pid=162095)     await self.app(scope, receive, send)
+(ApiServer_2 pid=162095)   File "/usr/local/lib/python3.12/dist-packages/fastapi/routing.py", line 134, in app
+(ApiServer_2 pid=162095)     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+(ApiServer_2 pid=162095)   File "/usr/local/lib/python3.12/dist-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+(ApiServer_2 pid=162095)     raise exc
+(ApiServer_2 pid=162095)   File "/usr/local/lib/python3.12/dist-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+(ApiServer_2 pid=162095)     await app(scope, receive, sender)
+(ApiServer_2 pid=162095)   File "/usr/local/lib/python3.12/dist-packages/fastapi/routing.py", line 120, in app
+(ApiServer_2 pid=162095)     response = await f(request)
+(ApiServer_2 pid=162095)                ^^^^^^^^^^^^^^^^
+(ApiServer_2 pid=162095)   File "/usr/local/lib/python3.12/dist-packages/fastapi/routing.py", line 674, in app
+(ApiServer_2 pid=162095)     raw_response = await run_endpoint_function(
+(ApiServer_2 pid=162095)                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(ApiServer_2 pid=162095)   File "/usr/local/lib/python3.12/dist-packages/fastapi/routing.py", line 328, in run_endpoint_function
+(ApiServer_2 pid=162095)     return await dependant.call(**values)
+(ApiServer_2 pid=162095)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(ApiServer_2 pid=162095)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/utils.py", line 96, in wrapper
+(ApiServer_2 pid=162095)     return handler_task.result()
+(ApiServer_2 pid=162095)            ^^^^^^^^^^^^^^^^^^^^^
+(ApiServer_2 pid=162095)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/utils.py", line 117, in wrapper
+(ApiServer_2 pid=162095)     return await func(*args, **kwargs)
+(ApiServer_2 pid=162095)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(ApiServer_2 pid=162095)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/chat_completion/api_router.py", line 61, in create_chat_completion
+(ApiServer_2 pid=162095)     generator = await handler.create_chat_completion(request, raw_request)
+(ApiServer_2 pid=162095)                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(ApiServer_2 pid=162095)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/chat_completion/serving.py", line 240, in create_chat_completion
+(ApiServer_2 pid=162095)     return await self._with_kv_transfer_rejection_cleanup(
+(ApiServer_2 pid=162095)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(ApiServer_2 pid=162095)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/engine/serving.py", line 431, in _with_kv_transfer_rejection_cleanup
+(ApiServer_2 pid=162095)     return await awaitable
+(ApiServer_2 pid=162095)            ^^^^^^^^^^^^^^^
+(ApiServer_2 pid=162095)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/chat_completion/serving.py", line 292, in _create_chat_completion
+(ApiServer_2 pid=162095)     max_tokens = get_max_tokens(
+(ApiServer_2 pid=162095)                  ^^^^^^^^^^^^^^^
+(ApiServer_2 pid=162095)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/utils.py", line 190, in get_max_tokens
+(ApiServer_2 pid=162095)     raise ValueError(
+(ApiServer_2 pid=162095) ValueError: Input length (4109) exceeds model's maximum context length (4096).
+/usr/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 4 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+/usr/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 8 leaked shared_memory objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+3716) INFO 06-09 15:48:34 [multiproc_executor.py:872] WorkerProc shutting down.
