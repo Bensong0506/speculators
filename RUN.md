@@ -203,6 +203,49 @@ RUN_MODE=dflash   ... bash examples/serve/run_qwen35_9b_gpu.sh   # then eval -> 
 # speedup = B / A
 ```
 
+### ⭐ 当前推荐流程：选出最优 checkpoint 并在两个数据集上证明提升
+
+目标：先在 **ALLaVA 域内**按真实接受率从所有 epoch 里挑出最优 checkpoint（这正是项目目标 —— 域内打过开源 draft），再到 **MMStar (OOD)** 上确认没把通用能力训坏。
+
+判据：
+- ALLaVA（真正要赢）：sweep 结果表里 best 行 `mean/native > 1.0` 且 first-pos > native(~0.731) 即为提升。
+- MMStar（只是遗忘检查，不指望赢）：native 标杆很高(~0.764 / 2.09)，域内微调历史上会退化到 ~0.87×；只要别退化太多、能比 kl_div 的 0.87× 好就行。
+- sanity：native first-pos 应 ≈ 0.73(ALLaVA) / 0.76(MMStar)，明显偏离说明数据/环境有问题，先别信 trained 的数。
+
+**第 1 步 —— ALLaVA val 扫所有 checkpoint（选最优 + 域内证明）**
+
+```bash
+cd /home/wenxuan/speculators
+git checkout test_result
+git pull
+
+# 先找到 CE run 的 checkpoints 目录（CE run = 最近一次 LOSS_FN=ce 的训练）
+ls -dt output/dflash_qwen3.5_9b_mm_distilled_10k_continue_dflash/*/checkpoints
+
+CHECKPOINT_FIND_ROOT=output/dflash_qwen3.5_9b_mm_distilled_10k_continue_dflash/<CE_RUN>/checkpoints \
+ALLAVA_JSONL="$(pwd)/data/allava/allava_qwen35_distill_10k.jsonl" \
+INFER_NUM_SPEC=7 NUM_PROMPTS=128 GPUS=0 \
+bash examples/evaluate/sweep_dflash_allava_checkpoints.sh
+```
+
+要点：
+- `ALLAVA_JSONL` 必须指向训练用的蒸馏 jsonl（`allava_qwen35_distill_10k.jsonl`）；脚本取最后 10% 当 val，才和训练 val tail 同分布（**别用 `allava_10000.jsonl`**）。
+- `CHECKPOINT_FIND_ROOT` 只指向 CE 这一条 run（kl_div 旧 checkpoint 已知更差，扫了浪费 GPU）；要扫所有 run 就指到 `output`。
+- 训练若还占着卡，eval 用 `GPUS=1`（空闲卡）或先停训练。每个 config 起一次 vLLM(~4 min)，N 个 epoch 约 (N+1)×4 min。
+- 万一扫到 0 个 checkpoint，加 `INCLUDE_BEST=1`（只剩 `checkpoint_best` 软链的情况）。
+
+输出：`output/allava_checkpoint_sweeps/<timestamp>/results.md`（按 mean-accept 排名 + 标注 `beats native?`），结尾打印 `BEST_CHECKPOINT=<path>`。
+
+**第 2 步 —— 用 best checkpoint 在 MMStar 上做 OOD 检查（原始 vs 训练，2-way @7）**
+
+```bash
+DRAFT=<第 1 步打印的 BEST_CHECKPOINT> \
+INFER_NUM_SPEC=7 NUM_PROMPTS=128 GPUS=0 \
+bash examples/evaluate/test_dflash_mmstar_weights.sh
+```
+
+脚本会自动从 `mmstar_answers.json` 构建 MMStar 数据、对 checkpoint 做合法性检查，并打印 native vs trained 的 first-pos / mean-accept / ratio 和 VERDICT。输出在 `output/mmstar_weight_tests/<timestamp>/`。
+
 ### Overnight MMStar sweep over all checkpoints
 
 This tests every speculators-format DFlash checkpoint under the training output
@@ -330,7 +373,7 @@ git checkout test_result
 git pull
 
 DRAFT=/data/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_distilled_10k_continue_dflash/dflash_qwen35_9b_allava_distilled_10k_continue_dflash_20260609_012511/checkpoints/6 \
-ALLAVA_JSONL="$(pwd)/data/allava/allava_10000.jsonl" \
+ALLAVA_JSONL="$(pwd)/data/allava/allava_qwen35_distill_10k.jsonl" \
 INFER_NUM_SPEC=7 \
 MTP_SPEC=7 \
 NUM_PROMPTS=128 \
@@ -359,6 +402,7 @@ Results are written to `output/allava_val_weight_tests/<timestamp>/`, especially
 | MMStar MTP/DFlash spec sweep summary | `examples/evaluate/mmstar_mtp_dflash_spec_sweep_summary.md` |
 | MMStar trained-best-vs-baselines eval | `examples/evaluate/eval_trained_dflash_best_vs_baselines.sh` |
 | ALLaVA val four-way eval | `examples/evaluate/test_dflash_allava_val_weights.sh` |
+| ALLaVA val checkpoint sweep (选最优 + 域内证明) | `examples/evaluate/sweep_dflash_allava_checkpoints.sh` |
 | ALLaVA val four-way summary | `examples/evaluate/allava_val_four_way_summary.md` |
 | Training curves (TensorBoard) | `examples/train/view_tensorboard.sh` |
 | Serve on GPU (baseline/mtp/dflash) | `examples/serve/run_qwen35_9b_gpu.sh` |
