@@ -152,11 +152,36 @@ bash examples/train/distill_allava_qwen35_10k.sh
 ### 1e. Train on 10k Qwen-distilled ALLaVA
 ```bash
 cd /home/wenxuan/speculators
+git pull origin allava-qwen-distill-10k        # get latest fixes/toggles
 
 bash examples/train/nohup_dflash_qwen3.5_9b_allava_distilled_10k.sh
 ```
 
-Defaults: `MAX_SAMPLES=10000 EPOCHS=20 CHECKPOINT_FREQ=1 LR_FT=1e-5`.
+Defaults: `MAX_SAMPLES=10000 EPOCHS=20 CHECKPOINT_FREQ=1 LR_FT=1e-5` (bf16, warm-start from open-source DFlash).
+
+Env toggles:
+
+| var | default | what |
+|---|---|---|
+| `CONTROL_LR0` | `0` | `1` = force LR to 0 (no weight update). Diagnostic: teacher-forced val MUST stay flat across epochs; any drift = bug. |
+| `HIDDEN_STATES_DTYPE` | `bfloat16` | `float32` = train params + AdamW state in fp32 (fixes small-LR bf16 rounding; more GPU mem). |
+| `GEN_MAX_MODEL_LEN` | `SEQ_LENGTH+2048` | gen-server context; headroom so image-expanded prompts >4096 aren't rejected (training still caps at `SEQ_LENGTH`). |
+| `ON_GENERATE` | `delete` | `cache` = keep generated hidden states across epochs (needs a writable `hidden_states/` dir). |
+
+#### test1 — LR=0 control (is the val dip a bug?)
+```bash
+CONTROL_LR0=1 EPOCHS=2 MAX_SAMPLES=500 \
+  bash examples/train/nohup_dflash_qwen3.5_9b_allava_distilled_10k.sh
+```
+Watch the teacher-forced val `position_1_acc` at `initial_val / epoch0 / epoch1`:
+- all ≈ equal (within ~0.005) → **no bug**; the dip-then-recover is warm-start optimization dynamics.
+- still drifts (e.g. 0.78→0.75) → **bug**: something mutates the model outside `optimizer.step()`.
+
+#### fp32 training (only if you decide bf16 precision is the issue)
+```bash
+HIDDEN_STATES_DTYPE=float32 \
+  bash examples/train/nohup_dflash_qwen3.5_9b_allava_distilled_10k.sh
+```
 
 ### 1f. Watch training (loss + per-position acceptance)
 ```bash
