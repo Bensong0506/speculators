@@ -241,6 +241,18 @@ bash examples/evaluate/test_dflash_mmstar_weights.sh
 - 自动从 `mmstar_answers.json` 构建数据 + checkpoint 合法性检查，打印 native vs trained 的 first-pos / mean-accept / ratio + VERDICT。输出：`output/mmstar_weight_tests/<timestamp>/`。
 - GPU：每步只起 2-4 个 server、串行十几分钟，单卡够（`GPUS=` 设空闲卡；训练占着 0 卡就换）。
 
+**第 2b 步（推荐）—— MMStar 三路：mtp vs 原始 vs 训练（同 run 同 spec，apples-to-apples）**
+
+第 2 步只比原始 vs 训练。要把 MTP 也拉进来、同一次 run 同 spec 干净对比（避免跨 run 漂移）：
+
+```bash
+DRAFT="$(pwd)/output/dflash_qwen3.5_9b_mm_distilled_10k_continue_dflash/<CE_RUN>/checkpoints/checkpoint_best" \
+INFER_NUM_SPEC=7 NUM_PROMPTS=128 GPUS=0 \
+bash examples/evaluate/test_dflash_mmstar_three_way.sh
+```
+- 顺序跑 `mtp@7` / `dflash_original@7` / `trained_dflash@7`（server 参数对齐第 2 步，原始/训练数可复现），输出排名表 + 三组比值（trained/original、trained/mtp、original/mtp）+ verdict 到 `output/mmstar_three_way_tests/<timestamp>/mmstar_three_way_summary.md`。
+- 加 `WITH_BASELINE=1` 再带上无 spec 基线（多一次 server）。
+
 **可选 —— 全扫所有 epoch 选最优**（不只用 val-loss 的 `checkpoint_best`，按真实接受率扫每个 epoch；想确认 best epoch / 看收敛曲线时用）：
 
 ```bash
@@ -408,6 +420,7 @@ Results are written to `output/allava_val_weight_tests/<timestamp>/`, especially
 | MMStar trained-best-vs-baselines eval | `examples/evaluate/eval_trained_dflash_best_vs_baselines.sh` |
 | ALLaVA val four-way eval | `examples/evaluate/test_dflash_allava_val_weights.sh` |
 | ALLaVA val checkpoint sweep (选最优 + 域内证明) | `examples/evaluate/sweep_dflash_allava_checkpoints.sh` |
+| MMStar 三路 (mtp/原始/训练 同 run 同 spec) | `examples/evaluate/test_dflash_mmstar_three_way.sh` |
 | ALLaVA val four-way summary | `examples/evaluate/allava_val_four_way_summary.md` |
 | Training curves (TensorBoard) | `examples/train/view_tensorboard.sh` |
 | Serve on GPU (baseline/mtp/dflash) | `examples/serve/run_qwen35_9b_gpu.sh` |
