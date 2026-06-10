@@ -448,14 +448,22 @@ echo "=== Step 2: Launching vLLM server ==="
 filter_vllm_access_logs() {
     grep -v -E '^\(ApiServer_[^)]*\) INFO: .*"(POST /v1/chat/completions|GET /health|GET /v1/models) HTTP/1\.1" 200 OK$'
 }
+# The generation server re-tokenizes the FULL multimodal prompt (text + image
+# token expansion + chat template), which can exceed the training sequence
+# length SEQ_LENGTH and get rejected with HTTP 400 "Input length (N) exceeds
+# model's maximum context length". Give the gen server headroom so those
+# prompts are not dropped. Training is still capped at SEQ_LENGTH: --total-seq-len
+# plus the collate slice_and_pad truncate everything back to SEQ_LENGTH.
+GEN_MAX_MODEL_LEN="${GEN_MAX_MODEL_LEN:-$((SEQ_LENGTH + 2048))}"
+echo "    gen vLLM max-model-len: $GEN_MAX_MODEL_LEN (training stays at $SEQ_LENGTH)"
 CUDA_VISIBLE_DEVICES="$VLLM_GPUS" python3 scripts/launch_vllm.py "$MODEL" \
     --target-layer-ids $TARGET_LAYER_IDS \
     -- --data-parallel-size "$VLLM_DP" \
        --port "$VLLM_PORT" \
        --allowed-local-media-path "$MEDIA_ROOT" \
        --trust-remote-code \
-       --max-model-len "$SEQ_LENGTH" \
-       --max-num-batched-tokens "$SEQ_LENGTH" \
+       --max-model-len "$GEN_MAX_MODEL_LEN" \
+       --max-num-batched-tokens "$GEN_MAX_MODEL_LEN" \
        --gpu-memory-utilization 0.85 \
        --limit-mm-per-prompt '{"image": 1}' \
        --enforce-eager \
