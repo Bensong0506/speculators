@@ -504,6 +504,7 @@ CUDA_VISIBLE_DEVICES="$TRAIN_GPUS" torchrun \
     --epochs "$EPOCHS" \
     --checkpoint-freq "$CHECKPOINT_FREQ" \
     --lr "$LR" \
+    --hidden-states-dtype "${HIDDEN_STATES_DTYPE:-bfloat16}" \
     --total-seq-len "$SEQ_LENGTH" \
     --speculator-type "$SPECULATOR_TYPE" \
     --block-size "$BLOCK_SIZE" \

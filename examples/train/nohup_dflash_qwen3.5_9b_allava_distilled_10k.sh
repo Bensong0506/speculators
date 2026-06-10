@@ -61,6 +61,13 @@ if [ "${CONTROL_LR0:-0}" = "1" ]; then
     export LR=0
     echo "  [CONTROL_LR0] LR forced to 0 -- teacher-forced val must stay flat; any drift = bug"
 fi
+
+# Param/optimizer precision. bf16 (default) trains params AND AdamW moments in
+# bf16; at LR~1e-5 updates smaller than the bf16 ULP round to zero, so small
+# updates are lost -- which hits warm-start finetuning hardest. Set
+# HIDDEN_STATES_DTYPE=float32 to train params + optimizer state in fp32 (fixes
+# the precision loss; uses more GPU memory). Controls both model and data dtype.
+export HIDDEN_STATES_DTYPE="${HIDDEN_STATES_DTYPE:-bfloat16}"
 export SEQ_LENGTH="${SEQ_LENGTH:-4096}"
 export PREPROCESS_SEQ_LENGTH="${PREPROCESS_SEQ_LENGTH:-3584}"
 export BLOCK_SIZE="${BLOCK_SIZE:-8}"
@@ -93,6 +100,7 @@ echo "  epochs: $EPOCHS"
 echo "  checkpoint_freq: $CHECKPOINT_FREQ"
 echo "  lr: $LR"
 echo "  lr_ft: $LR_FT"
+echo "  hidden_states_dtype: $HIDDEN_STATES_DTYPE"
 echo "  finetune_from: $FINETUNE_FROM"
 echo "  block_size: $BLOCK_SIZE"
 echo "  num_spec: $((BLOCK_SIZE - 1))"
