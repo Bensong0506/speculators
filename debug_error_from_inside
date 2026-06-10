@@ -1,65 +1,24 @@
-=== native log acceptance parse ===
-======================================================================
-Speculative Decoding Acceptance Analysis
-======================================================================
+=== Final three-way comparison ===
+# MMStar Three-Way Benchmark (single spec, one run)
 
-Total samples: 23
-Total drafted tokens: 36001
-Average drafted tokens: 1565.26
+| rank | method | tok/s | mean accept/draft | token accept | first-pos accept | completed |
+|---:|---|---:|---:|---:|---:|---:|
+| 1 | trained_dflash | 70.316 | 2.085 | 0.298 | 0.752 | 128/128 |
+| 2 | mtp | 68.074 | 2.822 | 0.403 | 0.828 | 128/128 |
+| 3 | dflash_original | 66.388 | 2.088 | 0.298 | 0.764 | 128/128 |
 
-Weighted per-position acceptance rates:
-[0.765 0.482 0.297 0.198 0.148 0.118 0.082]
+## Key ratios
 
-Conditional acceptance rates:
-[0.765 0.63  0.616 0.666 0.75  0.799 0.692]
-======================================================================
+- trained / original DFlash : tok/s `1.059`, mean-accept `0.999`, first-pos `0.985`
+- trained / MTP            : tok/s `1.033`, mean-accept `0.739`, first-pos `0.909`
+- original DFlash / MTP    : tok/s `0.975`, mean-accept `0.740`
 
-=== trained log acceptance parse ===
-======================================================================
-Speculative Decoding Acceptance Analysis
-======================================================================
+## Verdict
 
-Total samples: 24
-Total drafted tokens: 36925
-Average drafted tokens: 1538.54
-
-Weighted per-position acceptance rates:
-[0.752 0.485 0.3   0.198 0.148 0.113 0.082]
-
-Conditional acceptance rates:
-[0.752 0.644 0.618 0.66  0.746 0.768 0.72 ]
-======================================================================
-
-=== Final comparison ===
-native completed:   128/128
-trained completed:  128/128
-native tok/s:       69.339
-trained tok/s:      67.758
-trained/native:     0.977
-native ref hit:     0.234
-trained ref hit:    0.234
-
-native DFlash spec metrics:
-  draft steps:      5330.000
-  draft tokens:     37310.000
-  accepted:         11162.000
-  token accept:     0.299
-  first-pos accept: 0.765
-  mean accept/draft:   2.094
-
-trained DFlash spec metrics:
-  draft steps:      5349.000
-  draft tokens:     37443.000
-  accepted:         11112.000
-  token accept:     0.297
-  first-pos accept: 0.753
-  mean accept/draft:   2.077
-
-accept-rate ratio:  0.992
-mean-accept ratio:  0.992
-
-VERDICT: NOT IMPROVED - trained DFlash did not beat native DFlash.
+- trained DFlash does NOT beat original DFlash on mean-accept (0.999x).
+- MTP still stronger than trained DFlash on mean-accept (0.739x).
+- Fastest by tok/s: **trained_dflash**. Order: trained_dflash > mtp > dflash_original.
 
 Artifacts:
-  /home/wenxuan/speculators/output/mmstar_weight_tests/20260610_081248
-Stopping vLLM server pid=183693
+  /home/wenxuan/speculators/output/mmstar_three_way_tests/20260610_083756
+  /home/wenxuan/speculators/output/mmstar_three_way_tests/20260610_083756/mmstar_three_way_summary.md
