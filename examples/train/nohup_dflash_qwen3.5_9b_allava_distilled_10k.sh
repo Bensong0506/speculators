@@ -46,6 +46,21 @@ export EPOCHS="${EPOCHS:-20}"
 export CHECKPOINT_FREQ="${CHECKPOINT_FREQ:-1}"
 export LR_FT="${LR_FT:-1e-5}"
 export LR="${LR:-$LR_FT}"
+
+# --- Diagnostic: LR=0 control run ------------------------------------------
+# With LR=0 the optimizer makes no weight update, so the model is frozen and the
+# teacher-forced val MUST stay flat across epochs (initial_val == epoch0 == ...,
+# within tiny packing noise of ~0.005). If val still dips/moves under
+# CONTROL_LR0=1, something mutates the model OUTSIDE optimizer.step() -- a real
+# bug. If val stays flat, the observed dip-then-recover is genuine warm-start
+# optimization dynamics (cold Adam + LR warmup), not a bug.
+#   CONTROL_LR0=1 EPOCHS=2 MAX_SAMPLES=500 \
+#     bash examples/train/nohup_dflash_qwen3.5_9b_allava_distilled_10k.sh
+if [ "${CONTROL_LR0:-0}" = "1" ]; then
+    export LR_FT=0
+    export LR=0
+    echo "  [CONTROL_LR0] LR forced to 0 -- teacher-forced val must stay flat; any drift = bug"
+fi
 export SEQ_LENGTH="${SEQ_LENGTH:-4096}"
 export PREPROCESS_SEQ_LENGTH="${PREPROCESS_SEQ_LENGTH:-3584}"
 export BLOCK_SIZE="${BLOCK_SIZE:-8}"
