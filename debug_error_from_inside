@@ -1,46 +1,65 @@
-\"6\"}": 0.0
-  },
-  "spec_draft_steps_total": 5483.0,
-  "spec_draft_tokens_total": 38381.0,
-  "spec_accepted_tokens_total": 10929.0,
-  "spec_accepted_tokens_by_position": {
-    "0": 3988.0,
-    "1": 2552.0,
-    "2": 1610.0,
-    "3": 1091.0,
-    "4": 809.0,
-    "5": 538.0,
-    "6": 341.0
-  },
-  "spec_token_acceptance_rate": 0.284750267059222,
-  "spec_first_position_acceptance_rate": 0.7273390479664418,
-  "spec_mean_accepted_tokens_per_draft": 1.993251869414554
-}
-Stopping vLLM server pid=181691
-# ALLaVA Val Four-Way Benchmark
+=== native log acceptance parse ===
+======================================================================
+Speculative Decoding Acceptance Analysis
+======================================================================
 
-| rank | method | tok/s | mean accept/draft | token accept | first-pos accept | completed |
-|---:|---|---:|---:|---:|---:|---:|
-| 1 | mtp | 65.997 | 2.807 | 0.401 | 0.818 | 128/128 |
-| 2 | trained_dflash | 64.197 | 1.993 | 0.285 | 0.727 | 128/128 |
-| 3 | dflash_original | 62.821 | 1.942 | 0.277 | 0.729 | 128/128 |
-| 4 | baseline | 30.704 | n/a | n/a | n/a | 128/128 |
+Total samples: 23
+Total drafted tokens: 36001
+Average drafted tokens: 1565.26
 
-## Key Ratios
+Weighted per-position acceptance rates:
+[0.765 0.482 0.297 0.198 0.148 0.118 0.082]
 
-- trained/original DFlash tok/s: `1.022`
-- trained/MTP tok/s: `0.973`
-- trained/baseline tok/s: `2.091`
-- original DFlash/baseline tok/s: `2.046`
-- MTP/baseline tok/s: `2.149`
+Conditional acceptance rates:
+[0.765 0.63  0.616 0.666 0.75  0.799 0.692]
+======================================================================
 
-## Verdict
+=== trained log acceptance parse ===
+======================================================================
+Speculative Decoding Acceptance Analysis
+======================================================================
 
-Trained DFlash improves acceptance over original DFlash but is not the fastest config.
+Total samples: 24
+Total drafted tokens: 36925
+Average drafted tokens: 1538.54
 
-summary_jsonl=/home/wenxuan/speculators/output/allava_val_weight_tests/20260610_073126/allava_val_four_way_summary.jsonl
-summary_csv=/home/wenxuan/speculators/output/allava_val_weight_tests/20260610_073126/allava_val_four_way_summary.csv
-summary_md=/home/wenxuan/speculators/output/allava_val_weight_tests/20260610_073126/allava_val_summary.md
+Weighted per-position acceptance rates:
+[0.752 0.485 0.3   0.198 0.148 0.113 0.082]
+
+Conditional acceptance rates:
+[0.752 0.644 0.618 0.66  0.746 0.768 0.72 ]
+======================================================================
+
+=== Final comparison ===
+native completed:   128/128
+trained completed:  128/128
+native tok/s:       69.339
+trained tok/s:      67.758
+trained/native:     0.977
+native ref hit:     0.234
+trained ref hit:    0.234
+
+native DFlash spec metrics:
+  draft steps:      5330.000
+  draft tokens:     37310.000
+  accepted:         11162.000
+  token accept:     0.299
+  first-pos accept: 0.765
+  mean accept/draft:   2.094
+
+trained DFlash spec metrics:
+  draft steps:      5349.000
+  draft tokens:     37443.000
+  accepted:         11112.000
+  token accept:     0.297
+  first-pos accept: 0.753
+  mean accept/draft:   2.077
+
+accept-rate ratio:  0.992
+mean-accept ratio:  0.992
+
+VERDICT: NOT IMPROVED - trained DFlash did not beat native DFlash.
 
 Artifacts:
-  /home/wenxuan/speculators/output/allava_val_weight_tests/20260610_073126
+  /home/wenxuan/speculators/output/mmstar_weight_tests/20260610_081248
+Stopping vLLM server pid=183693
