@@ -190,6 +190,26 @@ LOSS_FN=ce bash examples/train/nohup_dflash_qwen3.5_9b_allava_distilled_10k.sh
 ```
 KL lowers the soft-distribution distance but may not move top-1 (= what acceptance needs). CE pushes the verifier's argmax toward top-1. Watch **train top-1** (`position_1_acc`), not loss: rising = the objective was the problem; still flat = a real ceiling (capacity / features / data / bf16).
 
+#### ⭐ 过夜长跑实验：CE + fp32 + LR 3e-5 + warmup（攻中段位置 pos2-4）
+目标：验证「纯 bf16 舍入 / 小 LR 把提升卡住」的假设，并把**中段位置**的接受率往上推（pos2-4 条件率最低 ~0.63、headroom 最大；first-pos 已 0.73 接近天花板）。改动：`HIDDEN_STATES_DTYPE=float32`（小更新不被 bf16 ULP 舍掉）+ `LR_FT=1e-5→3e-5` + warmup（默认 linear、约 1 epoch）+ **不限 20 epoch，过夜长跑**。
+```bash
+cd /home/wenxuan/speculators
+git pull origin allava-qwen-distill-10k
+
+LOSS_FN=ce \
+HIDDEN_STATES_DTYPE=float32 \
+LR_FT=3e-5 \
+EPOCHS=100 \
+CHECKPOINT_FREQ=5 \
+RUN_NAME="dflash_ce_fp32_lr3e5_$(date +%m%d_%H%M)" \
+bash examples/train/nohup_dflash_qwen3.5_9b_allava_distilled_10k.sh
+tail -f run_logs/dflash_ce_fp32_lr3e5_*.nohup.log
+```
+- 盯 wandb 的 `position_2/3/4_acc`（+ `position_1_acc` / `full_acc`）：中段爬升 = fp32/LR 起效；pos1 动了算白捡。
+- checkpoint：`output/dflash_qwen3.5_9b_mm_distilled_10k_continue_dflash/<RUN_NAME>/checkpoints/`，每 5 epoch 一个（bf16 存盘）。**20 个 checkpoint 含 optimizer ≈ 150GB**，磁盘紧就把 `CHECKPOINT_FREQ` 调大。
+- 早上：切 `test_result`，用 `sweep_dflash_allava_checkpoints.sh` 扫这些 checkpoint 按真实接受率挑最优（`CHECKPOINT_FIND_ROOT=.../<RUN_NAME>/checkpoints`），再跑 4-way / 三路对比原始 + MTP。
+- fp32 更费显存、更慢；若 OOM 降 batch 或回 `bfloat16`。想显式控制 warmup/总步数可加 `--scheduler-warmup-steps/--scheduler-total-steps`（train.py 支持，launcher 暂未透传）。
+
 ### 1f. Watch training (loss + per-position acceptance)
 ```bash
 bash examples/train/view_tensorboard.sh
