@@ -68,6 +68,10 @@ fi
 # HIDDEN_STATES_DTYPE=float32 to train params + optimizer state in fp32 (fixes
 # the precision loss; uses more GPU memory). Controls both model and data dtype.
 export HIDDEN_STATES_DTYPE="${HIDDEN_STATES_DTYPE:-bfloat16}"
+# Training loss. kl_div (default) matches the verifier's soft distribution but can
+# lower loss without moving top-1; ce = cross-entropy on the verifier's argmax,
+# which targets top-1 (= what speculative acceptance needs) more directly.
+export LOSS_FN="${LOSS_FN:-kl_div}"
 export SEQ_LENGTH="${SEQ_LENGTH:-4096}"
 export PREPROCESS_SEQ_LENGTH="${PREPROCESS_SEQ_LENGTH:-3584}"
 export BLOCK_SIZE="${BLOCK_SIZE:-8}"
@@ -101,6 +105,7 @@ echo "  checkpoint_freq: $CHECKPOINT_FREQ"
 echo "  lr: $LR"
 echo "  lr_ft: $LR_FT"
 echo "  hidden_states_dtype: $HIDDEN_STATES_DTYPE"
+echo "  loss_fn: $LOSS_FN"
 echo "  finetune_from: $FINETUNE_FROM"
 echo "  block_size: $BLOCK_SIZE"
 echo "  num_spec: $((BLOCK_SIZE - 1))"

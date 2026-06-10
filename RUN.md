@@ -167,6 +167,7 @@ Env toggles:
 | `HIDDEN_STATES_DTYPE` | `bfloat16` | `float32` = train params + AdamW state in fp32 (fixes small-LR bf16 rounding; more GPU mem). |
 | `GEN_MAX_MODEL_LEN` | `SEQ_LENGTH+2048` | gen-server context; headroom so image-expanded prompts >4096 aren't rejected (training still caps at `SEQ_LENGTH`). |
 | `ON_GENERATE` | `delete` | `cache` = keep generated hidden states across epochs (needs a writable `hidden_states/` dir). |
+| `LOSS_FN` | `kl_div` | `ce` = cross-entropy on the verifier's argmax (targets top-1 / acceptance, vs KL matching the soft distribution). |
 
 #### test1 — LR=0 control (is the val dip a bug?)
 ```bash
@@ -182,6 +183,12 @@ Watch the teacher-forced val `position_1_acc` at `initial_val / epoch0 / epoch1`
 HIDDEN_STATES_DTYPE=float32 \
   bash examples/train/nohup_dflash_qwen3.5_9b_allava_distilled_10k.sh
 ```
+
+#### switch training loss to CE (target top-1, not KL) — current experiment
+```bash
+LOSS_FN=ce bash examples/train/nohup_dflash_qwen3.5_9b_allava_distilled_10k.sh
+```
+KL lowers the soft-distribution distance but may not move top-1 (= what acceptance needs). CE pushes the verifier's argmax toward top-1. Watch **train top-1** (`position_1_acc`), not loss: rising = the objective was the problem; still flat = a real ceiling (capacity / features / data / bf16).
 
 ### 1f. Watch training (loss + per-position acceptance)
 ```bash

@@ -511,6 +511,7 @@ CUDA_VISIBLE_DEVICES="$TRAIN_GPUS" torchrun \
     --max-anchors "$MAX_ANCHORS" \
     --num-layers "$NUM_LAYERS" \
     --target-layer-ids $TARGET_LAYER_IDS \
+    --loss-fn "${LOSS_FN:-kl_div}" \
     --logger "$LOGGER" \
     --run-name "$RUN_NAME" \
     --log-dir "$LOG_DIR" \
