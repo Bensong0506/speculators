@@ -203,48 +203,53 @@ RUN_MODE=dflash   ... bash examples/serve/run_qwen35_9b_gpu.sh   # then eval -> 
 # speedup = B / A
 ```
 
-### ⭐ 当前推荐流程：选出最优 checkpoint 并在两个数据集上证明提升
+### ⭐ 当前评测流程：用 checkpoint_best 在两个数据集上证明提升
 
-目标：先在 **ALLaVA 域内**按真实接受率从所有 epoch 里挑出最优 checkpoint（这正是项目目标 —— 域内打过开源 draft），再到 **MMStar (OOD)** 上确认没把通用能力训坏。
+`checkpoint_best` = 训练时按 val loss 选的 epoch（CE 下 val loss 和 top-1 基本一致，可直接用）。两步：ALLaVA 四路（域内，真正要赢）→ MMStar 2-way（OOD，遗忘检查）。两个脚本各自一把同时跑 native/原始 + trained，组内对比，无跨 run 漂移。
 
 判据：
-- ALLaVA（真正要赢）：sweep 结果表里 best 行 `mean/native > 1.0` 且 first-pos > native(~0.731) 即为提升。
-- MMStar（只是遗忘检查，不指望赢）：native 标杆很高(~0.764 / 2.09)，域内微调历史上会退化到 ~0.87×；只要别退化太多、能比 kl_div 的 0.87× 好就行。
-- sanity：native first-pos 应 ≈ 0.73(ALLaVA) / 0.76(MMStar)，明显偏离说明数据/环境有问题，先别信 trained 的数。
+- ALLaVA（核心）：`trained_dflash` 行的 first-pos / mean-accept / tok-s > `dflash_original` 行即为提升。✅ 已验证（2026-06-10，CE checkpoint_best @spec7）：tok/s 64.2 vs 62.8、mean-accept 1.99 vs 1.94、token-accept 0.285 vs 0.277，first-pos 0.727 vs 0.729（持平）；MTP 仍最强(2.81)。详见 `examples/evaluate/allava_val_four_way_summary.md`。
+- MMStar（遗忘检查，不指望赢）：native 标杆高(~0.764 / 2.09)，域内微调历史退化到 ~0.87×；看 trained/native ratio 能否比 kl_div 的 0.87× 更接近 1.0。
+- sanity：`dflash_original`/native first-pos 应 ≈ 0.73(ALLaVA) / 0.76(MMStar)，明显偏离说明数据/环境有问题。
 
-**第 1 步 —— ALLaVA val 扫所有 checkpoint（选最优 + 域内证明）**
+先定位 checkpoint_best（CE run = 最近一次 `LOSS_FN=ce` 的训练）：
 
 ```bash
 cd /home/wenxuan/speculators
-git checkout test_result
-git pull
+git checkout test_result && git pull
+ls -dt output/dflash_qwen3.5_9b_mm_distilled_10k_continue_dflash/*/checkpoints/checkpoint_best
+```
 
-# 先找到 CE run 的 checkpoints 目录（CE run = 最近一次 LOSS_FN=ce 的训练）
-ls -dt output/dflash_qwen3.5_9b_mm_distilled_10k_continue_dflash/*/checkpoints
+**第 1 步 —— ALLaVA 四路（baseline / MTP / 原始 DFlash / 训练 DFlash）**
 
+```bash
+DRAFT="$(pwd)/output/dflash_qwen3.5_9b_mm_distilled_10k_continue_dflash/<CE_RUN>/checkpoints/checkpoint_best" \
+ALLAVA_JSONL="$(pwd)/data/allava/allava_qwen35_distill_10k.jsonl" \
+INFER_NUM_SPEC=7 MTP_SPEC=7 NUM_PROMPTS=128 GPUS=0 \
+bash examples/evaluate/test_dflash_allava_val_weights.sh
+```
+- `ALLAVA_JSONL` 必须是训练用的蒸馏 jsonl（取最后 10% 当 val，和训练 val tail 同分布；**别用 `allava_10000.jsonl`**）。
+- 输出：`output/allava_val_weight_tests/<timestamp>/allava_val_summary.md`。
+
+**第 2 步 —— MMStar 2-way（原始 vs 训练 @7）**
+
+```bash
+DRAFT="$(pwd)/output/dflash_qwen3.5_9b_mm_distilled_10k_continue_dflash/<CE_RUN>/checkpoints/checkpoint_best" \
+INFER_NUM_SPEC=7 NUM_PROMPTS=128 GPUS=0 \
+bash examples/evaluate/test_dflash_mmstar_weights.sh
+```
+- 自动从 `mmstar_answers.json` 构建数据 + checkpoint 合法性检查，打印 native vs trained 的 first-pos / mean-accept / ratio + VERDICT。输出：`output/mmstar_weight_tests/<timestamp>/`。
+- GPU：每步只起 2-4 个 server、串行十几分钟，单卡够（`GPUS=` 设空闲卡；训练占着 0 卡就换）。
+
+**可选 —— 全扫所有 epoch 选最优**（不只用 val-loss 的 `checkpoint_best`，按真实接受率扫每个 epoch；想确认 best epoch / 看收敛曲线时用）：
+
+```bash
 CHECKPOINT_FIND_ROOT=output/dflash_qwen3.5_9b_mm_distilled_10k_continue_dflash/<CE_RUN>/checkpoints \
 ALLAVA_JSONL="$(pwd)/data/allava/allava_qwen35_distill_10k.jsonl" \
 INFER_NUM_SPEC=7 NUM_PROMPTS=128 GPUS=0 \
 bash examples/evaluate/sweep_dflash_allava_checkpoints.sh
 ```
-
-要点：
-- `ALLAVA_JSONL` 必须指向训练用的蒸馏 jsonl（`allava_qwen35_distill_10k.jsonl`）；脚本取最后 10% 当 val，才和训练 val tail 同分布（**别用 `allava_10000.jsonl`**）。
-- `CHECKPOINT_FIND_ROOT` 只指向 CE 这一条 run（kl_div 旧 checkpoint 已知更差，扫了浪费 GPU）；要扫所有 run 就指到 `output`。
-- 训练若还占着卡，eval 用 `GPUS=1`（空闲卡）或先停训练。每个 config 起一次 vLLM(~4 min)，N 个 epoch 约 (N+1)×4 min。
-- 万一扫到 0 个 checkpoint，加 `INCLUDE_BEST=1`（只剩 `checkpoint_best` 软链的情况）。
-
-输出：`output/allava_checkpoint_sweeps/<timestamp>/results.md`（按 mean-accept 排名 + 标注 `beats native?`），结尾打印 `BEST_CHECKPOINT=<path>`。
-
-**第 2 步 —— 用 best checkpoint 在 MMStar 上做 OOD 检查（原始 vs 训练，2-way @7）**
-
-```bash
-DRAFT=<第 1 步打印的 BEST_CHECKPOINT> \
-INFER_NUM_SPEC=7 NUM_PROMPTS=128 GPUS=0 \
-bash examples/evaluate/test_dflash_mmstar_weights.sh
-```
-
-脚本会自动从 `mmstar_answers.json` 构建 MMStar 数据、对 checkpoint 做合法性检查，并打印 native vs trained 的 first-pos / mean-accept / ratio 和 VERDICT。输出在 `output/mmstar_weight_tests/<timestamp>/`。
+输出 `output/allava_checkpoint_sweeps/<timestamp>/results.md`（按 mean-accept 排名 + `beats native?`），结尾打印 `BEST_CHECKPOINT=<path>`。扫到 0 个时加 `INCLUDE_BEST=1`。
 
 ### Overnight MMStar sweep over all checkpoints
 
