@@ -135,19 +135,43 @@ The 8-GPU launcher starts one verifier server per GPU on ports `8100..8107`,
 writes shard files under `data/allava/allava_qwen35_distill_10k_shards/`, then
 merges them back into the default output path. It is resumable by default.
 
-**100k 变体（治过拟合 — 10× 数据，8 卡）：** 同一个脚本，只是把预算调到 100k、换成 100k 专属输出路径（别覆盖 10k）。`MAX_SAMPLES` 是**总量**（跨 8 卡分片，每卡 1/8）：
+**100k 变体（治过拟合 — 10× 数据）。** `MAX_SAMPLES` 是**总量**（跨卡取模分片），用 100k 专属输出路径别覆盖 10k。
+
+**两台机器各 8 卡 = 16 卡并行（时间减半）** —— 两台不互通，所以各跑**不重叠的一半**再拼。`SKIP_SAMPLES` 是分片前的全局偏移：
+
+机器 A（前 50k）：
 ```bash
 cd /home/wenxuan/speculators
 git checkout allava-qwen-distill-10k && git pull
-
-MAX_SAMPLES=100000 \
-FINAL_JSONL="$(pwd)/data/allava/allava_qwen35_distill_100k.jsonl" \
-SHARD_ROOT="$(pwd)/data/allava/allava_qwen35_distill_100k_shards" \
+SKIP_SAMPLES=0 MAX_SAMPLES=50000 \
+FINAL_JSONL="$(pwd)/data/allava/allava_qwen35_distill_100k_partA.jsonl" \
+SHARD_ROOT="$(pwd)/data/allava/allava_qwen35_distill_100k_partA_shards" \
 bash examples/train/distill_allava_qwen35_10k_8gpu.sh
 ```
-- 100k = 前 100k 条 ALLaVA prompt（全是 Caption-LAION，和 10k 同分布，只是更多）；8 卡各 12.5k，约几小时，**可断点续跑**（重跑即续）。
-- 分片日志在 `data/allava/allava_qwen35_distill_100k_shards/shard_*_driver.log`。
-- 跑完用它训练：在 1e 的命令前加 `DISTILLED_ALLAVA_JSONL="$(pwd)/data/allava/allava_qwen35_distill_100k.jsonl" MAX_SAMPLES=100000`（两个都要，否则只用前 10k）。
+机器 B（后 50k）：
+```bash
+cd /home/wenxuan/speculators
+git checkout allava-qwen-distill-10k && git pull
+SKIP_SAMPLES=50000 MAX_SAMPLES=50000 \
+FINAL_JSONL="$(pwd)/data/allava/allava_qwen35_distill_100k_partB.jsonl" \
+SHARD_ROOT="$(pwd)/data/allava/allava_qwen35_distill_100k_partB_shards" \
+bash examples/train/distill_allava_qwen35_10k_8gpu.sh
+```
+两边都跑完，在**训练那台机器**上合并（先把另一台的 part 拷过来）：
+```bash
+scp <另一台>:/home/wenxuan/speculators/data/allava/allava_qwen35_distill_100k_partB.jsonl data/allava/
+cat data/allava/allava_qwen35_distill_100k_partA.jsonl \
+    data/allava/allava_qwen35_distill_100k_partB.jsonl \
+    > data/allava/allava_qwen35_distill_100k.jsonl
+wc -l data/allava/allava_qwen35_distill_100k.jsonl   # ≈ 100000
+```
+
+**单机 8 卡（不拆）**：`MAX_SAMPLES=100000 FINAL_JSONL=...100k.jsonl SHARD_ROOT=...100k_shards bash examples/train/distill_allava_qwen35_10k_8gpu.sh`
+
+要点：
+- 100k = 前 100k 条 prompt = 全 Caption-LAION（和 10k 同分布，只是 10×）。
+- A/B 各 8 卡 × 6.25k，**可断点续跑**（重跑即续）；端口 8100-8107（两台各自用，不冲突）。
+- 拼完训练：1e 命令前加 `DISTILLED_ALLAVA_JSONL="$(pwd)/data/allava/allava_qwen35_distill_100k.jsonl" MAX_SAMPLES=100000`（两个都要，否则只用前 10k）。
 
 Single-GPU fallback:
 

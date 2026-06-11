@@ -21,6 +21,11 @@ ALLAVA_IMAGE_ROOT="${ALLAVA_IMAGE_ROOT:-/home/wenxuan/ALLaVA-4V}"
 ALLAVA_INPUTS="${ALLAVA_INPUTS:-$ALLAVA_IMAGE_ROOT/allava_laion/ALLaVA-Caption-LAION-4V.json $ALLAVA_IMAGE_ROOT/allava_laion/ALLaVA-Instruct-LAION-4V.json}"
 
 MAX_SAMPLES="${MAX_SAMPLES:-10000}"
+# Global offset into the input prompts, applied BEFORE sharding. Use it to split
+# one logical job across two unconnected machines: machine A = SKIP_SAMPLES=0
+# MAX_SAMPLES=N, machine B = SKIP_SAMPLES=N MAX_SAMPLES=N (disjoint ranges), then
+# concatenate the two output jsonls.
+SKIP_SAMPLES="${SKIP_SAMPLES:-0}"
 FINAL_JSONL="${FINAL_JSONL:-$REPO_ROOT/data/allava/allava_qwen35_distill_10k.jsonl}"
 SHARD_ROOT="${SHARD_ROOT:-$REPO_ROOT/data/allava/allava_qwen35_distill_10k_shards}"
 GPU_LIST="${GPU_LIST:-0 1 2 3 4 5 6 7}"
@@ -60,6 +65,7 @@ echo "  image_root:   $ALLAVA_IMAGE_ROOT"
 echo "  final_jsonl:  $FINAL_JSONL"
 echo "  shard_root:   $SHARD_ROOT"
 echo "  max_samples:  $MAX_SAMPLES"
+echo "  skip_samples: $SKIP_SAMPLES"
 echo "  num_shards:   $NUM_SHARDS"
 echo "  gpu_list:     $GPU_LIST"
 echo "  base_port:    $BASE_PORT"
@@ -84,6 +90,7 @@ for shard in $(seq 0 $((NUM_SHARDS - 1))); do
         OUT_JSONL="$shard_jsonl" \
         MAX_SAMPLES="$MAX_SAMPLES" \
         TOTAL_SAMPLES="$MAX_SAMPLES" \
+        SKIP_SAMPLES="$SKIP_SAMPLES" \
         NUM_SHARDS="$NUM_SHARDS" \
         SHARD_INDEX="$shard" \
         GPUS="$gpu" \
