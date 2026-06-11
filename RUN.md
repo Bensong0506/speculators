@@ -220,6 +220,21 @@ git checkout test_result && git pull
 ls -dt output/dflash_qwen3.5_9b_mm_distilled_10k_continue_dflash/*/checkpoints/checkpoint_best
 ```
 
+**一键 —— 双数据集三路对比（mtp / trained / original，MMStar + ALLaVA 一把出）**
+
+最省事：一条命令同时在 MMStar(OOD) 和 ALLaVA(域内) 上跑 mtp / trained / original，合并成一张跨数据集表。
+
+```bash
+DRAFT="$(pwd)/output/dflash_qwen3.5_9b_mm_distilled_10k_continue_dflash/<RUN>/checkpoints/checkpoint_best" \
+INFER_NUM_SPEC=7 NUM_PROMPTS=128 GPUS=0 \
+bash examples/evaluate/test_three_way_mmstar_allava.sh
+```
+- 跑 7 个 server（MMStar 3 + ALLaVA 4，含一个无 spec 基线），串行约 25-30 分钟，单卡够。
+- 输出 `output/three_way_both/<时间戳>/combined_summary.md`：跨数据集表 + 每个数据集 trained vs original / vs MTP 的比值。
+- ALLaVA 自动用蒸馏 jsonl 的 val tail；`<RUN>` 换成要测的那条 run（如新的 `dflash_ce_fp32_lr3e5_*`）。
+
+下面是拆开的单数据集脚本（要单独跑某个数据集时用）：
+
 **第 1 步 —— ALLaVA 四路（baseline / MTP / 原始 DFlash / 训练 DFlash）**
 
 ```bash
@@ -421,6 +436,7 @@ Results are written to `output/allava_val_weight_tests/<timestamp>/`, especially
 | ALLaVA val four-way eval | `examples/evaluate/test_dflash_allava_val_weights.sh` |
 | ALLaVA val checkpoint sweep (选最优 + 域内证明) | `examples/evaluate/sweep_dflash_allava_checkpoints.sh` |
 | MMStar 三路 (mtp/原始/训练 同 run 同 spec) | `examples/evaluate/test_dflash_mmstar_three_way.sh` |
+| 双数据集三路 (MMStar+ALLaVA 一键) | `examples/evaluate/test_three_way_mmstar_allava.sh` |
 | ALLaVA val four-way summary | `examples/evaluate/allava_val_four_way_summary.md` |
 | Training curves (TensorBoard) | `examples/train/view_tensorboard.sh` |
 | Serve on GPU (baseline/mtp/dflash) | `examples/serve/run_qwen35_9b_gpu.sh` |
