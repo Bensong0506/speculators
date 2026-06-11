@@ -220,18 +220,24 @@ git checkout test_result && git pull
 ls -dt output/dflash_qwen3.5_9b_mm_distilled_10k_continue_dflash/*/checkpoints/checkpoint_best
 ```
 
-**一键 —— 双数据集三路对比（mtp / trained / original，MMStar + ALLaVA 一把出）**
+**一键 —— 双数据集三路对比（mtp / trained / original，MMStar + ALLaVA 一把出）** ← 现在跑这个
 
-最省事：一条命令同时在 MMStar(OOD) 和 ALLaVA(域内) 上跑 mtp / trained / original，合并成一张跨数据集表。
+一条命令同时在 MMStar(OOD) 和 ALLaVA(域内) 上跑 mtp / trained / original，合并成一张跨数据集表。下面**自动选最近一条 fp32 run** 的 `checkpoint_best`，直接复制即可：
 
 ```bash
-DRAFT="$(pwd)/output/dflash_qwen3.5_9b_mm_distilled_10k_continue_dflash/<RUN>/checkpoints/checkpoint_best" \
-INFER_NUM_SPEC=7 NUM_PROMPTS=128 GPUS=0 \
+cd /home/wenxuan/speculators
+git checkout test_result && git pull
+
+# 自动选最近的 fp32 run 的 checkpoint_best；想测别的 run/epoch 就手动改 DRAFT=
+DRAFT="$(ls -dt output/dflash_qwen3.5_9b_mm_distilled_10k_continue_dflash/dflash_ce_fp32_lr3e5_*/checkpoints/checkpoint_best 2>/dev/null | head -1)"
+echo "DRAFT=$DRAFT"
+
+DRAFT="$DRAFT" INFER_NUM_SPEC=7 NUM_PROMPTS=128 GPUS=0 \
 bash examples/evaluate/test_three_way_mmstar_allava.sh
 ```
-- 跑 7 个 server（MMStar 3 + ALLaVA 4，含一个无 spec 基线），串行约 25-30 分钟，单卡够。
+- 跑 7 个 server（MMStar 3 + ALLaVA 4，含一个无 spec 基线），串行约 25-30 分钟，单卡够（`GPUS=` 设空闲卡）。
 - 输出 `output/three_way_both/<时间戳>/combined_summary.md`：跨数据集表 + 每个数据集 trained vs original / vs MTP 的比值。
-- ALLaVA 自动用蒸馏 jsonl 的 val tail；`<RUN>` 换成要测的那条 run（如新的 `dflash_ce_fp32_lr3e5_*`）。
+- ALLaVA 自动用蒸馏 jsonl 的 val tail。想按**真实接受率**挑最优 epoch（而非 val-loss 的 checkpoint_best），先跑下面「可选 sweep」，再把胜出 epoch 路径喂给 `DRAFT=`。
 
 下面是拆开的单数据集脚本（要单独跑某个数据集时用）：
 
