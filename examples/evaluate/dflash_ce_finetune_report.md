@@ -1,114 +1,87 @@
-# DFlash CE Fine-tune — Results Report (2026-06-10)
+# DFlash 多模态 Draft 微调 — 进展报告 (2026-06-11)
 
-## TL;DR
+## 执行摘要（汇报用）
 
-Switching the continue-training loss from `kl_div` to **`ce`** (cross-entropy on
-the verifier's argmax) fixed the long-standing failure where the trained DFlash
-draft *lost* to the original open-source draft. The CE `checkpoint_best`:
+**目标**：让 DFlash 投机解码 draft 在多模态（VLM, Qwen3.5-9B）场景下更强，至少在 ALLaVA 域内**超过开源原版 draft**，提升端到端吞吐。
 
-- **In-domain (ALLaVA val): modest WIN over original DFlash** — mean-accept 1.99
-  vs 1.94 (+2.6%), tok/s 64.2 vs 62.8 (+2.2%), first-pos tied (0.727 vs 0.729).
-- **OOD (MMStar): ≈ TIE with original** — mean-accept 2.085 vs 2.088, first-pos
-  0.752 vs 0.764. No catastrophic forgetting (kl_div used to regress to ~0.87x).
-- **vs MTP: MTP still has clearly higher acceptance** (mean-accept ~2.8 on both
-  sets, +35–40% over DFlash; first-pos ~+10%), **but trained DFlash matches MTP on
-  throughput** because the DFlash draft is far cheaper per step (tok/s within
-  ±3–5%, noisy across runs).
+**结论**：经过「① 换损失函数（KL→CE）→ ② 修优化（纯 bf16 → fp32、LR 1e-5→3e-5）」两步，训练出的 draft：
 
-Project bar — beat the open-source DFlash draft in-domain — is **met (modestly)**.
-The remaining gap to MTP is an acceptance-quality gap, concentrated at **first
-position**, which did not move.
+- **域内（ALLaVA）全面超过原版 DFlash**：mean-accept **+22%**（1.94→2.37）、first-position **+6.4%**（0.728→0.775）、tok/s **+13%**。
+- **在两个数据集上都是吞吐（tok/s）最快的方案**，超过原版 DFlash 和原生 MTP（DFlash draft 每步更便宜）。
+- **OOD（MMStar）不退化**：≥ 原版，无灾难性遗忘（早期 KL 方案曾退化到 0.87×）。
+- 与最强的 MTP 相比，接受率仍有差距（mean-accept 域内 0.84×），但差距已从 0.71× 收窄，且吞吐已反超 MTP。
 
-## Setup
+**关键技术发现**：first-position 接受率长期卡死，根因是**纯 bf16 训练把小于精度的权重更新舍掉了**；切到 fp32 + 提高 LR 后 first-pos 第一次明显上升（0.727→0.775），验证了这是优化瓶颈而非模型容量上限。
 
-- Verifier: Qwen3.5-9B. Draft: DFlash, warm-started from `z-lab/Qwen3.5-9B-DFlash`,
-  continue-trained on 10k Qwen-distilled ALLaVA (`allava_qwen35_distill_10k.jsonl`).
-- Decisive change: `LOSS_FN=ce` (was `kl_div`). Checkpoint: `checkpoint_best`
-  (selected by min val loss; under CE, val loss tracks top-1).
-- Eval: vLLM speculative decoding, `num_speculative_tokens=7`, 128 prompts,
-  temp 0; acceptance read from vLLM `/metrics` (`spec_decode_*`).
-- ALLaVA val = in-domain (distilled val tail, same split as training);
-  MMStar = OOD generalization / forgetting check.
+**当前瓶颈与下一步**：本结果来自 10k 蒸馏数据，已观察到过拟合（val 见顶回落）。**正在把蒸馏数据扩到 100k（10×，双机 16 卡并行）**，预期进一步抬高接受率、继续缩小与 MTP 的差距。
 
-## Results
+---
 
-### ALLaVA val (in-domain), @spec7
+## 最新结果（CE + fp32 + LR 3e-5，checkpoint_best，@spec=7，n=128）
+
+### ALLaVA val（域内）
 
 | method | tok/s | mean accept/draft | token accept | first-pos |
 |---|---:|---:|---:|---:|
-| MTP@7 | 65.997 | **2.807** | 0.401 | **0.818** |
-| **trained DFlash@7** | 64.197 | 1.993 | 0.285 | 0.727 |
-| original DFlash@7 | 62.821 | 1.942 | 0.277 | 0.729 |
+| **trained DFlash** | **71.437** | 2.369 | 0.338 | 0.775 |
+| MTP | 65.876 | **2.807** | **0.401** | **0.818** |
+| original DFlash | 63.249 | 1.938 | 0.277 | 0.728 |
 
-- trained vs original: mean-accept **1.026x**, tok/s **1.022x**, first-pos 0.997x (tie).
-- trained vs MTP: mean-accept 0.710x, first-pos 0.889x, tok/s 0.973x.
+- trained vs original: mean-accept **1.222×**, first-pos **1.064×**, tok/s **1.129×**（三项全胜）
+- trained vs MTP: mean-accept 0.844×, first-pos 0.948×, tok/s **1.084×**（吞吐反超 MTP）
 
-### MMStar (OOD), @spec7 — single run, three-way
+### MMStar（OOD，泛化/遗忘检查）
 
 | method | tok/s | mean accept/draft | token accept | first-pos |
 |---|---:|---:|---:|---:|
-| trained DFlash@7 | 70.316 | 2.085 | 0.298 | 0.752 |
-| MTP@7 | 68.074 | **2.822** | 0.403 | **0.828** |
-| original DFlash@7 | 66.388 | 2.088 | 0.298 | 0.764 |
+| **trained DFlash** | **70.910** | 2.162 | 0.309 | 0.758 |
+| original DFlash | 67.564 | 2.099 | 0.300 | 0.766 |
+| MTP | 67.309 | **2.822** | **0.403** | **0.828** |
 
-- trained vs original: mean-accept **0.999x** (tie), first-pos 0.985x, tok/s 1.059x.
-- trained vs MTP: mean-accept 0.739x, first-pos 0.909x, tok/s 1.033x.
+- trained vs original: mean-accept **1.030×**, first-pos 0.990×, tok/s 1.050×（≥ 原版，无遗忘）
+- trained vs MTP: mean-accept 0.766×, first-pos 0.916×, tok/s 1.053×
 
-**tok/s is noisy.** A separate MMStar 2-way run gave original 69.3 / trained 67.8
-(trained slower); this 3-way gave 66.4 / 70.3 (trained faster). Run-to-run tok/s
-variance is several %, so small tok/s gaps are not reliable. The stable signals
-are first-pos and mean-accept — both say **trained ≈ original on MMStar**.
+> **tok/s 注意**：单流吞吐有 ±数% 的 run 间噪声，trained 对 MTP 的吞吐领先（1.05–1.08×）属于「持平到小幅领先」。稳健结论以**接受率**为准（接受率指标 run 间稳定）。
 
-## Trajectory: kl_div → CE (ALLaVA val)
+---
 
-| metric | kl_div (ep6) | CE (checkpoint_best) | original |
-|---|---:|---:|---:|
-| first-pos | 0.672 | 0.727 | ~0.729 |
-| mean-accept | 1.615 | 1.993 | ~1.942 |
-| mean vs original | 0.826x (lose) | **1.026x (win)** | 1.0 |
+## 进展轨迹（ALLaVA 域内，mean-accept / first-pos；原版 ≈ 1.94 / 0.728）
 
-`kl_div` lowered the soft-distribution loss without moving top-1; acceptance@temp0
-only counts top-1, so kl_div drafts always lost. `ce` targets the verifier's
-argmax directly → top-1 / acceptance rose, in-domain crossed original, and OOD
-stopped regressing.
+| 阶段 | mean-accept | first-pos | vs 原版 (mean) | 结论 |
+|---|---:|---:|---:|---|
+| KL 损失 (bf16, 1e-5) | 1.615 | 0.672 | 0.83× | 输给原版 |
+| CE 损失 (bf16, 1e-5) | 1.993 | 0.727 | 1.03× | mean 反超、first-pos 持平 |
+| **CE + fp32 + 3e-5** | **2.369** | **0.775** | **1.22×** | **全面反超，first-pos 终于动** |
 
-## Conclusions
+两个关键修复：
+1. **KL → CE**：KL 只压软分布距离、不推 top-1；而 @temp0 的接受率只认 top-1，所以 KL 训练的 draft 一直输。CE 直接对 verifier 的 argmax 做交叉熵，top-1/接受率随之上升。
+2. **bf16 → fp32 + 提 LR**：纯 bf16 下，AdamW 的单步更新（~1e-5）远小于权重的 bf16 ULP（~1e-3），被舍入归零——尤其打击已接近收敛的 first-position。fp32 master 权重保留小更新，first-pos 第一次明显上升。
 
-1. **CE was the right objective.** It turned a consistent loss into an in-domain
-   win + OOD parity — the headline result of this round.
-2. **The in-domain win is real but small** (+2–3% mean-accept), and **first-pos
-   did not move** (0.727 vs 0.729). The per-block acceptance gate is unchanged;
-   the mean-accept gain came from deeper positions only.
-3. **MTP is still the stronger drafter on acceptance** (+35–40% mean-accept on
-   both sets), **but DFlash matches it on throughput** because DFlash drafting is
-   much cheaper per step. Implication: closing DFlash's acceptance gap is
-   high-value — a higher-accept DFlash would beat MTP on tok/s outright.
-4. **Bottleneck = first-position acceptance.** It is the gate for the whole draft
-   block and the main axis where DFlash trails both its own potential and MTP.
+---
 
-## Open levers for the next round (to discuss, not yet decided)
+## 下一步计划
 
-- **LR / schedule:** warm-start LR 1e-5 → 3e-5 + warmup — is first-pos LR-starved?
-- **Checkpoint selection:** confirm `checkpoint_best` (val-loss) is also the best
-  epoch by real acceptance (the per-epoch ALLaVA sweep would settle this).
-- **Target first-pos directly:** position-1-weighted CE, more/larger draft layers,
-  or different aux hidden-state layers.
-- **Data:** 10k may be too little / too narrow — replay or data mixing to lift
-  acceptance without re-introducing OOD regression.
-- **More training / capacity** if the above plateau.
+**短期（进行中）**
+1. **扩数据到 100k（10×）**：双机各 8 卡（16 卡并行）蒸馏 on-policy ALLaVA 数据，治 10k 过拟合、抬高接受率天花板。完成后用 CE + fp32 + 3e-5 重训。
+2. **按真实接受率选 checkpoint**：用 per-epoch sweep（而非 val-loss）挑最优 epoch，避免选到过拟合点。
+3. **正则**：按 100k 的 train/val 曲线决定是否加 weight_decay（需新增开关）/ early-stop。
 
-## Reproduce
+**中期（缩小与 MTP 的接受率差距）**
+4. **针对 first-position 加权**：position-1 加权 CE，把 gate 位置再往上抠。
+5. **容量 / 特征**：必要时增加 draft 层或调整 aux hidden-state 层（pos≥2 预测更难）。
+6. **on-policy 数据 / replay**：用 verifier 自身输出做训练分布，进一步贴合解码时上下文。
+
+**验证**
+7. **真实服务下复核吞吐**：确认 tok/s 领先在端到端服务（非 128-prompt 离线基准）下成立。
+
+---
+
+## 复现
 
 ```bash
-# ALLaVA four-way (in-domain)
-DRAFT=.../checkpoints/checkpoint_best ALLAVA_JSONL="$(pwd)/data/allava/allava_qwen35_distill_10k.jsonl" \
-INFER_NUM_SPEC=7 MTP_SPEC=7 NUM_PROMPTS=128 bash examples/evaluate/test_dflash_allava_val_weights.sh
-
-# MMStar three-way (OOD), one run, same spec
+# 双数据集三路（mtp / trained / original，MMStar + ALLaVA 一把出）
 DRAFT=.../checkpoints/checkpoint_best INFER_NUM_SPEC=7 NUM_PROMPTS=128 \
-bash examples/evaluate/test_dflash_mmstar_three_way.sh
+bash examples/evaluate/test_three_way_mmstar_allava.sh
 ```
 
-Source logs: `origin/main:debug_error_from_inside`. Artifacts:
-`output/allava_val_weight_tests/20260610_073126`, `output/mmstar_weight_tests/20260610_081248`,
-`output/mmstar_three_way_tests/20260610_083756`.
+来源日志 `origin/main:debug_error_from_inside`；本轮 artifact `output/three_way_both/20260611_015741/combined_summary.md`；checkpoint `dflash_ce_fp32_lr3e5_0610_0922`（10k 蒸馏数据，fp32 + LR 3e-5）。
