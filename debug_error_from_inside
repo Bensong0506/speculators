@@ -1,24 +1,35 @@
-=== Final three-way comparison ===
-# MMStar Three-Way Benchmark (single spec, one run)
-
-| rank | method | tok/s | mean accept/draft | token accept | first-pos accept | completed |
-|---:|---|---:|---:|---:|---:|---:|
-| 1 | trained_dflash | 70.316 | 2.085 | 0.298 | 0.752 | 128/128 |
-| 2 | mtp | 68.074 | 2.822 | 0.403 | 0.828 | 128/128 |
-| 3 | dflash_original | 66.388 | 2.088 | 0.298 | 0.764 | 128/128 |
-
-## Key ratios
-
-- trained / original DFlash : tok/s `1.059`, mean-accept `0.999`, first-pos `0.985`
-- trained / MTP            : tok/s `1.033`, mean-accept `0.739`, first-pos `0.909`
-- original DFlash / MTP    : tok/s `0.975`, mean-accept `0.740`
-
-## Verdict
-
-- trained DFlash does NOT beat original DFlash on mean-accept (0.999x).
-- MTP still stronger than trained DFlash on mean-accept (0.739x).
-- Fastest by tok/s: **trained_dflash**. Order: trained_dflash > mtp > dflash_original.
 
 Artifacts:
-  /home/wenxuan/speculators/output/mmstar_three_way_tests/20260610_083756
-  /home/wenxuan/speculators/output/mmstar_three_way_tests/20260610_083756/mmstar_three_way_summary.md
+  /home/wenxuan/speculators/output/three_way_both/20260611_015741/allava
+
+============================================================
+=== Combined cross-dataset summary ===
+============================================================
+# Three-way comparison — MMStar (OOD) + ALLaVA (in-domain)
+
+draft: `output/dflash_qwen3.5_9b_mm_distilled_10k_continue_dflash/dflash_ce_fp32_lr3e5_0610_0922/checkpoints/checkpoint_best`
+
+| dataset | method | tok/s | mean accept/draft | token accept | first-pos | completed |
+|---|---|---:|---:|---:|---:|---:|
+| MMStar (OOD) | mtp | 67.309 | 2.822 | 0.403 | 0.828 | 128/128 |
+| MMStar (OOD) | trained_dflash | 70.910 | 2.162 | 0.309 | 0.758 | 128/128 |
+| MMStar (OOD) | dflash_original | 67.564 | 2.099 | 0.300 | 0.766 | 128/128 |
+| ALLaVA val (in-domain) | mtp | 65.876 | 2.807 | 0.401 | 0.818 | 128/128 |
+| ALLaVA val (in-domain) | trained_dflash | 71.437 | 2.369 | 0.338 | 0.775 | 128/128 |
+| ALLaVA val (in-domain) | dflash_original | 63.249 | 1.938 | 0.277 | 0.728 | 128/128 |
+
+## Trained DFlash vs ... (per dataset)
+
+**MMStar (OOD)**
+- vs original: mean-accept `1.030`, first-pos `0.990`, tok/s `1.050`
+- vs MTP: mean-accept `0.766`, first-pos `0.916`, tok/s `1.053`
+
+**ALLaVA val (in-domain)**
+- vs original: mean-accept `1.222`, first-pos `1.064`, tok/s `1.129`
+- vs MTP: mean-accept `0.844`, first-pos `0.948`, tok/s `1.084`
+
+
+Artifacts:
+  combined: /home/wenxuan/speculators/output/three_way_both/20260611_015741/combined_summary.md
+  mmstar:   /home/wenxuan/speculators/output/three_way_both/20260611_015741/mmstar/mmstar_three_way_summary.md
+  allava:   /home/wenxuan/speculators/output/three_way_both/20260611_015741/allava/allava_val_summary.md
