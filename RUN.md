@@ -135,6 +135,20 @@ The 8-GPU launcher starts one verifier server per GPU on ports `8100..8107`,
 writes shard files under `data/allava/allava_qwen35_distill_10k_shards/`, then
 merges them back into the default output path. It is resumable by default.
 
+**100k 变体（治过拟合 — 10× 数据，8 卡）：** 同一个脚本，只是把预算调到 100k、换成 100k 专属输出路径（别覆盖 10k）。`MAX_SAMPLES` 是**总量**（跨 8 卡分片，每卡 1/8）：
+```bash
+cd /home/wenxuan/speculators
+git checkout allava-qwen-distill-10k && git pull
+
+MAX_SAMPLES=100000 \
+FINAL_JSONL="$(pwd)/data/allava/allava_qwen35_distill_100k.jsonl" \
+SHARD_ROOT="$(pwd)/data/allava/allava_qwen35_distill_100k_shards" \
+bash examples/train/distill_allava_qwen35_10k_8gpu.sh
+```
+- 100k = 前 100k 条 ALLaVA prompt（全是 Caption-LAION，和 10k 同分布，只是更多）；8 卡各 12.5k，约几小时，**可断点续跑**（重跑即续）。
+- 分片日志在 `data/allava/allava_qwen35_distill_100k_shards/shard_*_driver.log`。
+- 跑完用它训练：在 1e 的命令前加 `DISTILLED_ALLAVA_JSONL="$(pwd)/data/allava/allava_qwen35_distill_100k.jsonl" MAX_SAMPLES=100000`（两个都要，否则只用前 10k）。
+
 Single-GPU fallback:
 
 ```bash
