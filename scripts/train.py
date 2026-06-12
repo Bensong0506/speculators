@@ -405,13 +405,17 @@ def main(args: argparse.Namespace):
 
     if args.speculator_type == "mtp":
         # MTP extracts the verifier's NATIVE multi-token-prediction heads
-        # (mtp.* weights) and fine-tunes them; it needs the FULL verifier config,
-        # not the per-layer transformer config eagle3/dflash build. Extra args
-        # (block_size, anchors, vocab mapping...) are accepted and ignored by
-        # MTPDraftModel.from_training_args(**kwargs).
+        # (mtp.* weights) and fine-tunes them. Extra args (block_size, anchors,
+        # vocab mapping...) are accepted and ignored by from_training_args(**kwargs).
         mtp_verifier_config = AutoConfig.from_pretrained(
             args.verifier_name_or_path,
             trust_remote_code=args.trust_remote_code,
+        )
+        # VLM verifiers (e.g. Qwen3.5-9B) nest the text-decoder params under
+        # `text_config`; MTP's config reads vocab_size/hidden_size/
+        # num_hidden_layers off the top level, so use the text sub-config.
+        mtp_verifier_config = getattr(
+            mtp_verifier_config, "text_config", mtp_verifier_config
         )
         draft_model = model_class.from_training_args(
             verifier_config=mtp_verifier_config,
