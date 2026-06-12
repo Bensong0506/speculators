@@ -352,7 +352,16 @@ class ArrowDataset(BaseDataset):
             )
             return None
 
-        hidden_states = loaded_hs["hidden_states"][:, :-1].flatten(1)
+        hs_all = loaded_hs["hidden_states"]
+        if hs_all.shape[1] <= 1:
+            # MTP captures only the verifier's last hidden state (1 layer), which
+            # is BOTH the draft input and verifier_last_hidden_states. DFlash/eagle3
+            # capture aux layers + the final layer, so [:, :-1] = aux inputs and
+            # [:, -1] = verifier_last; that [:, :-1] split would empty a single-layer
+            # tensor (width 0 -> every sample skipped), so handle 1 layer explicitly.
+            hidden_states = hs_all.flatten(1)
+        else:
+            hidden_states = hs_all[:, :-1].flatten(1)
         if (
             self.expected_hidden_states_width is not None
             and hidden_states.shape[-1] != self.expected_hidden_states_width
@@ -370,9 +379,7 @@ class ArrowDataset(BaseDataset):
         return {
             "hidden_states": hidden_states,  # [seq_len, aux_layers * hidden_size]
             "input_ids": loaded_hs["token_ids"],  # [seq_len]
-            "verifier_last_hidden_states": loaded_hs["hidden_states"][
-                :, -1
-            ],  # [seq_len, hidden_size]
+            "verifier_last_hidden_states": hs_all[:, -1],  # [seq_len, hidden_size]
             "loss_mask": self.data[index]["loss_mask"],  # [seq_len]
         }
 
