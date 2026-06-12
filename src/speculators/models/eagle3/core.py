@@ -15,15 +15,8 @@ from speculators.models.eagle3.attention import (
 from speculators.models.eagle3.metrics import compute_metrics
 from speculators.models.eagle3.model_definitions import model_classes
 from speculators.models.metrics import kl_div_loss, resolve_loss_fn
-from speculators.models.utils import resolve_target_layer_ids
+from speculators.models.utils import conditional_torch_compile, resolve_target_layer_ids
 from speculators.proposals.greedy import GreedyTokenProposalConfig
-
-
-def conditional_torch_compile(func):
-    if torch.cuda.is_available() and hasattr(torch, "compile"):
-        return torch.compile(func)
-    else:
-        return func
 
 
 @SpeculatorModel.register("eagle3")
@@ -102,8 +95,25 @@ class Eagle3DraftModel(DraftVocabMixin, SpeculatorModel):
 
         self.post_init()
 
+    @property
+    def target_layer_ids(self) -> list[int]:
+        """Target layer IDs for auxiliary hidden states."""
+        return self.config.eagle_aux_hidden_state_layer_ids
+
+    @classmethod
+    def from_pretrained(cls, pretrained_model_name_or_path, *args, **kwargs):
+        model = super().from_pretrained(pretrained_model_name_or_path, *args, **kwargs)
+        verifier_path = model.config.speculators_config.verifier.name_or_path
+        if verifier_path is not None:
+            model.config.eagle_aux_hidden_state_layer_ids = resolve_target_layer_ids(
+                model.config.eagle_aux_hidden_state_layer_ids, verifier_path
+            )
+        return model
+
     def load_verifier_weights(self):
         super().load_verifier_weights()
+
+        self.embed_tokens.weight.requires_grad_(self.config.embed_requires_grad)
 
         verifier_config = self.config.speculators_config.verifier
         verifier_model_config = AutoConfig.from_pretrained(verifier_config.name_or_path)  # type: ignore[arg-type]
@@ -288,9 +298,9 @@ class Eagle3DraftModel(DraftVocabMixin, SpeculatorModel):
         Returns:
             Initialized Eagle3DraftModel
         """
+        # Resolve target layer IDs if not provided
         target_layer_ids = resolve_target_layer_ids(
-            kwargs.get("target_layer_ids"),
-            kwargs["verifier_name_or_path"],
+            kwargs.get("target_layer_ids"), kwargs["verifier_name_or_path"]
         )
 
         config = Eagle3SpeculatorConfig(

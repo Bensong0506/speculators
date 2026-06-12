@@ -8,13 +8,13 @@ from transformers import PretrainedConfig
 
 from speculators.config import SpeculatorsConfig, VerifierConfig
 from speculators.model import SpeculatorModel
-from speculators.models.eagle3.core import Eagle3DraftModel, conditional_torch_compile
+from speculators.models.eagle3.core import Eagle3DraftModel
 from speculators.models.metrics import kl_div_loss, resolve_loss_fn
 from speculators.models.peagle.attention import create_peagle_mask_mod
 from speculators.models.peagle.config import PEagleSpeculatorConfig
 from speculators.models.peagle.data import generate_cod_sample_indices
 from speculators.models.peagle.metrics import compute_metrics
-from speculators.models.utils import resolve_target_layer_ids
+from speculators.models.utils import conditional_torch_compile, resolve_target_layer_ids
 from speculators.proposals.greedy import GreedyTokenProposalConfig
 
 
@@ -206,9 +206,9 @@ class PEagleDraftModel(Eagle3DraftModel):
         Returns:
             Initialized PEagleDraftModel
         """
+        # Resolve target layer IDs if not provided
         target_layer_ids = resolve_target_layer_ids(
-            kwargs.get("target_layer_ids"),
-            kwargs["verifier_name_or_path"],
+            kwargs.get("target_layer_ids"), kwargs["verifier_name_or_path"]
         )
 
         config = PEagleSpeculatorConfig(

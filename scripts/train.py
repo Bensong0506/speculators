@@ -21,6 +21,7 @@ from speculators.data_generation.vllm_client import (
 from speculators.model import SpeculatorModel
 from speculators.models.eagle3.data import shift_batch
 from speculators.models.metrics import resolve_loss_fn
+from speculators.models.mtp.data import shift_batch_mtp
 from speculators.train.data import (
     ArrowDataset,
     BaseDataset,
@@ -402,7 +403,21 @@ def main(args: argparse.Namespace):
 
     model_class = registry[args.speculator_type]
 
-    if args.from_pretrained:
+    if args.speculator_type == "mtp":
+        # MTP extracts the verifier's NATIVE multi-token-prediction heads
+        # (mtp.* weights) and fine-tunes them; it needs the FULL verifier config,
+        # not the per-layer transformer config eagle3/dflash build. Extra args
+        # (block_size, anchors, vocab mapping...) are accepted and ignored by
+        # MTPDraftModel.from_training_args(**kwargs).
+        mtp_verifier_config = AutoConfig.from_pretrained(
+            args.verifier_name_or_path,
+            trust_remote_code=args.trust_remote_code,
+        )
+        draft_model = model_class.from_training_args(
+            verifier_config=mtp_verifier_config,
+            **vars(args),
+        )
+    elif args.from_pretrained:
         pretrained_config = load_pretrained_config_with_current_verifier(
             model_class, args
         )
@@ -425,11 +440,26 @@ def main(args: argparse.Namespace):
     expected_hidden_states_width = getattr(
         getattr(draft_model, "fc", None), "in_features", None
     )
+    if args.speculator_type == "mtp":
+        # Sync the step count from the converted MTP head so get_trainer_kwargs
+        # (below) can compute the FastMTP step weights; MTP has no `fc`, so derive
+        # its hidden-states width from (num target layers x hidden size).
+        args.num_speculative_steps = draft_model.config.num_speculative_steps
+        if expected_hidden_states_width is None:
+            expected_hidden_states_width = (
+                len(draft_model.target_layer_ids)
+                * draft_model.config.hidden_size
+            )
     if expected_hidden_states_width is not None:
         logger.info("Expected hidden_states width: %s", expected_hidden_states_width)
 
     # Setup dataloaders
-    preprocess = shift_batch if args.speculator_type in ("eagle3", "peagle") else None
+    if args.speculator_type == "mtp":
+        preprocess = shift_batch_mtp
+    elif args.speculator_type in ("eagle3", "peagle"):
+        preprocess = shift_batch
+    else:
+        preprocess = None
 
     noise_transform = AddUniformNoise(std=args.noise_std)
     if args.legacy_data:
@@ -678,6 +708,19 @@ def parse_args():
     parser.add_argument("--log-dir", type=str, default="./logs")
     parser.add_argument("--run-name", type=str, default=None)
     parser.add_argument("--num-layers", type=int, default=1)
+    parser.add_argument(
+        "--num-speculative-steps",
+        type=int,
+        default=3,
+        help="Number of MTP prediction steps (default: 3). Only used with "
+        "--speculator-type mtp.",
+    )
+    parser.add_argument(
+        "--step-weight-beta",
+        type=float,
+        default=0.6,
+        help="FastMTP step-weight decay beta (default: 0.6). Only used with MTP.",
+    )
     parser.add_argument(
         "--draft-arch",
         type=str,

@@ -124,7 +124,12 @@ if [ "$LOG_TO_FILE" = "1" ]; then
 fi
 
 # --- 4) DFlash-specific ----------------------------------------------------
-SPECULATOR_TYPE="dflash"
+# SPECULATOR_TYPE=mtp trains the verifier's NATIVE multi-token-prediction head
+# (extracted + fine-tuned). dflash-only knobs below (block_size/anchors/vocab/
+# finetune-from) are then ignored by MTPDraftModel.
+SPECULATOR_TYPE="${SPECULATOR_TYPE:-dflash}"
+NUM_SPECULATIVE_STEPS="${NUM_SPECULATIVE_STEPS:-3}"   # MTP prediction steps
+STEP_WEIGHT_BETA="${STEP_WEIGHT_BETA:-0.6}"           # MTP FastMTP step-weight decay
 # Empty = use the warm-start checkpoint block size; from scratch falls back to 8.
 BLOCK_SIZE="${BLOCK_SIZE:-}"
 MAX_ANCHORS="${MAX_ANCHORS:-512}"  # max anchor positions sampled per step (memory knob)
@@ -248,6 +253,10 @@ fi
 VOCAB_FLAG=();     [ -n "$DRAFT_VOCAB_SIZE" ]  && VOCAB_FLAG=(--draft-vocab-size "$DRAFT_VOCAB_SIZE")
 DRAFTARCH_FLAG=(); [ -n "${DRAFT_ARCH:-}" ]    && DRAFTARCH_FLAG=(--draft-arch "$DRAFT_ARCH")
 MASK_FLAG=();      [ -n "${MASK_TOKEN_ID:-}" ] && MASK_FLAG=(--mask-token-id "$MASK_TOKEN_ID")
+SPEC_FLAG=()
+if [ "$SPECULATOR_TYPE" = "mtp" ]; then
+    SPEC_FLAG=(--num-speculative-steps "$NUM_SPECULATIVE_STEPS" --step-weight-beta "$STEP_WEIGHT_BETA")
+fi
 NO_RESUME_FLAG=()
 if [ "$NO_RESUME_FROM_CHECKPOINT" = "1" ]; then
     NO_RESUME_FLAG=(--no-resume-from-checkpoint)
@@ -266,18 +275,20 @@ export SPECULATORS_DFLASH_COMPILE="$DFLASH_COMPILE"
 # Auto-compute TARGET_LAYER_IDS from the verifier's *text* config if unset,
 # so vLLM and the trainer always agree.
 if [ -z "${TARGET_LAYER_IDS}" ]; then
-    echo "=== Auto-computing --target-layer-ids from model config ==="
-    TARGET_LAYER_IDS=$(python3 - "$MODEL" "${TRUST_REMOTE_CODE}" <<'PY'
+    # MTP consumes ONLY the verifier's last hidden state (model target_layer_ids=[L]);
+    # eagle3/dflash use aux layers "2  L/2  L-3". Auto-compute per type.
+    echo "=== Auto-computing --target-layer-ids from model config (type=$SPECULATOR_TYPE) ==="
+    TARGET_LAYER_IDS=$(python3 - "$MODEL" "${TRUST_REMOTE_CODE}" "$SPECULATOR_TYPE" <<'PY'
 import sys
 from transformers import AutoConfig
-model, trc = sys.argv[1], sys.argv[2] == "1"
+model, trc, stype = sys.argv[1], sys.argv[2] == "1", sys.argv[3]
 cfg = AutoConfig.from_pretrained(model, trust_remote_code=trc)
 cfg = getattr(cfg, "text_config", cfg)   # VLM -> text decoder
 L = cfg.num_hidden_layers
-print(2, L // 2, L - 3)
+print(L) if stype == "mtp" else print(2, L // 2, L - 3)
 PY
 )
-    echo "    text num_hidden_layers based -> TARGET_LAYER_IDS = ${TARGET_LAYER_IDS}"
+    echo "    type=$SPECULATOR_TYPE -> TARGET_LAYER_IDS = ${TARGET_LAYER_IDS}"
 fi
 
 if ! [[ "$BLOCK_SIZE" =~ ^[0-9]+$ ]]; then
@@ -507,6 +518,7 @@ CUDA_VISIBLE_DEVICES="$TRAIN_GPUS" torchrun \
     --hidden-states-dtype "${HIDDEN_STATES_DTYPE:-bfloat16}" \
     --total-seq-len "$SEQ_LENGTH" \
     --speculator-type "$SPECULATOR_TYPE" \
+    "${SPEC_FLAG[@]}" \
     --block-size "$BLOCK_SIZE" \
     --max-anchors "$MAX_ANCHORS" \
     --num-layers "$NUM_LAYERS" \
