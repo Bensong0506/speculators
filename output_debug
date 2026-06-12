@@ -1,40 +1,137 @@
-[rank2]: AttributeError: 'Qwen3_5Config' object has no attribute 'vocab_size'
-[rank1]: Traceback (most recent call last):
-[rank1]:   File "/data/wenxuan/speculators/scripts/train.py", line 938, in <module>
-[rank1]:     main(args)
-[rank1]:   File "/data/wenxuan/speculators/scripts/train.py", line 416, in main
-[rank1]:     draft_model = model_class.from_training_args(
-[rank1]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/data/wenxuan/speculators/src/speculators/models/mtp/core.py", line 262, in from_training_args
-[rank1]:     model = cls(config=config)
-[rank1]:             ^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/data/wenxuan/speculators/src/speculators/models/mtp/core.py", line 75, in __init__
-[rank1]:     self._init_vocab(config)
-[rank1]:   File "/data/wenxuan/speculators/src/speculators/model.py", line 45, in _init_vocab
-[rank1]:     self.draft_vocab_size = config.draft_vocab_size
-[rank1]:                             ^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/pydantic/main.py", line 1039, in __getattr__
-[rank1]:     return super().__getattribute__(item)  # Raises AttributeError if appropriate
-[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/transformers/configuration_utils.py", line 434, in __getattribute__
-[rank1]:     return super().__getattribute__(key)
-[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/data/wenxuan/speculators/src/speculators/models/mtp/config.py", line 65, in draft_vocab_size
-[rank1]:     return self.vocab_size
-[rank1]:            ^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/pydantic/main.py", line 1039, in __getattr__
-[rank1]:     return super().__getattribute__(item)  # Raises AttributeError if appropriate
-[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/transformers/configuration_utils.py", line 434, in __getattribute__
-[rank1]:     return super().__getattribute__(key)
-[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/data/wenxuan/speculators/src/speculators/models/mtp/config.py", line 61, in vocab_size
-[rank1]:     return self.transformer_layer_config.vocab_size  # type: ignore[return-value]
-[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/transformers/configuration_utils.py", line 434, in __getattribute__
-[rank1]:     return super().__getattribute__(key)
-[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]: AttributeError: 'Qwen3_5Config' object has no attribute 'vocab_size'
-[rank0]:[W612 06:44:40.944180569 ProcessGroupNCCL.cpp:1575] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
-E0612 06:44:41.618000 101946 torch/distributed/elastic/multiprocessing/api.py:986] failed (exitcode: 1) local_rank: 0 (pid: 102014) of binary: /usr/bin/python3
-Traceback (most recent call last):
+w shape (930, 1, 4096) -> flattened width 0, expected 4096. Skipping sample.
+  warnings.warn(
+/data/wenxuan/speculators/src/speculators/train/data.py:360: UserWarning: Hidden-state width mismatch for sample 44 (file_idx=44, path=output/mtp_qwen3.5_9b_mm_distilled/hidden_states/hs_44.safetensors): got hidden_states raw shape (963, 1, 4096) -> flattened width 0, expected 4096. Skipping sample.
+  warnings.warn(
+/data/wenxuan/speculators/src/speculators/train/data.py:360: UserWarning: Hidden-state width mismatch for sample 21 (file_idx=21, path=output/mtp_qwen3.5_9b_mm_distilled/hidden_states/hs_21.safetensors): got hidden_states raw shape (810, 1, 4096) -> flattened width 0, expected 4096. Skipping sample.
+  warnings.warn(
+/data/wenxuan/speculators/src/speculators/train/data.py:360: UserWarning: Hidden-state width mismatch for sample 34 (file_idx=34, path=output/mtp_qwen3.5_9b_mm_distilled/hidden_states/hs_34.safetensors): got hidden_states raw shape (1200, 1, 4096) -> flattened width 0, expected 4096. Skipping sample.
+  warnings.warn(
+/data/wenxuan/speculators/src/speculators/train/data.py:360: UserWarning: Hidden-state width mismatch for sample 9 (file_idx=9, path=output/mtp_qwen3.5_9b_mm_distilled/hidden_states/hs_9.safetensors): got hidden_states raw shape (937, 1, 4096) -> flattened width 0, expected 4096. Skipping sample.
+  warnings.warn(
+/data/wenxuan/speculators/src/speculators/train/data.py:360: UserWarning: Hidden-state width mismatch for sample 22 (file_idx=22, path=output/mtp_qwen3.5_9b_mm_distilled/hidden_states/hs_22.safetensors): got hidden_states raw shape (927, 1, 4096) -> flattened width 0, expected 4096. Skipping sample.
+  warnings.warn(
+/data/wenxuan/speculators/src/speculators/train/data.py:360: UserWarning: Hidden-state width mismatch for sample 19 (file_idx=19, path=output/mtp_qwen3.5_9b_mm_distilled/hidden_states/hs_19.safetensors): got hidden_states raw shape (1253, 1, 4096) -> flattened width 0, expected 4096. Skipping sample.
+  warnings.warn(
+/data/wenxuan/speculators/src/speculators/train/data.py:360: UserWarning: Hidden-state width mismatch for sample 11 (file_idx=11, path=output/mtp_qwen3.5_9b_mm_distilled/hidden_states/hs_11.safetensors): got hidden_states raw shape (1023, 1, 4096) -> flattened width 0, expected 4096. Skipping sample.
+  warnings.warn(
+/data/wenxuan/speculators/src/speculators/train/data.py:360: UserWarning: Hidden-state width mismatch for sample 1 (file_idx=1, path=output/mtp_qwen3.5_9b_mm_distilled/hidden_states/hs_1.safetensors): got hidden_states raw shape (1183, 1, 4096) -> flattened width 0, expected 4096. Skipping sample.
+  warnings.warn(
+/usr/local/lib/python3.12/dist-packages/torch/_inductor/compile_fx.py:322: UserWarning: TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled. Consider setting `torch.set_float32_matmul_precision('high')` for better performance.
+  warnings.warn(
+/usr/local/lib/python3.12/dist-packages/torch/_inductor/compile_fx.py:322: UserWarning: TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled. Consider setting `torch.set_float32_matmul_precision('high')` for better performance.
+  warnings.warn(
+/usr/local/lib/python3.12/dist-packages/torch/_inductor/compile_fx.py:322: UserWarning: TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled. Consider setting `torch.set_float32_matmul_precision('high')` for better performance.
+  warnings.warn(
+/usr/local/lib/python3.12/dist-packages/torch/_inductor/compile_fx.py:322: UserWarning: TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled. Consider setting `torch.set_float32_matmul_precision('high')` for better performance.
+  warnings.warn(
+wandb: Loading settings from /root/.config/wandb/settings
+wandb: [wandb.login()] Loaded credentials for http://10.155.156.175:38080 from /root/.netrc.
+wandb: Currently logged in as: aigc to http://10.155.156.175:38080. Use `wandb login --relogin` to force relogin
+wandb: Tracking run with wandb version 0.27.1
+wandb: Run data is saved locally in train_logs/wandb/run-20260612_065643-fml91ryr
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run mtp_qwen35_9b_allava_distilled_20260612_065353
+wandb: ⭐️ View project at http://10.155.156.175:38080/aigc/speculators
+wandb: 🚀 View run at http://10.155.156.175:38080/aigc/speculators/runs/fml91ryr
+wandb: Detected [openai] in use.
+wandb: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+wandb: For more information, check out the docs at: https://weave-docs.wandb.ai
+[06:56:42] INFO     train/loss_step_0=0.00e+00,                   trainer.py:234
+                    train/loss_step_1=0.00e+00,                                 
+                    train/loss_step_2=0.00e+00,                                 
+                    train/loss=0.00e+00, epoch=0, lr=3.00e-05,                  
+                    global_step=0                                               
+[06:56:45] INFO     train/loss_step_0=0.00e+00,                   trainer.py:234
+                    train/loss_step_1=0.00e+00,                                 
+                    train/loss_step_2=0.00e+00,                                 
+                    train/loss=0.00e+00, epoch=0, lr=2.25e-05,                  
+                    global_step=1                                               
+[06:56:48] INFO     train/loss_step_0=0.00e+00,                   trainer.py:234
+                    train/loss_step_1=0.00e+00,                                 
+                    train/loss_step_2=0.00e+00,                                 
+                    train/loss=0.00e+00, epoch=0, lr=1.50e-05,                  
+                    global_step=2                                               
+[06:56:50] INFO     train/loss_step_0=0.00e+00,                   trainer.py:234
+                    train/loss_step_1=0.00e+00,                                 
+                    train/loss_step_2=0.00e+00,                                 
+                    train/loss=0.00e+00, epoch=0, lr=7.50e-06,                  
+                    global_step=3                                               
+Epoch 0 100% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4/4  [ 0:00:39 < 0:00:00 , 0 it/s ]
+           INFO     Training epoch 1/1 completed                  trainer.py:361
+           INFO     Saving checkpoint to                          trainer.py:314
+                    output/mtp_qwen3.5_9b_mm_distilled/mtp_qwen35               
+                    _9b_allava_distilled_20260612_065353/checkpoi               
+                    nts/0                                                       
+Writing model shards: 100%|██████████| 1/1 [00:00<00:00,  2.14it/s]
+[06:56:54] INFO     Checkpoint saved to                           trainer.py:318
+                    output/mtp_qwen3.5_9b_mm_distilled/mtp_qwen35               
+                    _9b_allava_distilled_20260612_065353/checkpoi               
+                    nts/0                                                       
+           INFO     Validation epoch 1/1 started                  trainer.py:376
+/data/wenxuan/speculators/src/speculators/train/data.py:360: UserWarning: Hidden-state width mismatch for sample 1 (file_idx=46, path=output/mtp_qwen3.5_9b_mm_distilled/hidden_states/hs_46.safetensors): got hidden_states raw shape (1199, 1, 4096) -> flattened width 0, expected 4096. Skipping sample.
+  warnings.warn(
+/data/wenxuan/speculators/src/speculators/train/data.py:360: UserWarning: Hidden-state width mismatch for sample 3 (file_idx=48, path=output/mtp_qwen3.5_9b_mm_distilled/hidden_states/hs_48.safetensors): got hidden_states raw shape (1200, 1, 4096) -> flattened width 0, expected 4096. Skipping sample.
+  warnings.warn(
+/data/wenxuan/speculators/src/speculators/train/data.py:360: UserWarning: Hidden-state width mismatch for sample 2 (file_idx=47, path=output/mtp_qwen3.5_9b_mm_distilled/hidden_states/hs_47.safetensors): got hidden_states raw shape (901, 1, 4096) -> flattened width 0, expected 4096. Skipping sample.
+  warnings.warn(
+/data/wenxuan/speculators/src/speculators/train/data.py:360: UserWarning: Hidden-state width mismatch for sample 4 (file_idx=49, path=output/mtp_qwen3.5_9b_mm_distilled/hidden_states/hs_49.safetensors): got hidden_states raw shape (864, 1, 4096) -> flattened width 0, expected 4096. Skipping sample.
+  warnings.warn(
+/data/wenxuan/speculators/src/speculators/train/data.py:360: UserWarning: Hidden-state width mismatch for sample 0 (file_idx=45, path=output/mtp_qwen3.5_9b_mm_distilled/hidden_states/hs_45.safetensors): got hidden_states raw shape (3513, 1, 4096) -> flattened width 0, expected 4096. Skipping sample.
+  warnings.warn(
+Epoch 0 100% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1/1  [ 0:00:12 < 0:00:00 , ? it/s ]
+[06:57:07] INFO     val/loss_step_0_epoch=0.00e+00,               trainer.py:295
+                    val/loss_step_1_epoch=0.00e+00,                             
+                    val/loss_step_2_epoch=0.00e+00,                             
+                    val/loss_epoch=0.00e+00, epoch=0, phase='val'               
+           INFO     Validation epoch 1/1 completed                trainer.py:378
+           INFO     Updated checkpoint_best -> 0                  trainer.py:338
+                    (loss_epoch=0.000000)                                       
+[06:57:07] INFO     Destroyed distributed with local_rank=2,         utils.py:54
+                    world_size=4                                                
+           INFO     Destroyed distributed with local_rank=0,         utils.py:54
+                    world_size=4                                                
+[06:57:07] INFO     Destroyed distributed with local_rank=1,         utils.py:54
+                    world_size=4                                                
+[06:57:07] INFO     Destroyed distributed with local_rank=3,         utils.py:54
+                    world_size=4                                                
+wandb: 
+wandb: 🚀 View run mtp_qwen35_9b_allava_distilled_20260612_065353 at: http://10.155.156.175:38080/aigc/speculators/runs/fml91ryr
+Done. Checkpoints saved to ./output/mtp_qwen3.5_9b_mm_distilled/mtp_qwen35_9b_allava_distilled_20260612_065353/checkpoints/
+Stopping vLLM server...
+ting for application startup.
+(ApiServer_1 pid=102621) INFO:     Application startup complete.
+/usr/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 4 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+/usr/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 8 leaked shared_memory objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+/responses/{response_id}/cancel, Methods: POST
+(ApiServer_1 pid=102621) INFO 06-12 06:55:31 [launcher.py:46] Route: /v1/completions, Methods: POST
+(ApiServer_1 pid=102621) INFO 06-12 06:55:31 [launcher.py:46] Route: /v1/messages, Methods: POST
+(ApiServer_1 pid=102621) INFO 06-12 06:55:31 [launcher.py:46] Route: /v1/messages/count_tokens, Methods: POST
+(ApiServer_1 pid=102621) INFO 06-12 06:55:31 [launcher.py:46] Route: /inference/v1/generate, Methods: POST
+(ApiServer_1 pid=102621) INFO 06-12 06:55:31 [launcher.py:46] Route: /scale_elastic_ep, Methods: POST
+(ApiServer_1 pid=102621) INFO 06-12 06:55:31 [launcher.py:46] Route: /is_scaling_elastic_ep, Methods: POST
+(ApiServer_1 pid=102621) INFO 06-12 06:55:31 [launcher.py:46] Route: /generative_scoring, Methods: POST
+(ApiServer_1 pid=102621) INFO 06-12 06:55:31 [launcher.py:46] Route: /v1/chat/completions/render, Methods: POST
+(ApiServer_1 pid=102621) INFO 06-12 06:55:31 [launcher.py:46] Route: /v1/completions/render, Methods: POST
+(Worker pid=104241) WARNING 06-12 06:56:18 [jit_monitor.py:103] Triton kernel JIT compilation during inference: _zero_kv_blocks_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+(Worker pid=104241) WARNING 06-12 06:56:18 [jit_monitor.py:103] Triton kernel JIT compilation during inference: _compute_slot_mapping_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+(Worker pid=104241) WARNING 06-12 06:56:18 [jit_monitor.py:103] Triton kernel JIT compilation during inference: _bilinear_pos_embed_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+(Worker pid=104241) WARNING 06-12 06:56:18 [jit_monitor.py:103] Triton kernel JIT compilation during inference: _causal_conv1d_fwd_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+(Worker pid=104241) WARNING 06-12 06:56:18 [jit_monitor.py:103] Triton kernel JIT compilation during inference: _fused_post_conv_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+(Worker pid=104241) WARNING 06-12 06:56:18 [jit_monitor.py:103] Triton kernel JIT compilation during inference: _triton_mrope_forward. This causes a latency spike; consider extending warmup to cover this shape/config.
+(Worker pid=104241) WARNING 06-12 06:56:20 [jit_monitor.py:103] Triton kernel JIT compilation during inference: rotary_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+INFO 06-12 06:57:15 [serve.py:369] Waiting up to 0 seconds for processes to exit
+(EngineCore_DP0 pid=102616) INFO 06-12 06:57:15 [core.py:1266] Shutdown initiated (timeout=0)
+(EngineCore_DP0 pid=102616) INFO 06-12 06:57:15 [core.py:1289] Shutdown complete
+(Worker pid=104241) INFO 06-12 06:57:15 [multiproc_executor.py:775] Parent process exited, terminating worker queues
+(EngineCore_DP1 pid=102617) INFO 06-12 06:57:15 [core.py:1266] Shutdown initiated (timeout=0)
+(EngineCore_DP1 pid=102617) INFO 06-12 06:57:15 [core.py:1289] Shutdown complete
+(Worker pid=104241) INFO 06-12 06:57:15 [multiproc_executor.py:872] WorkerProc shutting down.
+(EngineCore_DP2 pid=102618) INFO 06-12 06:57:15 [core.py:1266] Shutdown initiated (timeout=0)
+(EngineCore_DP2 pid=102618) INFO 06-12 06:57:15 [core.py:1289] Shutdown complete
+(EngineCore_DP3 pid=102619) INFO 06-12 06:57:15 [core.py:1266] Shutdown initiated (timeout=0)
+(EngineCore_DP3 pid=102619) INFO 06-12 06:57:15 [core.py:1289] Shutdown complete
+(Worker pid=104243) INFO 06-12 06:57:15 [multiproc_executor.py:872] WorkerProc shutting down.
+(Worker pid=104242) INFO 06-12 06:57:15 [multiproc_executor.py:872] WorkerProc shutting down.
+(Worker pid=104234) INFO 06-12 06:57:15 [multiproc_executor.py:872] WorkerProc shutting down.
