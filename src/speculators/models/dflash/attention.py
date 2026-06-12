@@ -25,7 +25,7 @@ def create_anchor_block_mask_mod(
     For queries in block j:
         - may attend to base tokens in the same document with
           position < anchor_positions[j]
-        - may attend to all tokens in their own synthetic block j
+        - may attend causally to tokens in their own synthetic block j
         - may not attend to other synthetic blocks or later base tokens
 
     Args:
@@ -39,8 +39,8 @@ def create_anchor_block_mask_mod(
     Returns:
         mask_mod, q_len, kv_len
     """
-    # Always use non_causal for full attn
-    non_causal = sliding_window is None or sliding_window_non_causal
+    # This branch forces lower-triangular visibility inside every synthetic block.
+    _ = sliding_window_non_causal
 
     device = lengths.device
     anchor_positions = anchor_positions.to(device=device, dtype=torch.long).contiguous()
@@ -111,17 +111,13 @@ def create_anchor_block_mask_mod(
 
     def same_block_mod(_b, _h, q_idx, kv_idx):
         """
-        Queries may attend to tokens in their own synthetic block.
-        Non-causal unless non_causal=False,
-        in which case only prior positions are attended.
+        Queries may attend causally to tokens in their own synthetic block.
         """
         q_block = q_idx // block_size
         kv_is_block = kv_idx >= total_seq_len
         kv_block = (kv_idx - total_seq_len) // block_size
 
         same = kv_is_block & (q_block == kv_block)
-        if not non_causal:
-            same = same & (kv_idx <= q_idx + total_seq_len)
-        return same
+        return same & (kv_idx <= q_idx + total_seq_len)
 
     return or_masks(base_prefix_mod, same_block_mod), q_len, kv_len
