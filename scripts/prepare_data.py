@@ -15,7 +15,7 @@ Preprocessing will be skipped if the dataset already exists at the output direct
 Token frequencies are saved in the output directory by default.
 
 Usage:
-    python prepare_data.py \
+    python3 prepare_data.py \
         --model meta-llama/Llama-3.1-8B-Instruct \
         --data sharegpt \
         --output ./training_data \

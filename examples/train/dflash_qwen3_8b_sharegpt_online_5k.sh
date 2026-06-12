@@ -63,7 +63,7 @@ NUM_TRAIN_GPUS=2
 
 # Step 1: Prepare data
 echo "=== Step 1: Preparing data ==="
-python scripts/prepare_data.py \
+python3 scripts/prepare_data.py \
     --model "$MODEL" \
     --data "$DATASET" \
     --output "$OUTPUT_DIR" \
@@ -72,7 +72,7 @@ python scripts/prepare_data.py \
 
 # Step 2: Launch vLLM server in the background
 echo "=== Step 2: Launching vLLM server ==="
-CUDA_VISIBLE_DEVICES="$VLLM_GPUS" python scripts/launch_vllm.py "$MODEL" \
+CUDA_VISIBLE_DEVICES="$VLLM_GPUS" python3 scripts/launch_vllm.py "$MODEL" \
     --target-layer-ids $TARGET_LAYER_IDS \
     -- --data-parallel-size 2 --port "$VLLM_PORT" &
 VLLM_PID=$!

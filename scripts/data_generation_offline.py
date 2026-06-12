@@ -5,7 +5,7 @@ Offline Hidden States Generation Pipeline
 This script generates hidden states and saves them to disk for offline training.
 
 Usage:
-    python data_generation_offline.py \
+    python3 data_generation_offline.py \
         --model meta-llama/Llama-3.1-8B-Instruct \
         --preprocessed-data sharegpt \
         --output ./training_data \

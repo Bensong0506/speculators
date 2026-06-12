@@ -832,5 +832,5 @@ if __name__ == "__main__":
 # torchrun --standalone --nproc_per_node=<num_gpus>  scripts/train.py
 # for FSDP training
 # OR
-# python scripts/train.py
+# python3 scripts/train.py
 # for single GPU training

@@ -63,7 +63,7 @@ echo "=== Step 1: Downloading dataset and preparing data ==="
 DATASET_DIR="$OUTPUT_DIR/dataset"
 hf download "$DATASET" "$DATASET_FILE" --repo-type dataset --local-dir "$DATASET_DIR"
 
-python scripts/prepare_data.py \
+python3 scripts/prepare_data.py \
     --model "$MODEL" \
     --data "$DATASET_DIR/$DATASET_FILE" \
     --max-samples "$MAX_SAMPLES" \
@@ -72,7 +72,7 @@ python scripts/prepare_data.py \
 
 # Step 2: Launch vLLM server in the background
 echo "=== Step 2: Launching vLLM server ==="
-CUDA_VISIBLE_DEVICES="$VLLM_GPU" python scripts/launch_vllm.py "$MODEL" \
+CUDA_VISIBLE_DEVICES="$VLLM_GPU" python3 scripts/launch_vllm.py "$MODEL" \
     --target-layer-ids 32 \
     -- --port "$VLLM_PORT" &
 VLLM_PID=$!
@@ -93,7 +93,7 @@ echo "vLLM server ready."
 
 # Step 3: Train against the live vLLM server
 echo "=== Step 3: Training ==="
-CUDA_VISIBLE_DEVICES="$TRAIN_GPU" python \
+CUDA_VISIBLE_DEVICES="$TRAIN_GPU" python3 \
     scripts/train.py \
     --verifier-name-or-path "$MODEL" \
     --data-path "$OUTPUT_DIR" \
@@ -111,7 +111,7 @@ CUDA_VISIBLE_DEVICES="$TRAIN_GPU" python \
 
 # Step 4: Stitch finetuned weights back into the verifier
 echo "=== Step 4: Stitching finetuned weights ==="
-python scripts/stitch_mtp.py \
+python3 scripts/stitch_mtp.py \
     "$OUTPUT_DIR/checkpoints/checkpoint_best" \
     "$MODEL" \
     --output-path "$STITCHED_DIR"

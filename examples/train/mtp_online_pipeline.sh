@@ -88,7 +88,7 @@ prepare_data() {
         prepare_args+=(--trust-remote-code)
     fi
 
-    python "${prepare_args[@]}"
+    python3 "${prepare_args[@]}"
 }
 
 launch_vllm() {
@@ -124,7 +124,7 @@ launch_vllm() {
     fi
     launch_args+=(--target-layer-ids "${TARGET_LAYER_ARGS[@]}")
 
-    CUDA_VISIBLE_DEVICES="$VLLM_GPUS" python "${launch_args[@]}" \
+    CUDA_VISIBLE_DEVICES="$VLLM_GPUS" python3 "${launch_args[@]}" \
         -- "${vllm_args[@]}" &
     VLLM_PID=$!
 
@@ -181,7 +181,7 @@ train_mtp() {
             --nproc_per_node "$NUM_TRAIN_GPUS" \
             "${train_args[@]}"
     else
-        CUDA_VISIBLE_DEVICES="$TRAIN_GPUS" python "${train_args[@]}"
+        CUDA_VISIBLE_DEVICES="$TRAIN_GPUS" python3 "${train_args[@]}"
     fi
 }
 
@@ -196,7 +196,7 @@ stitch_mtp() {
         exit 1
     fi
 
-    python scripts/stitch_mtp.py \
+    python3 scripts/stitch_mtp.py \
         "$checkpoint_to_stitch" \
         "$MODEL" \
         --output-path "$STITCHED_DIR"

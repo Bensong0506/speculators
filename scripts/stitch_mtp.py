@@ -10,13 +10,13 @@ Frozen weights (embed_tokens, lm_head) are skipped -- only the MTP layer
 weights are replaced.
 
 Usage:
-    python scripts/stitch_mtp.py ./finetuned-mtp ./Qwen3-Next-80B-A3B-Instruct
+    python3 scripts/stitch_mtp.py ./finetuned-mtp ./Qwen3-Next-80B-A3B-Instruct
 
     # verifier can be a HuggingFace model ID:
-    python scripts/stitch_mtp.py ./finetuned-mtp Qwen/Qwen3-Next-80B-A3B-Instruct
+    python3 scripts/stitch_mtp.py ./finetuned-mtp Qwen/Qwen3-Next-80B-A3B-Instruct
 
     # custom output path (defaults to {verifier-name}-stitched):
-    python scripts/stitch_mtp.py ./finetuned-mtp ./verifier --output-path ./out
+    python3 scripts/stitch_mtp.py ./finetuned-mtp ./verifier --output-path ./out
 """
 
 import json

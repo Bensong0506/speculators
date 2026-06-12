@@ -82,7 +82,7 @@ if [[ "$NUM_TRAIN_GPUS" -gt 1 ]]; then
         --nproc_per_node "$NUM_TRAIN_GPUS" \
         "${train_args[@]}"
 else
-    CUDA_VISIBLE_DEVICES="$TRAIN_GPUS" python "${train_args[@]}"
+    CUDA_VISIBLE_DEVICES="$TRAIN_GPUS" python3 "${train_args[@]}"
 fi
 
 if [[ "$STITCH_MTP" == "1" ]]; then
@@ -94,7 +94,7 @@ if [[ "$STITCH_MTP" == "1" ]]; then
         exit 1
     fi
 
-    python scripts/stitch_mtp.py \
+    python3 scripts/stitch_mtp.py \
         "$CHECKPOINT_TO_STITCH" \
         "$MODEL" \
         --output-path "$STITCHED_DIR"

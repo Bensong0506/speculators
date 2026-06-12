@@ -54,7 +54,7 @@ hf download \
   --repo-type dataset \
   --local-dir ./output/dataset
 
-python scripts/prepare_data.py \
+python3 scripts/prepare_data.py \
   --model Qwen/Qwen3.5-9B \
   --data ./output/dataset/gsm8k.jsonl \
   --output ./output/mtp_qwen3_5_9b \
@@ -89,7 +89,7 @@ Start vLLM to serve the verifier for hidden state extraction. The server stays r
 
 ```bash
 # in vLLM venv
-CUDA_VISIBLE_DEVICES=0 python scripts/launch_vllm.py \
+CUDA_VISIBLE_DEVICES=0 python3 scripts/launch_vllm.py \
   Qwen/Qwen3.5-9B \
   --target-layer-ids 32 \
   -- --port 8000
@@ -118,7 +118,7 @@ With the vLLM server running, train the MTP head. Native MTP weights are automat
 
 ```bash
 # in speculators venv (on a separate GPU)
-CUDA_VISIBLE_DEVICES=1 python scripts/train.py \
+CUDA_VISIBLE_DEVICES=1 python3 scripts/train.py \
   --verifier-name-or-path Qwen/Qwen3.5-9B \
   --data-path ./output/mtp_qwen3_5_9b \
   --vllm-endpoint http://localhost:8000/v1 \
@@ -160,7 +160,7 @@ After training, stitch the finetuned MTP weights back into the original verifier
 
 ```bash
 # in speculators venv
-python scripts/stitch_mtp.py \
+python3 scripts/stitch_mtp.py \
   ./output/mtp_qwen3_5_9b/checkpoints/checkpoint_best \
   Qwen/Qwen3.5-9B \
   --output-path ./output/stitched

@@ -7,7 +7,7 @@ preprocessing) and creates vocabulary mappings for a draft model with a
 smaller vocabulary.
 
 Usage:
-    python build_vocab_mapping.py \
+    python3 build_vocab_mapping.py \
         --token-freq-path ./cache/token_frequencies/xxx_token_freq.pt \
         --draft-vocab-size 32000 \
         --target-vocab-size 128256 \

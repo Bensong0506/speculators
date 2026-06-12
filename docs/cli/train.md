@@ -7,7 +7,7 @@ Trains speculator models using either online or offline hidden states. Supports 
 **Single-GPU:**
 
 ```bash
-python scripts/train.py \
+python3 scripts/train.py \
   --verifier-name-or-path meta-llama/Llama-3.1-8B-Instruct \
   --data-path ./training_data \
   --save-path ./checkpoints \
@@ -158,12 +158,12 @@ torchrun --standalone --nproc_per_node=4 scripts/train.py \
 
 ```bash
 # First, start vLLM server
-python scripts/launch_vllm.py \
+python3 scripts/launch_vllm.py \
   meta-llama/Llama-3.1-8B-Instruct \
   -- --port 8000
 
 # Then train with on-demand hidden states generation
-python scripts/train.py \
+python3 scripts/train.py \
   --verifier-name-or-path meta-llama/Llama-3.1-8B-Instruct \
   --data-path ./training_data \
   --vllm-endpoint http://localhost:8000/v1 \
@@ -179,7 +179,7 @@ python scripts/train.py \
 
 ```bash
 # Train using pre-generated hidden states
-python scripts/train.py \
+python3 scripts/train.py \
   --verifier-name-or-path meta-llama/Llama-3.1-8B-Instruct \
   --data-path ./training_data \
   --hidden-states-path ./hidden_states \
@@ -193,7 +193,7 @@ python scripts/train.py \
 ### Hybrid Training (Cache on First Epoch)
 
 ```bash
-python scripts/train.py \
+python3 scripts/train.py \
   --verifier-name-or-path meta-llama/Llama-3.1-8B-Instruct \
   --data-path ./training_data \
   --hidden-states-path ./hidden_states \
@@ -231,7 +231,7 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 torchrun \
 ### Fine-tuning a Pretrained Model
 
 ```bash
-python scripts/train.py \
+python3 scripts/train.py \
   --verifier-name-or-path meta-llama/Llama-3.1-8B-Instruct \
   --from-pretrained ./pretrained_speculator \
   --data-path ./new_training_data \
