@@ -42,6 +42,11 @@ def parse_args():
         ),
     )
     parser.add_argument(
+        "--trust-remote-code",
+        action="store_true",
+        help="Allow executing code from HF Hub when loading the model config.",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Print the command that would be executed without running it",
@@ -56,7 +61,10 @@ def main():
 
     from transformers import AutoConfig  # noqa: PLC0415
 
-    config = AutoConfig.from_pretrained(args.model)
+    config = AutoConfig.from_pretrained(
+        args.model,
+        trust_remote_code=args.trust_remote_code,
+    )
     if hasattr(config, "text_config"):
         config = config.text_config
     num_hidden_layers = config.num_hidden_layers

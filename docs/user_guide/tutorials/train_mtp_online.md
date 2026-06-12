@@ -7,6 +7,7 @@ Unlike Eagle-3, DFlash, or P-EAGLE which train draft models from scratch, MTP fi
 For ready-to-run versions of this tutorial, see:
 
 - [`examples/train/mtp_qwen3_5_9b_gsm8k_online.sh`](https://github.com/vllm-project/speculators/blob/main/examples/train/mtp_qwen3_5_9b_gsm8k_online.sh) for the fixed Qwen3.5-9B GSM8K example
+- [`examples/train/mtp_qwen3_5_9b_allava_online.sh`](https://github.com/vllm-project/speculators/blob/main/examples/train/mtp_qwen3_5_9b_allava_online.sh) for Qwen-distilled ALLaVA data
 - [`examples/train/mtp_online_pipeline.sh`](https://github.com/vllm-project/speculators/blob/main/examples/train/mtp_online_pipeline.sh) for a configurable end-to-end pipeline
 - [`examples/train/mtp_train_online.sh`](https://github.com/vllm-project/speculators/blob/main/examples/train/mtp_train_online.sh) when vLLM and data preparation are managed separately
 

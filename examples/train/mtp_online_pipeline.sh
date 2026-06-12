@@ -49,6 +49,7 @@ VLLM_TENSOR_PARALLEL_SIZE="${VLLM_TENSOR_PARALLEL_SIZE:-}"
 VLLM_GPU_MEMORY_UTILIZATION="${VLLM_GPU_MEMORY_UTILIZATION:-}"
 VLLM_MAX_MODEL_LEN="${VLLM_MAX_MODEL_LEN:-}"
 VLLM_ENFORCE_EAGER="${VLLM_ENFORCE_EAGER:-0}"
+VLLM_EXTRA_ARGS="${VLLM_EXTRA_ARGS:-}"
 
 # Set these to 0 when those stages are managed outside this script.
 PREPARE_DATA="${PREPARE_DATA:-1}"
@@ -109,10 +110,17 @@ launch_vllm() {
     if [[ "$VLLM_ENFORCE_EAGER" == "1" ]]; then
         vllm_args+=(--enforce-eager)
     fi
+    if [[ -n "$VLLM_EXTRA_ARGS" ]]; then
+        read -r -a extra_vllm_args <<< "$VLLM_EXTRA_ARGS"
+        vllm_args+=("${extra_vllm_args[@]}")
+    fi
 
     launch_args=(scripts/launch_vllm.py "$MODEL")
     if [[ -n "$HIDDEN_STATES_PATH" ]]; then
         launch_args+=(--hidden-states-path "$HIDDEN_STATES_PATH")
+    fi
+    if [[ "$TRUST_REMOTE_CODE" == "1" ]]; then
+        launch_args+=(--trust-remote-code)
     fi
     launch_args+=(--target-layer-ids "${TARGET_LAYER_ARGS[@]}")
 
