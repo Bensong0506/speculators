@@ -1,0 +1,36 @@
+root@devserver-bms-039cc9dc:/home/wenxuan_prune/speculators# export https_proxy=http://s00918705:diguoligongeth0506%40@10.170.22.41:8082/
+root@devserver-bms-039cc9dc:/home/wenxuan_prune/speculators# bash examples/train/mtp_qwen3_5_9b_allava_online.sh 
+=== Step 1: Preparing data ===
+/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:180: UserWarning: CUDA initialization: The NVIDIA driver on your system is too old (found version 12090). Please update your GPU driver by downloading and installing a new version from the URL: http://www.nvidia.com/Download/index.aspx Alternatively, go to: https://pytorch.org to install a PyTorch version that has been compiled with your version of the CUDA driver. (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:119.)
+  return torch._C._cuda_getDeviceCount() > 0
+2026-06-12 03:10:26,299 - __main__ - INFO - ━━━━━━━━━━━━━━━━━━
+2026-06-12 03:10:26,299 - __main__ - INFO -   Preparing data
+2026-06-12 03:10:26,299 - __main__ - INFO - ━━━━━━━━━━━━━━━━━━
+2026-06-12 03:10:26,299 - __main__ - INFO -   Target Model │ /home/models/Qwen3.5-9B
+2026-06-12 03:10:26,299 - __main__ - INFO -   Dataset      │ ['/home/wenxuan_train_dflash/wenxuan/speculators/data/allava/allava_10000.jsonl']
+2026-06-12 03:10:26,299 - __main__ - INFO -   Output Dir   │ ./output/mtp_qwen3.5_9b_allava_distilled_10k
+2026-06-12 03:10:26,299 - speculators.data_generation.preprocessing - INFO - ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2026-06-12 03:10:26,299 - speculators.data_generation.preprocessing - INFO -   Starting dataset preprocessing
+2026-06-12 03:10:26,299 - speculators.data_generation.preprocessing - INFO - ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2026-06-12 03:10:26,299 - speculators.data_generation.preprocessing - INFO - 
+▸ Loading processor
+2026-06-12 03:10:27,296 - speculators.data_generation.preprocessing - INFO - 
+▸ Processing /home/wenxuan_train_dflash/wenxuan/speculators/data/allava/allava_10000.jsonl
+2026-06-12 03:10:28,317 - httpx - INFO - HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/json/json.py "HTTP/1.1 200 OK"
+Traceback (most recent call last):
+  File "/home/wenxuan_prune/speculators/scripts/prepare_data.py", line 201, in <module>
+    main()
+  File "/home/wenxuan_prune/speculators/scripts/prepare_data.py", line 181, in main
+    dataset, _ = load_and_preprocess_dataset(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/wenxuan_prune/speculators/src/speculators/data_generation/preprocessing.py", line 716, in load_and_preprocess_dataset
+    raw_dataset, normalize_fn = load_raw_dataset(train_data_path)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/wenxuan_prune/speculators/src/speculators/data_generation/preprocessing.py", line 617, in load_raw_dataset
+    return load_dataset("json", data_files=train_data_path, split="train"), None
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/datasets/load.py", line 1708, in load_dataset
+    builder_instance.download_and_prepare(
+  File "/usr/local/lib/python3.12/dist-packages/datasets/builder.py", line 836, in download_and_prepare
+    raise OSError(
+OSError: Not enough disk space. Needed: Unknown size (download: Unknown size, generated: Unknown size
