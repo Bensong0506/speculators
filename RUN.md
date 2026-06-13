@@ -446,6 +446,28 @@ causal > bidirectional gain is a green light to retrain causal (Phase 1.5) and t
 patch vLLM inference (Phase 2). Since z-lab was trained bidirectional, a causal
 *loss* here is mask-mismatch, not a verdict on the idea — see the script header.
 
+### 🔬 Causal serve sweep on GPU vLLM (Phase 2 — NO vLLM code patch)
+
+GPU vLLM 0.22 already supports causal DFlash inference: it reads
+`dflash_config.causal` (default `false` = bidirectional) from the **draft's
+config.json** and picks the attention backend (`use_non_causal = not causal`). So
+the inference toggle is just a config flag — no source patch. This script serves
+the ORIGINAL DFlash with causal OFF vs ON across `num_spec` and tabulates whether
+causal **flattens** your first-pos-vs-num_spec curve (3>5>7).
+
+```bash
+DRAFT=/data/wenxuan/Qwen3.5-9B-DFlash \
+SPECS="3 5 7" NUM_PROMPTS=128 GPUS=0 \
+bash examples/evaluate/serve_dflash_causal_spec_sweep.sh
+# -> output/dflash_causal_spec_sweep/<stamp>/causal_spec_sweep_summary.md
+```
+
+It builds the causal-ON draft by symlinking the weights + writing a config.json
+with `dflash_config.causal=true` (no weight copy). To deploy causal permanently,
+just set `"causal": true` in the served draft's `config.json` `dflash_config`.
+(Original draft is bidirectionally trained, so causal-ON is a mask-mismatch probe —
+expect a flat first-pos curve; absolute lift needs a causal retrain.)
+
 ---
 
 ## Files
@@ -464,6 +486,7 @@ patch vLLM inference (Phase 2). Since z-lab was trained bidirectional, a causal
 | MMStar trained-best-vs-baselines eval | `examples/evaluate/eval_trained_dflash_best_vs_baselines.sh` |
 | ALLaVA val four-way eval | `examples/evaluate/test_dflash_allava_val_weights.sh` |
 | Causal block-mask diagnostic (no-train, bi vs causal) | `examples/evaluate/diagnose_dflash_causal_blockmask.sh` |
+| Causal serve sweep on GPU (first-pos vs num_spec) | `examples/evaluate/serve_dflash_causal_spec_sweep.sh` |
 | ALLaVA val checkpoint sweep (选最优 + 域内证明) | `examples/evaluate/sweep_dflash_allava_checkpoints.sh` |
 | MMStar 三路 (mtp/原始/训练 同 run 同 spec) | `examples/evaluate/test_dflash_mmstar_three_way.sh` |
 | 双数据集三路 (MMStar+ALLaVA 一键) | `examples/evaluate/test_three_way_mmstar_allava.sh` |
