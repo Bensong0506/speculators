@@ -364,6 +364,17 @@ bash examples/evaluate/test_mtp_allava_orig_vs_trained.sh
 - If trained ≈ original exactly, the finetuned head didn't load → the summary warns
   you; retry with `TRAINED_MTP_METHOD=mtp` (generic speculators MTP path).
 
+**OOD forgetting check (MMStar):** same idea, sibling script. MMStar is out-of-domain
+(the MTP never trained on it), so here you want trained **≈** original (no regression),
+not a win. Reuses the same stitched dir, so run it right after the ALLaVA one.
+
+```bash
+MTP_CKPT=./output/<your-mtp-run>/checkpoints/checkpoint_best \
+INFER_NUM_SPEC=7 NUM_PROMPTS=128 GPUS=0 \
+bash examples/evaluate/test_mtp_mmstar_orig_vs_trained.sh
+# -> output/mtp_mmstar_orig_vs_trained/<stamp>/...summary.md  (verdict = PASS / regression)
+```
+
 ---
 
 ## Files
@@ -384,4 +395,5 @@ bash examples/evaluate/test_mtp_allava_orig_vs_trained.sh
 | vLLM 0.22 M-RoPE guard patch · send image req | `examples/serve/patch_vllm_mrope_guard.sh` · `examples/serve/send_image_request.sh` |
 | Eval client (throughput + acceptance) | `examples/evaluate/eval_qwen35_9b.sh` + `examples/evaluate/bench_mm_speculative.py` |
 | MTP: original vs trained (ALLaVA, auto-stitch) | `examples/evaluate/test_mtp_allava_orig_vs_trained.sh` |
+| MTP: original vs trained (MMStar OOD forgetting) | `examples/evaluate/test_mtp_mmstar_orig_vs_trained.sh` |
 | Stitch finetuned MTP head into verifier | `scripts/stitch_mtp.py` |
