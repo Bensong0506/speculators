@@ -375,31 +375,42 @@ bash examples/evaluate/test_mtp_mmstar_orig_vs_trained.sh
 # -> output/mtp_mmstar_orig_vs_trained/<stamp>/...summary.md  (verdict = PASS / regression)
 ```
 
-### MTP training on a ~122B verifier (tensor-parallel)
+### MTP training on the ~122B verifier (Qwen3.5-122B-A10B, tensor-parallel)
 
-Same MTP pipeline as 9B, but the 122B verifier (~244 GB bf16) must be
-**tensor-parallel** for vLLM (DP would replicate the whole model per GPU). On 8x
-A800: verifier TP=6 on GPUs 0-5 (~41 GB/GPU) + MTP trainer on GPUs 6-7.
+Target = **Qwen3.5-122B-A10B** (MoE 122B/~10B-active, 48 layers, **heads=32, KV=2**,
+hidden 3072, native MTP head). The verifier (~244 GB bf16) must be **tensor-parallel**
+for vLLM (DP would replicate the whole model per GPU). heads=32 → **TP ∈ {4,8}** (not 6).
+
+**Step 1 — distill the training data with the 122B itself** (MTP must learn THIS
+model's continuations, so don't reuse the 9B distill). Generation only → all 8 GPUs:
 
 ```bash
-# smoke test first
+MODEL=/data/wenxuan/Qwen3.5-122B-A10B MAX_SAMPLES=10000 \
+bash examples/train/distill_allava_122b.sh
+# -> data/allava/allava_122b_distill_10k.jsonl
+```
+
+**Step 2 — MTP train** (8× A800: verifier TP=4 on GPUs 0-3, ~61 GB/GPU but KV is
+tiny here so it fits; MTP trainer on GPUs 4-7):
+
+```bash
+# smoke first
 MAX_SAMPLES=50 EPOCHS=1 VALIDATE_INITIAL=0 \
-MODEL=/data/wenxuan/<YOUR-122B> \
-DISTILLED_ALLAVA_JSONL=/data/wenxuan/speculators/data/allava/<122b-distilled>.jsonl \
+MODEL=/data/wenxuan/Qwen3.5-122B-A10B \
+DISTILLED_ALLAVA_JSONL=$(pwd)/data/allava/allava_122b_distill_10k.jsonl \
 bash examples/train/nohup_mtp_122b_allava_distilled.sh
 
 # full run: drop the smoke overrides
-MODEL=/data/wenxuan/<YOUR-122B> DISTILLED_ALLAVA_JSONL=... \
+MODEL=/data/wenxuan/Qwen3.5-122B-A10B \
+DISTILLED_ALLAVA_JSONL=$(pwd)/data/allava/allava_122b_distill_10k.jsonl \
 bash examples/train/nohup_mtp_122b_allava_distilled.sh
 ```
 
-- `VLLM_TP=6` needs the verifier's head count divisible by 6. If vLLM errors on TP,
-  use `VLLM_TP=8 VLLM_GPUS=0,1,2,3,4,5,6,7` (then trainer co-located / cached) or
-  `VLLM_TP=4 VLLM_GPUS=0,1,2,3 TRAIN_GPUS=4,5,6,7 NUM_TRAIN_GPUS=4` (tight — lower
-  `SEQ_LENGTH`, or serve int8). The base launcher now honours `VLLM_TP` / `VLLM_DP`
-  / `VLLM_GPUS` / `TRAIN_GPUS` / `NUM_TRAIN_GPUS` / `GEN_GPU_MEM_UTIL` from env.
-- MTP wants responses from the SAME verifier → ideally point `DISTILLED_ALLAVA_JSONL`
-  at data distilled by THIS 122B.
+- If TP=4 verifier OOMs: raise `GEN_GPU_MEM_UTIL` (→0.92), lower `SEQ_LENGTH`, serve
+  int8, or use `VLLM_TP=8 VLLM_GPUS=0,1,2,3,4,5,6,7 GEN_GPU_MEM_UTIL=0.55 TRAIN_GPUS=6,7`
+  (verifier on all 8, trainer co-located in the freed memory).
+- The base launcher now honours `VLLM_TP` / `VLLM_DP` / `VLLM_GPUS` / `TRAIN_GPUS` /
+  `NUM_TRAIN_GPUS` / `GEN_GPU_MEM_UTIL` from env (they used to be hardcoded).
 
 ---
 
@@ -420,6 +431,7 @@ bash examples/train/nohup_mtp_122b_allava_distilled.sh
 | Quick serve test (text · image) | `examples/serve/test_trained_dflash_gpu.sh` · `examples/serve/test_trained_dflash_mm_gpu.sh` |
 | vLLM 0.22 M-RoPE guard patch · send image req | `examples/serve/patch_vllm_mrope_guard.sh` · `examples/serve/send_image_request.sh` |
 | Eval client (throughput + acceptance) | `examples/evaluate/eval_qwen35_9b.sh` + `examples/evaluate/bench_mm_speculative.py` |
+| Distill ALLaVA with the 122B (for its MTP) | `examples/train/distill_allava_122b.sh` |
 | MTP train on ~122B verifier (tensor-parallel) | `examples/train/nohup_mtp_122b_allava_distilled.sh` |
 | MTP: original vs trained (ALLaVA, auto-stitch) | `examples/evaluate/test_mtp_allava_orig_vs_trained.sh` |
 | MTP: original vs trained (MMStar OOD forgetting) | `examples/evaluate/test_mtp_mmstar_orig_vs_trained.sh` |
