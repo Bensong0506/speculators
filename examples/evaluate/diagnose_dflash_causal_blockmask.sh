@@ -38,6 +38,11 @@ BASELINE_DRAFT="${BASELINE_DRAFT:-/data/wenxuan/Qwen3.5-9B-DFlash}"
 MAX_SAMPLES="${MAX_SAMPLES:-2000}"
 VLLM_GPUS="${VLLM_GPUS:-0}"
 TRAIN_GPUS="${TRAIN_GPUS:-1}"
+# Derive parallel sizes from the GPU lists so they MATCH (the base launcher
+# defaults VLLM_DP=4 / NUM_TRAIN_GPUS=4 for an 8-GPU box; leaving them unset while
+# passing single GPUs makes vLLM start data-parallel=4 on 1 device -> crash).
+VLLM_DP="${VLLM_DP:-$(echo "$VLLM_GPUS" | tr ',' '\n' | grep -c .)}"
+NUM_TRAIN_GPUS="${NUM_TRAIN_GPUS:-$(echo "$TRAIN_GPUS" | tr ',' '\n' | grep -c .)}"
 VLLM_PORT="${VLLM_PORT:-8000}"
 USE_ALLAVA="${USE_ALLAVA:-1}"
 LAUNCHER="${LAUNCHER:-examples/train/dflash_qwen3.5_9b_multimodal_online.sh}"
@@ -65,6 +70,7 @@ run_one() {
     EPOCHS=1 \
     USE_ALLAVA="$USE_ALLAVA" \
     VLLM_GPUS="$VLLM_GPUS" TRAIN_GPUS="$TRAIN_GPUS" VLLM_PORT="$VLLM_PORT" \
+    VLLM_DP="$VLLM_DP" NUM_TRAIN_GPUS="$NUM_TRAIN_GPUS" \
     OUTPUT_DIR="$OUT_DIR/${tag}_data" \
     SAVE_PATH="$OUT_DIR/${tag}_ckpt" \
     RUN_LOG_PATH="$log" \
