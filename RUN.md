@@ -423,6 +423,29 @@ Results are written to `output/allava_val_weight_tests/<timestamp>/`, especially
 `allava_val_summary.md`, `allava_val_four_way_summary.csv`, and
 `allava_val_four_way_summary.jsonl`.
 
+### 🔬 Causal block-mask diagnostic (no training, Phase 1)
+
+Tests whether a **causal** within-block mask helps the ORIGINAL z-lab DFlash, by
+running ONE validation pass (per-position top-1 acceptance) twice — bidirectional
+vs causal block mask — no training. Two new knobs power it:
+
+- `DFLASH_BLOCK_CAUSAL` (in `src/speculators/models/dflash/attention.py`): `1`
+  (default on this branch) = causal within block; `0` = original bidirectional.
+- `VALIDATE_ONLY` (in `scripts/train.py`): run a single `val_epoch` and exit
+  (prints a `VALIDATE_ONLY_RESULT {json}` line with `position_i_acc`).
+
+```bash
+BASELINE_DRAFT=/data/wenxuan/Qwen3.5-9B-DFlash \
+VLLM_GPUS=0 TRAIN_GPUS=1 MAX_SAMPLES=2000 \
+bash examples/evaluate/diagnose_dflash_causal_blockmask.sh
+# -> output/dflash_causal_diag/<stamp>/summary.md (per-position bi vs causal + verdict)
+```
+
+Needs 2 GPUs (verifier vLLM + draft forward). Reads pos-0 (first-position): a clear
+causal > bidirectional gain is a green light to retrain causal (Phase 1.5) and then
+patch vLLM inference (Phase 2). Since z-lab was trained bidirectional, a causal
+*loss* here is mask-mismatch, not a verdict on the idea — see the script header.
+
 ---
 
 ## Files
@@ -440,6 +463,7 @@ Results are written to `output/allava_val_weight_tests/<timestamp>/`, especially
 | MMStar MTP/DFlash spec sweep summary | `examples/evaluate/mmstar_mtp_dflash_spec_sweep_summary.md` |
 | MMStar trained-best-vs-baselines eval | `examples/evaluate/eval_trained_dflash_best_vs_baselines.sh` |
 | ALLaVA val four-way eval | `examples/evaluate/test_dflash_allava_val_weights.sh` |
+| Causal block-mask diagnostic (no-train, bi vs causal) | `examples/evaluate/diagnose_dflash_causal_blockmask.sh` |
 | ALLaVA val checkpoint sweep (选最优 + 域内证明) | `examples/evaluate/sweep_dflash_allava_checkpoints.sh` |
 | MMStar 三路 (mtp/原始/训练 同 run 同 spec) | `examples/evaluate/test_dflash_mmstar_three_way.sh` |
 | 双数据集三路 (MMStar+ALLaVA 一键) | `examples/evaluate/test_three_way_mmstar_allava.sh` |

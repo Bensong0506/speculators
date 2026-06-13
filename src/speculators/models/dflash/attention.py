@@ -1,3 +1,5 @@
+import os
+
 import torch
 from torch.nn.attention.flex_attention import (
     or_masks,
@@ -39,8 +41,13 @@ def create_anchor_block_mask_mod(
     Returns:
         mask_mod, q_len, kv_len
     """
-    # This branch forces lower-triangular visibility inside every synthetic block.
+    # Within-block visibility. By default this branch forces lower-triangular
+    # (causal) attention inside every synthetic block. Set DFLASH_BLOCK_CAUSAL=0 to
+    # restore the original behaviour (full attention layers attend bidirectionally
+    # within a block) — used to A/B causal vs bidirectional without switching
+    # branches. sliding_window_non_causal is kept for signature compatibility.
     _ = sliding_window_non_causal
+    block_causal = os.environ.get("DFLASH_BLOCK_CAUSAL", "1") not in ("0", "", "false", "False")
 
     device = lengths.device
     anchor_positions = anchor_positions.to(device=device, dtype=torch.long).contiguous()
@@ -111,13 +118,16 @@ def create_anchor_block_mask_mod(
 
     def same_block_mod(_b, _h, q_idx, kv_idx):
         """
-        Queries may attend causally to tokens in their own synthetic block.
+        Queries attend to tokens in their own synthetic block: causally when
+        block_causal (default), else bidirectionally (original behaviour).
         """
         q_block = q_idx // block_size
         kv_is_block = kv_idx >= total_seq_len
         kv_block = (kv_idx - total_seq_len) // block_size
 
         same = kv_is_block & (q_block == kv_block)
-        return same & (kv_idx <= q_idx + total_seq_len)
+        if block_causal:
+            return same & (kv_idx <= q_idx + total_seq_len)
+        return same
 
     return or_masks(base_prefix_mod, same_block_mod), q_len, kv_len

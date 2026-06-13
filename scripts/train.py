@@ -1,5 +1,6 @@
 import argparse
 import logging
+import os
 import random
 import warnings
 from copy import deepcopy
@@ -516,6 +517,22 @@ def main(args: argparse.Namespace):
         log_freq=args.log_freq,
     )
     trainer = Trainer(draft_model, trainer_config, train_loader, val_loader)
+
+    if os.environ.get("VALIDATE_ONLY", "0") not in ("0", "", "false", "False"):
+        # Diagnostic: run ONE validation pass over the (warm-started) model and exit,
+        # without any training. Used to A/B the DFlash block mask (DFLASH_BLOCK_CAUSAL)
+        # on an off-the-shelf draft. Emits a tagged JSON line for easy parsing.
+        import json as _json
+
+        logging.info("VALIDATE_ONLY set -> single val_epoch, no training")
+        val_metrics = trainer.val_epoch(0)
+        if local_rank == 0:
+            print(
+                "VALIDATE_ONLY_RESULT "
+                + _json.dumps(val_metrics or {}, ensure_ascii=False, sort_keys=True)
+            )
+        maybe_destroy_distributed()
+        return
 
     # Run training
     trainer.run_training()
