@@ -1,22 +1,20 @@
-Stopping vLLM server pid=127693
-# ALLaVA — original MTP vs trained MTP
+Forgetting check: the MTP was trained on ALLaVA, NOT MMStar. We want trained **~= original** (no regression), not trained >> original.
 
 trained ckpt: `/data/wenxuan/speculators/output/mtp_qwen3.5_9b_mm_distilled/mtp_bf16_lr3e5_100k_0612_0823/checkpoints/checkpoint_best`  
-val jsonl: `/data/wenxuan/speculators/data/allava/allava_qwen35_distill_100k_val_tail10pct.jsonl`  
+eval set: `/data/wenxuan/speculators/data/mmstar/mmstar_eval.jsonl`  
 requests: original 128/128, trained 128/128
 
 | metric | original MTP | trained MTP | trained-original | trained/original |
 |---|---:|---:|---:|---:|
-| first-pos accept | 0.8378 | 0.8440 | 0.0062 | 1.0074 |
-| mean accept/draft | 2.9162 | 3.1420 | 0.2258 | 1.0774 |
-| token accept | 0.4166 | 0.4489 | 0.0323 | 1.0774 |
-| tok/s | 66.3773 | 70.3903 | 4.0130 | 1.0605 |
+| first-pos accept | 0.8279 | 0.8239 | -0.0040 | 0.9952 |
+| mean accept/draft | 2.8223 | 2.6937 | -0.1286 | 0.9544 |
+| token accept | 0.4032 | 0.3848 | -0.0184 | 0.9544 |
+| tok/s | 69.8109 | 65.9262 | -3.8846 | 0.9444 |
 
-## verdict
+## verdict (forgetting check)
 
-Trained MTP improves over original on this ALLaVA val slice (mean-accept 3.1420 vs 2.9162, first-pos 0.8440 vs 0.8378).
+BORDERLINE: trained/original mean-accept = 0.9544 (mild OOD regression). Acceptable but watch it.
 
 Artifacts:
-  summary:  /data/wenxuan/speculators/output/mtp_orig_vs_trained/20260613_020839/mtp_orig_vs_trained_summary.md
-  per-arm:  /data/wenxuan/speculators/output/mtp_orig_vs_trained/20260613_020839/{original_mtp,trained_mtp}_summary.json
-  stitched: /data/wenxuan/speculators/output/mtp_stitched/mtp_bf16_lr3e5_100k_0612_0823_checkpoint_best
+  summary:  /data/wenxuan/speculators/output/mtp_mmstar_orig_vs_trained/20260613_023232/mtp_mmstar_orig_vs_trained_summary.md
+  per-arm:  /data/wenxuan/speculators/output/mtp_mmstar_orig_vs_trained/20260613_023232/{original_mtp,trained_mtp}_summary.json
