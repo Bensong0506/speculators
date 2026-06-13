@@ -1,3 +1,124 @@
+master_addr=127.0.0.1, mq_connect_ip=10.155.71.44 (local), world_size=1, local_world_size=1
+(EngineCore_DP0 pid=134240) WARNING 06-13 03:38:01 [multiproc_executor.py:1029] Reducing Torch parallelism from 64 threads to 1 to avoid unnecessary CPU contention. Set OMP_NUM_THREADS in the external environment to tune this value as needed.
+(EngineCore_DP0 pid=134240) INFO 06-13 03:38:01 [network_utils.py:205] Port 8000 is already in use, trying port 8001
+(EngineCore_DP0 pid=134240) INFO 06-13 03:38:01 [multiproc_executor.py:139] DP group leader: node_rank=0, node_rank_within_dp=0, master_addr=127.0.0.1, mq_connect_ip=10.155.71.44 (local), world_size=1, local_world_size=1
+(Worker pid=135867) INFO 06-13 03:38:10 [parallel_state.py:1422] world_size=1 rank=0 local_rank=2 distributed_init_method=tcp://127.0.0.1:8002 backend=nccl
+(Worker pid=135860) INFO 06-13 03:38:10 [parallel_state.py:1422] world_size=1 rank=0 local_rank=3 distributed_init_method=tcp://127.0.0.1:8001 backend=nccl
+(Worker pid=135866) INFO 06-13 03:38:10 [parallel_state.py:1422] world_size=1 rank=0 local_rank=0 distributed_init_method=tcp://127.0.0.1:8001 backend=nccl
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870] WorkerProc failed to start.
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870] Traceback (most recent call last):
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 837, in worker_main
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]     worker = WorkerProc(*args, **kwargs)
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]     return func(*args, **kwargs)
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]            ^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 611, in __init__
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]     self.worker.init_device()
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/worker_base.py", line 325, in init_device
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]     self.worker.init_device()  # type: ignore
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]     ^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]     return func(*args, **kwargs)
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]            ^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu_worker.py", line 280, in init_device
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]     init_worker_distributed_environment(
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu_worker.py", line 1140, in init_worker_distributed_environment
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]     init_distributed_environment(
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/distributed/parallel_state.py", line 1444, in init_distributed_environment
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]     torch.distributed.init_process_group(
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/c10d_logger.py", line 83, in wrapper
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]     return func(*args, **kwargs)
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]            ^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/c10d_logger.py", line 97, in wrapper
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]     func_return = func(*args, **kwargs)
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]                   ^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/distributed_c10d.py", line 1831, in init_process_group
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]     store, rank, world_size = next(rendezvous_iterator)
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]                               ^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/rendezvous.py", line 232, in _tcp_rendezvous_handler
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]     store = _create_c10d_store(
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]             ^^^^^^^^^^^^^^^^^^^
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/rendezvous.py", line 199, in _create_c10d_store
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]     return TCPStore(
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870]            ^^^^^^^^^
+(Worker pid=135866) ERROR 06-13 03:38:10 [multiproc_executor.py:870] torch.distributed.DistNetworkError: The server socket has failed to listen on any local network address. port: 8001, useIpv6: false, code: -98, name: EADDRINUSE, message: address already in use
+(Worker pid=135861) INFO 06-13 03:38:10 [parallel_state.py:1422] world_size=1 rank=0 local_rank=1 distributed_init_method=tcp://127.0.0.1:8001 backend=nccl
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870] WorkerProc failed to start.
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870] Traceback (most recent call last):
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 837, in worker_main
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]     worker = WorkerProc(*args, **kwargs)
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]     return func(*args, **kwargs)
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]            ^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 611, in __init__
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]     self.worker.init_device()
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/worker_base.py", line 325, in init_device
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]     self.worker.init_device()  # type: ignore
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]     ^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]     return func(*args, **kwargs)
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]            ^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu_worker.py", line 280, in init_device
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]     init_worker_distributed_environment(
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu_worker.py", line 1140, in init_worker_distributed_environment
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]     init_distributed_environment(
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/distributed/parallel_state.py", line 1444, in init_distributed_environment
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]     torch.distributed.init_process_group(
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/c10d_logger.py", line 83, in wrapper
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]     return func(*args, **kwargs)
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]            ^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/c10d_logger.py", line 97, in wrapper
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]     func_return = func(*args, **kwargs)
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]                   ^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/distributed_c10d.py", line 1831, in init_process_group
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]     store, rank, world_size = next(rendezvous_iterator)
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]                               ^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/rendezvous.py", line 232, in _tcp_rendezvous_handler
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]     store = _create_c10d_store(
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]             ^^^^^^^^^^^^^^^^^^^
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/rendezvous.py", line 199, in _create_c10d_store
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]     return TCPStore(
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870]            ^^^^^^^^^
+(Worker pid=135861) ERROR 06-13 03:38:10 [multiproc_executor.py:870] torch.distributed.DistNetworkError: The server socket has failed to listen on any local network address. port: 8001, useIpv6: false, code: -98, name: EADDRINUSE, message: address already in use
+(Worker pid=135860) INFO 06-13 03:38:10 [topk_topp_sampler.py:45] Using FlashInfer for top-p & top-k sampling.
+(Worker pid=135867) INFO 06-13 03:38:10 [topk_topp_sampler.py:45] Using FlashInfer for top-p & top-k sampling.
+(Worker pid=135860) WARNING 06-13 03:38:10 [__init__.py:204] min_p and logit_bias parameters won't work with speculative decoding.
+(Worker pid=135867) WARNING 06-13 03:38:10 [__init__.py:204] min_p and logit_bias parameters won't work with speculative decoding.
+(EngineCore_DP1 pid=134241) ERROR 06-13 03:38:11 [core.py:1165] EngineCore failed to start.
+(EngineCore_DP1 pid=134241) ERROR 06-13 03:38:11 [core.py:1165] Traceback (most recent call last):
+(EngineCore_DP1 pid=134241) ERROR 06-13 03:38:11 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 1139, in run_engine_core
+(EngineCore_DP1 pid=134241) ERROR 06-13 03:38:11 [core.py:1165]     engine_core = EngineCoreProc(*args, engine_index=dp_rank, **kwargs)
+(EngineCore_DP1 pid=134241) ERROR 06-13 03:38:11 [core.py:1165]                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP1 pid=134241) ERROR 06-13 03:38:11 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore_DP1 pid=134241) ERROR 06-13 03:38:11 [core.py:1165]     return func(*args, **kwargs)
+(EngineCore_DP1 pid=134241) ERROR 06-13 03:38:11 [core.py:1165]            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP1 pid=134241) ERROR 06-13 03:38:11 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 905, in __init__
+(EngineCore_DP1 pid=134241) ERROR 06-13 03:38:11 [core.py:1165]     super().__init__(
+(EngineCore_DP1 pid=134241) ERROR 06-13 03:38:11 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 121, in __init__
+(EngineCore_DP1 pid=134241) ERROR 06-13 03:38:11 [core.py:1165]     self.model_executor = executor_class(vllm_config)
+(EngineCore_DP1 pid=134241) ERROR 06-13 03:38:11 [core.py:1165]                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP1 pid=134241) ERROR 06-13 03:38:11 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 107, in __init__
+(EngineCore_DP1 pid=134241) ERROR 06-13 03:38:11 [core.py:1165]     super().__init__(vllm_config)
+(EngineCore_DP1 pid=134241) ERROR 06-13 03:38:11 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore_DP1 pid=134241) ERROR 06-13 03:38:11 [core.py:1165]     return func(*args, **kwargs)
+(EngineCore_DP1 pid=134241) ERROR 06-13 03:38:11 [core.py:1165]            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP1 pid=134241) ERROR 06-13 03:38:11 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/abstract.py", line 109, in __init__
+(EngineCore_DP1 pid=134241) ERROR 06-13 03:38:11 [core.py:1165]     self._init_executor(/data/wenxuan/speculators/scripts/launch_vllm.py:119: UserWarning: Using custom target layer ids [1, 8, 15, 22, 29, 32]. These must also be explicitly passed into the training script.
+  main()
+(ApiServer_1 pid=134245) [transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
+(ApiServer_2 pid=134246) [transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
+(ApiServer_3 pid=134247) [transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
+(ApiServer_0 pid=134244) [transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
+(ApiServer_2 pid=134246) [transformers] The `use_fast` parameter is deprecated and will be removed in a future version. Use `backend="torchvision"` instead of `use_fast=True`, or `backend="pil"` instead of `use_fast=False`.
+(ApiServer_1 pid=134245) [transformers] The `use_fast` parameter is deprecated and will be removed in a future version. Use `backend="torchvision"` instead of `use_fast=True`, or `backend="pil"` instead of `use_fast=False`.
+(ApiServer_3 pid=134247) [transformers] The `use_fast` parameter is deprecated and will be removed in a future version. Use `backend="torchvision"` instead of `use_fast=True`, or `backend="pil"` instead of `use_fast=False`.
+(ApiServer_0 pid=134244) [transformers] The `use_fast` parameter is deprecated and will be removed in a future version. Use `backend="torchvision"` instead of `use_fast=True`, or `backend="pil"` instead of `use_fast=False`.
+[transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
+[transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
+[transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
+[transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
 (EngineCore_DP1 pid=134241) Process EngineCore_DP1:
 (EngineCore_DP1 pid=134241) Traceback (most recent call last):
 (EngineCore_DP1 pid=134241)   File "/usr/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
