@@ -2,13 +2,16 @@
 # Phase 2 (GPU vLLM 0.22): does CAUSAL within-block attention remove the first-pos
 # drop with num_spec (you observed first-pos 3 > 5 > 7)?
 #
-# NO vLLM code patch needed — vLLM reads `dflash_config.causal` (default False =
-# bidirectional) from the DRAFT's config.json and selects the attention backend
-# accordingly (use_non_causal = not causal). This script serves the ORIGINAL
-# DFlash with causal OFF vs ON across num_spec and tabulates first-pos/mean-accept.
+# Causal is toggled at serve time via the DFLASH_CAUSAL env var. Editing the draft
+# config.json (dflash_config.causal=true) was tried first and did NOT take effect
+# (vLLM rebuilds dflash_config on load, dropping the manual key — confirmed by
+# causal-ON == causal-OFF in the first run). So apply the one-time patch first:
 #
-# It builds a causal-ON variant of the draft by SYMLINKING the weights and writing
-# a config.json with dflash_config.causal=true (no weight copy).
+#     bash examples/serve/patch_vllm_dflash_causal_env.sh
+#
+# Then this script serves the ORIGINAL DFlash with DFLASH_CAUSAL=0 vs 1 across
+# num_spec and tabulates first-pos/mean-accept. Each cell's vLLM log prints a
+# "[DFLASH] dflash_causal=..." line so you can confirm it actually engaged.
 #
 # INTERPRETATION (original DFlash was TRAINED bidirectional, so causal-ON is a
 # mask-mismatch probe):
@@ -67,29 +70,11 @@ MAX_NUM_BATCHED_TOKENS="${MAX_NUM_BATCHED_TOKENS:-$((MAX_MODEL_LEN + MAX_NUM_SEQ
 [ -d "$ALLAVA_IMAGE_ROOT" ] || { echo "[fatal] ALLAVA_IMAGE_ROOT not found: $ALLAVA_IMAGE_ROOT"; exit 1; }
 [ -s "$ALLAVA_JSONL" ] || { echo "[fatal] ALLAVA_JSONL missing: $ALLAVA_JSONL"; exit 1; }
 
-# ---- build causal-ON variant draft (symlink weights + edited config.json) ----
-CAUSAL_DRAFT="$OUT_DIR/causal_draft"
-echo "=== Building causal-ON draft variant (symlinks + config.json causal=true) ==="
-rm -rf "$CAUSAL_DRAFT"; mkdir -p "$CAUSAL_DRAFT"
-for f in "$DRAFT"/* "$DRAFT"/.[!.]*; do
-    [ -e "$f" ] || continue
-    bn="$(basename "$f")"
-    [ "$bn" = "config.json" ] && continue
-    ln -s "$f" "$CAUSAL_DRAFT/$bn"
-done
-python3 - "$DRAFT/config.json" "$CAUSAL_DRAFT/config.json" <<'PY'
-import json, sys
-src, dst = sys.argv[1], sys.argv[2]
-c = json.load(open(src))
-dc = c.get("dflash_config")
-if not isinstance(dc, dict):
-    raise SystemExit(f"[fatal] no dflash_config dict in {src}; is this a DFlash draft?")
-dc["causal"] = True
-c["dflash_config"] = dc
-json.dump(c, open(dst, "w"), indent=2)
-print(f"[info] wrote {dst} with dflash_config.causal=true")
-PY
-[ -f "$CAUSAL_DRAFT/config.json" ] || { echo "[fatal] failed to write causal config"; exit 1; }
+# Causal is toggled at serve time via the DFLASH_CAUSAL env var, which requires the
+# one-time patch examples/serve/patch_vllm_dflash_causal_env.sh (editing the draft
+# config.json was tried first and did NOT take effect — vLLM rebuilds dflash_config
+# on load, dropping the manual key). Each cell sets DFLASH_CAUSAL=0/1 and the vLLM
+# log prints a "[DFLASH] dflash_causal=..." line to confirm.
 
 # ---- ALLaVA val tail (same as the other evals) ----
 echo "=== Preparing ALLaVA val tail (last $VAL_RATIO of $(basename "$ALLAVA_JSONL")) ==="
@@ -143,15 +128,14 @@ wait_for_server() {
 run_cell() {
     local causal="$1" spec="$2"
     local tag="causal${causal}_spec${spec}"
-    local draft="$DRAFT"; [ "$causal" = "on" ] && draft="$CAUSAL_DRAFT"
+    local dcausal=0; [ "$causal" = "on" ] && dcausal=1
     local log="$OUT_DIR/${tag}_vllm.log"
-    local spec_cfg="{\"method\":\"dflash\",\"model\":\"$draft\",\"num_speculative_tokens\":$spec}"
+    local spec_cfg="{\"method\":\"dflash\",\"model\":\"$DRAFT\",\"num_speculative_tokens\":$spec}"
 
     cleanup_server
     echo
-    echo "=== [$tag] serve dflash causal=$causal num_spec=$spec ==="
-    echo "    draft: $draft"
-    env CUDA_VISIBLE_DEVICES="$GPUS" vllm serve "$MODEL" \
+    echo "=== [$tag] serve dflash causal=$causal (DFLASH_CAUSAL=$dcausal) num_spec=$spec ==="
+    env CUDA_VISIBLE_DEVICES="$GPUS" DFLASH_CAUSAL="$dcausal" vllm serve "$MODEL" \
         --served-model-name "$SERVED_MODEL_NAME" --seed 42 \
         --tensor-parallel-size "$TP" --max-model-len "$MAX_MODEL_LEN" \
         --max-num-batched-tokens "$MAX_NUM_BATCHED_TOKENS" --max-num-seqs "$MAX_NUM_SEQS" \
@@ -163,6 +147,12 @@ run_cell() {
         --host 0.0.0.0 --port "$PORT" >"$log" 2>&1 &
     SERVER_PID=$!
     if wait_for_server "$log" "$tag"; then
+        # confirm causal actually engaged (needs patch_vllm_dflash_causal_env.sh)
+        if grep -m1 "\[DFLASH\] dflash_causal" "$log" >/dev/null 2>&1; then
+            grep -m1 "\[DFLASH\] dflash_causal" "$log" | sed 's/^/    /'
+        else
+            echo "    WARN: no [DFLASH] line — apply examples/serve/patch_vllm_dflash_causal_env.sh first, else causal won't toggle."
+        fi
         python3 examples/evaluate/mmstar_weight_client.py \
             --endpoint "http://localhost:${PORT}/v1" \
             --data-jsonl "$ALLAVA_VAL_JSONL" \
@@ -176,10 +166,11 @@ run_cell() {
     sleep 5
 }
 
-echo "=== DFlash causal sweep ==="
+echo "=== DFlash causal sweep (causal toggled via DFLASH_CAUSAL env) ==="
 echo "  model:   $MODEL"
-echo "  draft:   $DRAFT (original, causal off) vs $CAUSAL_DRAFT (causal on)"
+echo "  draft:   $DRAFT  (same draft both arms; causal off vs on via env)"
 echo "  specs:   $SPECS   num_prompts: $NUM_PROMPTS   out: $OUT_DIR"
+echo "  NOTE: requires examples/serve/patch_vllm_dflash_causal_env.sh applied once."
 
 # Pre-flight: make sure PORT is free (a zombie from a previous run would block us).
 if curl -sf "http://localhost:${PORT}/health" >/dev/null 2>&1; then
