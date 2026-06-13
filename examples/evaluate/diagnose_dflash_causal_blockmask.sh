@@ -38,10 +38,12 @@ BASELINE_DRAFT="${BASELINE_DRAFT:-/data/wenxuan/Qwen3.5-9B-DFlash}"
 MAX_SAMPLES="${MAX_SAMPLES:-2000}"
 VLLM_GPUS="${VLLM_GPUS:-0}"
 TRAIN_GPUS="${TRAIN_GPUS:-1}"
-# Derive parallel sizes from the GPU lists so they MATCH (the base launcher
-# defaults VLLM_DP=4 / NUM_TRAIN_GPUS=4 for an 8-GPU box; leaving them unset while
-# passing single GPUs makes vLLM start data-parallel=4 on 1 device -> crash).
-VLLM_DP="${VLLM_DP:-$(echo "$VLLM_GPUS" | tr ',' '\n' | grep -c .)}"
+# Verifier: FORCE a single replica on ONE GPU. The base launcher defaults
+# VLLM_DP=4 (8-GPU box), and data-parallel>1 races on the distributed-init port in
+# this vLLM build (every DP replica grabs the same port -> EADDRINUSE crash). The
+# 9B verifier fits on one GPU, so DP brings no benefit for this diagnostic.
+VLLM_GPUS="${VLLM_GPUS%%,*}"   # first GPU only
+VLLM_DP=1
 NUM_TRAIN_GPUS="${NUM_TRAIN_GPUS:-$(echo "$TRAIN_GPUS" | tr ',' '\n' | grep -c .)}"
 VLLM_PORT="${VLLM_PORT:-8000}"
 USE_ALLAVA="${USE_ALLAVA:-1}"
