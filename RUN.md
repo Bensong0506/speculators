@@ -339,6 +339,31 @@ RUN_MODE=dflash   ... bash examples/serve/run_qwen35_9b_gpu.sh   # then eval -> 
 # speedup = B / A
 ```
 
+### 3b. Eval — original MTP vs trained MTP (ALLaVA, one command)
+
+After MTP training, compare the verifier's native MTP head against your finetuned
+one on the ALLaVA val tail. The script auto-**stitches** the finetuned head into a
+servable checkpoint (`scripts/stitch_mtp.py`), then benchmarks both arms with the
+same method/spec/val set — only the weights differ. Run from the **mtp-training
+env** (stitch imports `speculators.convert.mtp`).
+
+```bash
+cd /home/wenxuan/speculators && git checkout mtp-training && git pull
+MTP_CKPT=./output/<your-mtp-run>/checkpoints/checkpoint_best \
+INFER_NUM_SPEC=7 NUM_PROMPTS=128 GPUS=0 \
+bash examples/evaluate/test_mtp_allava_orig_vs_trained.sh
+# -> output/mtp_orig_vs_trained/<stamp>/mtp_orig_vs_trained_summary.md
+#    (first-pos / mean-accept / tok/s, original vs trained + delta/ratio)
+```
+
+- Point `ALLAVA_JSONL=` at the **same jsonl your MTP trained on** so the val tail
+  matches the training val split (defaults to the 10k distilled jsonl; for 100k use
+  `ALLAVA_JSONL=.../data/allava/allava_qwen35_distill_100k.jsonl`).
+- The stitch writes a full ~verifier-size copy under `output/mtp_stitched/...`
+  (reused across runs; `FORCE_STITCH=1` to rebuild).
+- If trained ≈ original exactly, the finetuned head didn't load → the summary warns
+  you; retry with `TRAINED_MTP_METHOD=mtp` (generic speculators MTP path).
+
 ---
 
 ## Files
@@ -358,3 +383,5 @@ RUN_MODE=dflash   ... bash examples/serve/run_qwen35_9b_gpu.sh   # then eval -> 
 | Quick serve test (text · image) | `examples/serve/test_trained_dflash_gpu.sh` · `examples/serve/test_trained_dflash_mm_gpu.sh` |
 | vLLM 0.22 M-RoPE guard patch · send image req | `examples/serve/patch_vllm_mrope_guard.sh` · `examples/serve/send_image_request.sh` |
 | Eval client (throughput + acceptance) | `examples/evaluate/eval_qwen35_9b.sh` + `examples/evaluate/bench_mm_speculative.py` |
+| MTP: original vs trained (ALLaVA, auto-stitch) | `examples/evaluate/test_mtp_allava_orig_vs_trained.sh` |
+| Stitch finetuned MTP head into verifier | `scripts/stitch_mtp.py` |
