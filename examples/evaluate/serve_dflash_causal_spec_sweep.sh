@@ -112,6 +112,18 @@ cleanup_server() {
         wait "$SERVER_PID" 2>/dev/null || true
         SERVER_PID=""
     fi
+    # Ensure the port is actually released before the next cell. vLLM spawns
+    # EngineCore/Worker subprocesses that can outlive the parent and keep holding
+    # the port -> the next cell would hit EADDRINUSE. Wait for /health to go down,
+    # then free the port as a last resort.
+    for _ in $(seq 1 30); do
+        curl -sf "http://localhost:${PORT}/health" >/dev/null 2>&1 || break
+        sleep 2
+    done
+    if command -v fuser >/dev/null 2>&1; then
+        fuser -k "${PORT}/tcp" 2>/dev/null || true
+    fi
+    sleep 3
 }
 trap cleanup_server EXIT
 
@@ -168,6 +180,13 @@ echo "=== DFlash causal sweep ==="
 echo "  model:   $MODEL"
 echo "  draft:   $DRAFT (original, causal off) vs $CAUSAL_DRAFT (causal on)"
 echo "  specs:   $SPECS   num_prompts: $NUM_PROMPTS   out: $OUT_DIR"
+
+# Pre-flight: make sure PORT is free (a zombie from a previous run would block us).
+if curl -sf "http://localhost:${PORT}/health" >/dev/null 2>&1; then
+    echo "WARN: something is already serving on :$PORT — freeing it."
+    command -v fuser >/dev/null 2>&1 && fuser -k "${PORT}/tcp" 2>/dev/null || true
+    sleep 3
+fi
 
 for causal in off on; do
     for spec in $SPECS; do
