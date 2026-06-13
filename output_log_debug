@@ -1,35 +1,20 @@
-# DFlash causal vs bidirectional — first-pos across num_spec (original DFlash, GPU serve)
-
-Original z-lab DFlash (trained bidirectional). causal-ON via `dflash_config.causal=true` (no vLLM patch). Question: does causal flatten the first-pos-vs-num_spec curve you saw (3>5>7)?
-
-### first-pos acceptance
-
-| num_spec | causal OFF (bi) | causal ON | ON-OFF |
-|---:|---:|---:|---:|
-| 3 | 0.7497 | 0.7481 | -0.0016 |
-| 5 | 0.7303 | 0.7307 | 0.0005 |
-| 7 | 0.7279 | 0.7296 | 0.0017 |
-
-### mean accept / draft
-
-| num_spec | causal OFF (bi) | causal ON | ON-OFF |
-|---:|---:|---:|---:|
-| 3 | 1.5480 | 1.5428 | -0.0052 |
-| 5 | 1.8145 | 1.8152 | 0.0007 |
-| 7 | 1.9385 | 1.9494 | 0.0109 |
-
-### tok/s
-
-| num_spec | causal OFF (bi) | causal ON | ON-OFF |
-|---:|---:|---:|---:|
-| 3 | 56.4322 | 57.7173 | 1.2851 |
-| 5 | 61.9932 | 61.5244 | -0.4689 |
-| 7 | 64.7214 | 64.7175 | -0.0039 |
-
-## verdict
-
-- first-pos spread across num_spec — OFF: `0.0218`, ON: `0.0185` (smaller = flatter; causal should be ~flat).
-- ⚠️ causal did NOT clearly flatten the curve — inspect per-cell logs (did causal=true actually take effect? check the served draft config).
-- at num_spec=7: causal ON first-pos 0.7296 vs OFF 0.7279 (0.0017) -> comparable
-
-Artifacts: /data/wenxuan/speculators/output/dflash_causal_spec_sweep/20260613_063902/causal_spec_sweep_summary.md
+root@devserver-bms-250cfc86-tmp1108:/data/wenxuan/speculators# bash examples/serve/patch_vllm_dflash_causal_env.sh 
+vllm install: /usr/local/lib/python3.12/dist-packages/vllm
+[fatal] anchor not found in /usr/local/lib/python3.12/dist-packages/vllm/v1/spec_decode/dflash.py
+        expected line:
+        self.dflash_causal = self.dflash_config.get("causal", False)
+        (installed vLLM differs from expected 0.22 layout — paste the
+         function and I'll adjust the patch.)
+[fatal] not found: /usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu/spec_decode/dflash/utils.py
+root@devserver-bms-250cfc86-tmp1108:/data/wenxuan/speculators# pip show vllm
+Name: vllm
+Version: 0.22.0
+Summary: A high-throughput and memory-efficient inference and serving engine for LLMs
+Home-page: https://github.com/vllm-project/vllm
+Author: vLLM Team
+Author-email: 
+License-Expression: Apache-2.0
+Location: /usr/local/lib/python3.12/dist-packages
+Requires: aiohttp, anthropic, apache-tvm-ffi, blake3, cachetools, cbor2, cloudpickle, compressed-tensors, depyf, diskcache, einops, fastapi, fastsafetensors, filelock, flashinfer-cubin, flashinfer-python, gguf, humming-kernels, ijson, lark, llguidance, lm-format-enforcer, mcp, mistral_common, model-hosting-container-standards, msgspec, ninja, numba, numpy, nvidia-cudnn-frontend, nvidia-cutlass-dsl, openai, openai-harmony, opencv-python-headless, opentelemetry-api, opentelemetry-exporter-otlp, opentelemetry-sdk, opentelemetry-semantic-conventions-ai, outlines_core, partial-json-parser, pillow, prometheus-fastapi-instrumentator, prometheus_client, protobuf, psutil, py-cpuinfo, pybase64, pydantic, python-json-logger, pyyaml, pyzmq, quack-kernels, regex, requests, safetensors, sentencepiece, setproctitle, setuptools, six, tiktoken, tilelang, tokenizers, tokenspeed-mla, torch, torchaudio, torchvision, tqdm, transformers, typing_extensions, watchfiles, xgrammar
+Required-by: 
+root@devserver-bms-250cfc86-tmp1108:/data/wenxuan/speculators# 
