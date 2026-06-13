@@ -152,11 +152,16 @@ TARGET_LAYER_IDS="${TARGET_LAYER_IDS:-}"
 
 # --- 5) GPU layout on the A800 node ---------------------------------------
 # Online training runs vLLM (serving) and the trainer (FSDP) on SEPARATE GPUs.
-# Defaults assume an 8x A800 (80GB) node, split half/half.
-VLLM_GPUS="0,1,2,3"
-VLLM_DP=4               # vLLM data-parallel replicas (use TP instead if model is big)
-TRAIN_GPUS="4,5,6,7"
-NUM_TRAIN_GPUS=4
+# Defaults assume an 8x A800 (80GB) node, split half/half. All overridable via env.
+# Big verifiers (won't fit per-GPU) MUST use VLLM_TP (shards weights) instead of
+# VLLM_DP (replicates the full model per replica). vLLM uses TP x DP GPUs total,
+# which must equal the count in VLLM_GPUS.
+VLLM_GPUS="${VLLM_GPUS:-0,1,2,3}"
+VLLM_TP="${VLLM_TP:-1}"      # tensor-parallel: shard weights across GPUs (use for big models)
+VLLM_DP="${VLLM_DP:-4}"      # data-parallel: replicate weights (only for small models)
+GEN_GPU_MEM_UTIL="${GEN_GPU_MEM_UTIL:-0.85}"
+TRAIN_GPUS="${TRAIN_GPUS:-4,5,6,7}"
+NUM_TRAIN_GPUS="${NUM_TRAIN_GPUS:-4}"
 # ===========================================================================
 
 TRC_FLAG=()
@@ -467,15 +472,17 @@ filter_vllm_access_logs() {
 # plus the collate slice_and_pad truncate everything back to SEQ_LENGTH.
 GEN_MAX_MODEL_LEN="${GEN_MAX_MODEL_LEN:-$((SEQ_LENGTH + 2048))}"
 echo "    gen vLLM max-model-len: $GEN_MAX_MODEL_LEN (training stays at $SEQ_LENGTH)"
+echo "    vLLM parallelism: TP=$VLLM_TP x DP=$VLLM_DP on GPUs [$VLLM_GPUS], mem_util=$GEN_GPU_MEM_UTIL"
 CUDA_VISIBLE_DEVICES="$VLLM_GPUS" python3 scripts/launch_vllm.py "$MODEL" \
     --target-layer-ids $TARGET_LAYER_IDS \
-    -- --data-parallel-size "$VLLM_DP" \
+    -- --tensor-parallel-size "$VLLM_TP" \
+       --data-parallel-size "$VLLM_DP" \
        --port "$VLLM_PORT" \
        --allowed-local-media-path "$MEDIA_ROOT" \
        --trust-remote-code \
        --max-model-len "$GEN_MAX_MODEL_LEN" \
        --max-num-batched-tokens "$GEN_MAX_MODEL_LEN" \
-       --gpu-memory-utilization 0.85 \
+       --gpu-memory-utilization "$GEN_GPU_MEM_UTIL" \
        --limit-mm-per-prompt '{"image": 1}' \
        --enforce-eager \
        > >(filter_vllm_access_logs) \

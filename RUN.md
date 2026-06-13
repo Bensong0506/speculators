@@ -375,6 +375,32 @@ bash examples/evaluate/test_mtp_mmstar_orig_vs_trained.sh
 # -> output/mtp_mmstar_orig_vs_trained/<stamp>/...summary.md  (verdict = PASS / regression)
 ```
 
+### MTP training on a ~122B verifier (tensor-parallel)
+
+Same MTP pipeline as 9B, but the 122B verifier (~244 GB bf16) must be
+**tensor-parallel** for vLLM (DP would replicate the whole model per GPU). On 8x
+A800: verifier TP=6 on GPUs 0-5 (~41 GB/GPU) + MTP trainer on GPUs 6-7.
+
+```bash
+# smoke test first
+MAX_SAMPLES=50 EPOCHS=1 VALIDATE_INITIAL=0 \
+MODEL=/data/wenxuan/<YOUR-122B> \
+DISTILLED_ALLAVA_JSONL=/data/wenxuan/speculators/data/allava/<122b-distilled>.jsonl \
+bash examples/train/nohup_mtp_122b_allava_distilled.sh
+
+# full run: drop the smoke overrides
+MODEL=/data/wenxuan/<YOUR-122B> DISTILLED_ALLAVA_JSONL=... \
+bash examples/train/nohup_mtp_122b_allava_distilled.sh
+```
+
+- `VLLM_TP=6` needs the verifier's head count divisible by 6. If vLLM errors on TP,
+  use `VLLM_TP=8 VLLM_GPUS=0,1,2,3,4,5,6,7` (then trainer co-located / cached) or
+  `VLLM_TP=4 VLLM_GPUS=0,1,2,3 TRAIN_GPUS=4,5,6,7 NUM_TRAIN_GPUS=4` (tight — lower
+  `SEQ_LENGTH`, or serve int8). The base launcher now honours `VLLM_TP` / `VLLM_DP`
+  / `VLLM_GPUS` / `TRAIN_GPUS` / `NUM_TRAIN_GPUS` / `GEN_GPU_MEM_UTIL` from env.
+- MTP wants responses from the SAME verifier → ideally point `DISTILLED_ALLAVA_JSONL`
+  at data distilled by THIS 122B.
+
 ---
 
 ## Files
@@ -394,6 +420,7 @@ bash examples/evaluate/test_mtp_mmstar_orig_vs_trained.sh
 | Quick serve test (text · image) | `examples/serve/test_trained_dflash_gpu.sh` · `examples/serve/test_trained_dflash_mm_gpu.sh` |
 | vLLM 0.22 M-RoPE guard patch · send image req | `examples/serve/patch_vllm_mrope_guard.sh` · `examples/serve/send_image_request.sh` |
 | Eval client (throughput + acceptance) | `examples/evaluate/eval_qwen35_9b.sh` + `examples/evaluate/bench_mm_speculative.py` |
+| MTP train on ~122B verifier (tensor-parallel) | `examples/train/nohup_mtp_122b_allava_distilled.sh` |
 | MTP: original vs trained (ALLaVA, auto-stitch) | `examples/evaluate/test_mtp_allava_orig_vs_trained.sh` |
 | MTP: original vs trained (MMStar OOD forgetting) | `examples/evaluate/test_mtp_mmstar_orig_vs_trained.sh` |
 | Stitch finetuned MTP head into verifier | `scripts/stitch_mtp.py` |
