@@ -1,20 +1,777 @@
-root@devserver-bms-250cfc86-tmp1108:/data/wenxuan/speculators# bash examples/serve/patch_vllm_dflash_causal_env.sh 
-vllm install: /usr/local/lib/python3.12/dist-packages/vllm
-[fatal] anchor not found in /usr/local/lib/python3.12/dist-packages/vllm/v1/spec_decode/dflash.py
-        expected line:
-        self.dflash_causal = self.dflash_config.get("causal", False)
-        (installed vLLM differs from expected 0.22 layout — paste the
-         function and I'll adjust the patch.)
-[fatal] not found: /usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu/spec_decode/dflash/utils.py
-root@devserver-bms-250cfc86-tmp1108:/data/wenxuan/speculators# pip show vllm
-Name: vllm
-Version: 0.22.0
-Summary: A high-throughput and memory-efficient inference and serving engine for LLMs
-Home-page: https://github.com/vllm-project/vllm
-Author: vLLM Team
-Author-email: 
-License-Expression: Apache-2.0
-Location: /usr/local/lib/python3.12/dist-packages
-Requires: aiohttp, anthropic, apache-tvm-ffi, blake3, cachetools, cbor2, cloudpickle, compressed-tensors, depyf, diskcache, einops, fastapi, fastsafetensors, filelock, flashinfer-cubin, flashinfer-python, gguf, humming-kernels, ijson, lark, llguidance, lm-format-enforcer, mcp, mistral_common, model-hosting-container-standards, msgspec, ninja, numba, numpy, nvidia-cudnn-frontend, nvidia-cutlass-dsl, openai, openai-harmony, opencv-python-headless, opentelemetry-api, opentelemetry-exporter-otlp, opentelemetry-sdk, opentelemetry-semantic-conventions-ai, outlines_core, partial-json-parser, pillow, prometheus-fastapi-instrumentator, prometheus_client, protobuf, psutil, py-cpuinfo, pybase64, pydantic, python-json-logger, pyyaml, pyzmq, quack-kernels, regex, requests, safetensors, sentencepiece, setproctitle, setuptools, six, tiktoken, tilelang, tokenizers, tokenspeed-mla, torch, torchaudio, torchvision, tqdm, transformers, typing_extensions, watchfiles, xgrammar
-Required-by: 
-root@devserver-bms-250cfc86-tmp1108:/data/wenxuan/speculators# 
+root@devserver-bms-250cfc86-tmp1108:/data/wenxuan/speculators# bash examples/serve/probe_vllm_dflash.sh 
+### vllm version + location
+version: 0.22.0
+dir: /usr/local/lib/python3.12/dist-packages/vllm
+
+### all files mentioning dflash
+/usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/qwen3_dflash.py
+/usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/registry.py
+/usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/__pycache__/registry.cpython-312.pyc
+/usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/__pycache__/qwen3_dflash.cpython-312.pyc
+/usr/local/lib/python3.12/dist-packages/vllm/compilation/passes/fusion/__pycache__/collective_fusion.cpython-312.pyc
+/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu_model_runner.py
+/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/__pycache__/gpu_model_runner.cpython-312.pyc
+/usr/local/lib/python3.12/dist-packages/vllm/v1/spec_decode/dflash.py
+/usr/local/lib/python3.12/dist-packages/vllm/v1/spec_decode/utils.py
+/usr/local/lib/python3.12/dist-packages/vllm/v1/spec_decode/llm_base_proposer.py
+/usr/local/lib/python3.12/dist-packages/vllm/v1/spec_decode/__pycache__/dflash.cpython-312.pyc
+/usr/local/lib/python3.12/dist-packages/vllm/v1/spec_decode/__pycache__/utils.cpython-312.pyc
+/usr/local/lib/python3.12/dist-packages/vllm/v1/spec_decode/__pycache__/llm_base_proposer.cpython-312.pyc
+/usr/local/lib/python3.12/dist-packages/vllm/v1/attention/ops/prefix_prefill.py
+/usr/local/lib/python3.12/dist-packages/vllm/v1/attention/backends/rocm_attn.py
+/usr/local/lib/python3.12/dist-packages/vllm/distributed/device_communicators/__pycache__/all2all.cpython-312.pyc
+/usr/local/lib/python3.12/dist-packages/vllm/transformers_utils/configs/speculators/algos.py
+/usr/local/lib/python3.12/dist-packages/vllm/transformers_utils/configs/speculators/__pycache__/algos.cpython-312.pyc
+/usr/local/lib/python3.12/dist-packages/vllm/transformers_utils/configs/eagle.py
+/usr/local/lib/python3.12/dist-packages/vllm/transformers_utils/configs/__pycache__/eagle.cpython-312.pyc
+/usr/local/lib/python3.12/dist-packages/vllm/config/speculative.py
+/usr/local/lib/python3.12/dist-packages/vllm/config/__pycache__/speculative.cpython-312.pyc
+
+### every file's causal / dflash_config / non_causal lines (with context)
+==================== /usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/qwen3_dflash.py ====================
+37-
+38-from .qwen2 import Qwen2MLP as Qwen3MLP
+39:from .qwen3 import Qwen3ForCausalLM
+40-from .utils import (
+41-    AutoWeightsLoader,
+42-    get_draft_quant_config,
+--
+229-
+230-        drafter_config = getattr(self.config, "eagle_config", {})
+231:        drafter_config.update(getattr(self.config, "dflash_config", {}))
+232-
+233-        if drafter_config is not None and "use_aux_hidden_state" in drafter_config:
+234-            self.use_aux_hidden_state = drafter_config["use_aux_hidden_state"]
+--
+501-
+502-
+503:class DFlashQwen3ForCausalLM(Qwen3ForCausalLM):
+504-    def __init__(self, *, vllm_config: VllmConfig, prefix: str = ""):
+505-        nn.Module.__init__(self)
+506-        self.config = vllm_config.speculative_config.draft_model_config.hf_config
+
+==================== /usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/registry.py ====================
+71-_TEXT_GENERATION_MODELS = {
+72-    # [Decoder-only]
+73:    "AfmoeForCausalLM": ("afmoe", "AfmoeForCausalLM"),
+74:    "ApertusForCausalLM": ("apertus", "ApertusForCausalLM"),
+75:    "AquilaModel": ("llama", "LlamaForCausalLM"),
+76:    "AquilaForCausalLM": ("llama", "LlamaForCausalLM"),  # AquilaChat2
+77:    "ArceeForCausalLM": ("arcee", "ArceeForCausalLM"),
+78:    "ArcticForCausalLM": ("arctic", "ArcticForCausalLM"),
+79:    "AXK1ForCausalLM": ("AXK1", "AXK1ForCausalLM"),
+80-    # baichuan-7b, upper case 'C' in the class name
+81:    "BaiChuanForCausalLM": ("baichuan", "BaiChuanForCausalLM"),
+82-    # baichuan-13b, lower case 'c' in the class name
+83:    "BaichuanForCausalLM": ("baichuan", "BaichuanForCausalLM"),
+84:    "BailingMoeForCausalLM": ("bailing_moe", "BailingMoeForCausalLM"),
+85:    "BailingMoeV2ForCausalLM": ("bailing_moe", "BailingMoeV2ForCausalLM"),
+86:    "BailingMoeV2_5ForCausalLM": ("bailing_moe_linear", "BailingMoeV25ForCausalLM"),
+87:    "BambaForCausalLM": ("bamba", "BambaForCausalLM"),
+88:    "BloomForCausalLM": ("bloom", "BloomForCausalLM"),
+89:    "ChatGLMModel": ("chatglm", "ChatGLMForCausalLM"),
+90:    "ChatGLMForConditionalGeneration": ("chatglm", "ChatGLMForCausalLM"),
+91:    "CohereForCausalLM": ("commandr", "CohereForCausalLM"),
+92:    "Cohere2ForCausalLM": ("commandr", "CohereForCausalLM"),
+93:    "Cohere2MoeForCausalLM": ("cohere2_moe", "Cohere2MoeForCausalLM"),
+94:    "CwmForCausalLM": ("llama", "LlamaForCausalLM"),
+95:    "DbrxForCausalLM": ("dbrx", "DbrxForCausalLM"),
+96:    "DeciLMForCausalLM": ("nemotron_nas", "DeciLMForCausalLM"),
+97:    "DeepseekForCausalLM": ("deepseek_v2", "DeepseekForCausalLM"),
+98:    "DeepseekV2ForCausalLM": ("deepseek_v2", "DeepseekV2ForCausalLM"),
+99:    "DeepseekV3ForCausalLM": ("deepseek_v2", "DeepseekV3ForCausalLM"),
+100:    "DeepseekV32ForCausalLM": ("deepseek_v2", "DeepseekV3ForCausalLM"),
+101:    "DeepseekV4ForCausalLM": ("vllm.models.deepseek_v4", "DeepseekV4ForCausalLM"),
+102:    "Dots1ForCausalLM": ("dots1", "Dots1ForCausalLM"),
+103:    "Ernie4_5ForCausalLM": ("ernie45", "Ernie4_5ForCausalLM"),
+104:    "Ernie4_5_MoeForCausalLM": ("ernie45_moe", "Ernie4_5_MoeForCausalLM"),
+105:    "ExaoneForCausalLM": ("exaone", "ExaoneForCausalLM"),
+106:    "Exaone4ForCausalLM": ("exaone4", "Exaone4ForCausalLM"),
+107:    "ExaoneMoEForCausalLM": ("exaone_moe", "ExaoneMoeForCausalLM"),
+108:    "Fairseq2LlamaForCausalLM": ("fairseq2_llama", "Fairseq2LlamaForCausalLM"),
+109:    "FalconForCausalLM": ("falcon", "FalconForCausalLM"),
+110:    "FalconMambaForCausalLM": ("mamba", "MambaForCausalLM"),
+111:    "FalconH1ForCausalLM": ("falcon_h1", "FalconH1ForCausalLM"),
+112:    "FlexOlmoForCausalLM": ("flex_olmo", "FlexOlmoForCausalLM"),
+113:    "GemmaForCausalLM": ("gemma", "GemmaForCausalLM"),
+114:    "Gemma2ForCausalLM": ("gemma2", "Gemma2ForCausalLM"),
+115:    "Gemma3ForCausalLM": ("gemma3", "Gemma3ForCausalLM"),
+116:    "Rnj1ForCausalLM": ("rnj1", "Rnj1ForCausalLM"),
+117:    "Gemma3nForCausalLM": ("gemma3n", "Gemma3nForCausalLM"),
+118:    "Gemma4ForCausalLM": ("gemma4", "Gemma4ForCausalLM"),
+119:    "Qwen3NextForCausalLM": ("qwen3_next", "Qwen3NextForCausalLM"),
+120:    "GlmForCausalLM": ("glm", "GlmForCausalLM"),
+121:    "Glm4ForCausalLM": ("glm4", "Glm4ForCausalLM"),
+122:    "Glm4MoeForCausalLM": ("glm4_moe", "Glm4MoeForCausalLM"),
+123:    "Glm4MoeLiteForCausalLM": ("glm4_moe_lite", "Glm4MoeLiteForCausalLM"),
+124:    "GlmMoeDsaForCausalLM": ("deepseek_v2", "GlmMoeDsaForCausalLM"),
+125:    "GptOssForCausalLM": ("gpt_oss", "GptOssForCausalLM"),
+126-    "GPT2LMHeadModel": ("gpt2", "GPT2LMHeadModel"),
+127:    "GPTBigCodeForCausalLM": ("gpt_bigcode", "GPTBigCodeForCausalLM"),
+128:    "GPTJForCausalLM": ("gpt_j", "GPTJForCausalLM"),
+129:    "GPTNeoXForCausalLM": ("gpt_neox", "GPTNeoXForCausalLM"),
+130:    "GraniteForCausalLM": ("granite", "GraniteForCausalLM"),
+131:    "GraniteMoeForCausalLM": ("granitemoe", "GraniteMoeForCausalLM"),
+132:    "GraniteMoeHybridForCausalLM": ("granitemoehybrid", "GraniteMoeHybridForCausalLM"),
+133:    "GraniteMoeSharedForCausalLM": ("granitemoeshared", "GraniteMoeSharedForCausalLM"),
+134-    "GritLM": ("gritlm", "GritLM"),
+135:    "Grok1ModelForCausalLM": ("grok1", "GrokForCausalLM"),
+136:    "Grok1ForCausalLM": ("grok1", "GrokForCausalLM"),
+137:    "HunYuanMoEV1ForCausalLM": ("hunyuan_v1", "HunYuanMoEV1ForCausalLM"),
+138:    "HunYuanDenseV1ForCausalLM": ("hunyuan_v1", "HunYuanDenseV1ForCausalLM"),
+139:    "HYV3ForCausalLM": ("hy_v3", "HYV3ForCausalLM"),
+140:    "HCXVisionForCausalLM": ("hyperclovax_vision", "HCXVisionForCausalLM"),
+141:    "HCXVisionV2ForCausalLM": ("hyperclovax_vision_v2", "HCXVisionV2ForCausalLM"),
+142:    "HyperCLOVAXForCausalLM": ("hyperclovax", "HyperCLOVAXForCausalLM"),
+143:    "InternLMForCausalLM": ("llama", "LlamaForCausalLM"),
+144:    "InternLM2ForCausalLM": ("internlm2", "InternLM2ForCausalLM"),
+145:    "InternLM2VEForCausalLM": ("internlm2_ve", "InternLM2VEForCausalLM"),
+146:    "InternLM3ForCausalLM": ("llama", "LlamaForCausalLM"),
+147:    "IQuestCoderForCausalLM": ("llama", "LlamaForCausalLM"),
+148:    "IQuestLoopCoderForCausalLM": ("iquest_loopcoder", "IQuestLoopCoderForCausalLM"),
+149-    "JAISLMHeadModel": ("jais", "JAISLMHeadModel"),
+150:    "Jais2ForCausalLM": ("jais2", "Jais2ForCausalLM"),
+151:    "JambaForCausalLM": ("jamba", "JambaForCausalLM"),
+152:    "KimiLinearForCausalLM": ("kimi_linear", "KimiLinearForCausalLM"),
+153:    "Lfm2ForCausalLM": ("lfm2", "Lfm2ForCausalLM"),
+154:    "Lfm2MoeForCausalLM": ("lfm2_moe", "Lfm2MoeForCausalLM"),
+155:    "LagunaForCausalLM": ("laguna", "LagunaForCausalLM"),
+156:    "LlamaForCausalLM": ("llama", "LlamaForCausalLM"),
+157:    "Llama4ForCausalLM": ("llama4", "Llama4ForCausalLM"),
+158-    # For decapoda-research/llama-*
+159:    "LLaMAForCausalLM": ("llama", "LlamaForCausalLM"),
+160:    "LongcatFlashForCausalLM": ("longcat_flash", "LongcatFlashForCausalLM"),
+161:    "MambaForCausalLM": ("mamba", "MambaForCausalLM"),
+162:    "Mamba2ForCausalLM": ("mamba2", "Mamba2ForCausalLM"),
+163:    "MiniCPMForCausalLM": ("minicpm", "MiniCPMForCausalLM"),
+164:    "MiniCPM3ForCausalLM": ("minicpm3", "MiniCPM3ForCausalLM"),
+165:    "MiniMaxForCausalLM": ("minimax_text_01", "MiniMaxText01ForCausalLM"),
+166:    "MiniMaxText01ForCausalLM": ("minimax_text_01", "MiniMaxText01ForCausalLM"),
+167:    "MiniMaxM1ForCausalLM": ("minimax_text_01", "MiniMaxText01ForCausalLM"),
+168:    "MiniMaxM2ForCausalLM": ("minimax_m2", "MiniMaxM2ForCausalLM"),
+169:    "Ministral3ForCausalLM": ("mistral", "MistralForCausalLM"),
+170:    "MistralForCausalLM": ("mistral", "MistralForCausalLM"),
+171:    "MistralLarge3ForCausalLM": ("mistral_large_3", "MistralLarge3ForCausalLM"),
+172:    "MixtralForCausalLM": ("mixtral", "MixtralForCausalLM"),
+173-    # transformers's mpt class has lower case
+174:    "MptForCausalLM": ("mpt", "MPTForCausalLM"),
+175:    "MPTForCausalLM": ("mpt", "MPTForCausalLM"),
+176:    "MiMoForCausalLM": ("mimo", "MiMoForCausalLM"),
+177:    "MiMoV2FlashForCausalLM": ("mimo_v2", "MiMoV2FlashForCausalLM"),
+178:    "MiMoV2ForCausalLM": ("mimo_v2", "MiMoV2ForCausalLM"),
+179:    "NemotronForCausalLM": ("nemotron", "NemotronForCausalLM"),
+180:    "NemotronHForCausalLM": ("nemotron_h", "NemotronHForCausalLM"),
+181:    "NemotronHPuzzleForCausalLM": ("nemotron_h", "NemotronHForCausalLM"),
+182:    "OlmoForCausalLM": ("olmo", "OlmoForCausalLM"),
+183:    "Olmo2ForCausalLM": ("olmo2", "Olmo2ForCausalLM"),
+184:    "Olmo3ForCausalLM": ("olmo2", "Olmo2ForCausalLM"),
+185:    "OlmoHybridForCausalLM": ("olmo_hybrid", "OlmoHybridForCausalLM"),
+186:    "OlmoeForCausalLM": ("olmoe", "OlmoeForCausalLM"),
+187:    "OPTForCausalLM": ("opt", "OPTForCausalLM"),
+188:    "OrionForCausalLM": ("orion", "OrionForCausalLM"),
+189:    "OuroForCausalLM": ("ouro", "OuroForCausalLM"),
+190:    "PanguEmbeddedForCausalLM": ("openpangu", "PanguEmbeddedForCausalLM"),
+191:    "PanguProMoEV2ForCausalLM": ("openpangu", "PanguProMoEV2ForCausalLM"),
+192:    "PanguUltraMoEForCausalLM": ("openpangu", "PanguUltraMoEForCausalLM"),
+193:    "Param2MoEForCausalLM": ("param2moe", "Param2MoEForCausalLM"),
+194:    "PersimmonForCausalLM": ("persimmon", "PersimmonForCausalLM"),
+195:    "PhiForCausalLM": ("phi", "PhiForCausalLM"),
+196:    "Phi3ForCausalLM": ("phi3", "Phi3ForCausalLM"),
+197:    "PhiMoEForCausalLM": ("phimoe", "PhiMoEForCausalLM"),
+198:    "Plamo2ForCausalLM": ("plamo2", "Plamo2ForCausalLM"),
+199:    "Plamo3ForCausalLM": ("plamo3", "Plamo3ForCausalLM"),
+200-    "QWenLMHeadModel": ("qwen", "QWenLMHeadModel"),
+201:    "Qwen2ForCausalLM": ("qwen2", "Qwen2ForCausalLM"),
+202:    "Qwen2MoeForCausalLM": ("qwen2_moe", "Qwen2MoeForCausalLM"),
+203:    "Qwen3ForCausalLM": ("qwen3", "Qwen3ForCausalLM"),
+204:    "Qwen3MoeForCausalLM": ("qwen3_moe", "Qwen3MoeForCausalLM"),
+205:    "RWForCausalLM": ("falcon", "FalconForCausalLM"),
+206:    "SarvamMoEForCausalLM": ("sarvam", "SarvamMoEForCausalLM"),
+207:    "SarvamMLAForCausalLM": ("sarvam", "SarvamMLAForCausalLM"),
+208:    "SeedOssForCausalLM": ("seed_oss", "SeedOssForCausalLM"),
+209:    "Step1ForCausalLM": ("step1", "Step1ForCausalLM"),
+210:    "Step3TextForCausalLM": ("step3_text", "Step3TextForCausalLM"),
+211:    "Step3p5ForCausalLM": ("step3p5", "Step3p5ForCausalLM"),
+212:    "StableLMEpochForCausalLM": ("stablelm", "StablelmForCausalLM"),
+213:    "StableLmForCausalLM": ("stablelm", "StablelmForCausalLM"),
+214:    "Starcoder2ForCausalLM": ("starcoder2", "Starcoder2ForCausalLM"),
+215:    "SolarForCausalLM": ("solar", "SolarForCausalLM"),
+216:    "TeleChatForCausalLM": ("telechat2", "TeleChat2ForCausalLM"),
+217:    "TeleChat2ForCausalLM": ("telechat2", "TeleChat2ForCausalLM"),
+218:    "TeleChat3ForCausalLM": ("llama", "LlamaForCausalLM"),
+219:    "TeleFLMForCausalLM": ("teleflm", "TeleFLMForCausalLM"),
+220:    "XverseForCausalLM": ("llama", "LlamaForCausalLM"),
+221:    "Zamba2ForCausalLM": ("zamba2", "Zamba2ForCausalLM"),
+222-}
+223-
+224-_EMBEDDING_MODELS = {
+--
+228-    "ErnieModel": ("ernie", "ErnieEmbeddingModel"),
+229-    "BgeM3EmbeddingModel": ("roberta", "BgeM3EmbeddingModel"),
+230:    "DeciLMForCausalLM": ("nemotron_nas", "DeciLMForCausalLM"),
+231:    "Gemma2Model": ("gemma2", "Gemma2ForCausalLM"),
+232-    "Gemma3TextModel": ("gemma3", "Gemma3Model"),
+233:    "GlmForCausalLM": ("glm", "GlmForCausalLM"),
+234-    "GritLM": ("gritlm", "GritLM"),
+235-    "GteModel": ("bert_with_rope", "SnowflakeGteNewModel"),
+236-    "GteNewModel": ("bert_with_rope", "GteNewModel"),
+237-    "JinaEmbeddingsV5Model": ("jina", "JinaEmbeddingsV5Model"),
+238-    "LlamaBidirectionalModel": ("llama", "LlamaBidirectionalModel"),
+239:    "LlamaModel": ("llama", "LlamaForCausalLM"),
+240-    **{
+241-        # Multiple models share the same architecture, so we include them all
+242-        k: (mod, arch)
+243-        for k, (mod, arch) in _TEXT_GENERATION_MODELS.items()
+244:        if arch == "LlamaForCausalLM"
+245-    },
+246:    "MistralModel": ("llama", "LlamaForCausalLM"),
+247-    "ModernBertModel": ("modernbert", "ModernBertModel"),
+248-    "NomicBertModel": ("bert_with_rope", "NomicBertModel"),
+249:    "Phi3ForCausalLM": ("phi3", "Phi3ForCausalLM"),
+250:    "Qwen2Model": ("qwen2", "Qwen2ForCausalLM"),
+251:    "Qwen2ForCausalLM": ("qwen2", "Qwen2ForCausalLM"),
+252-    "RobertaForMaskedLM": ("roberta", "RobertaEmbeddingModel"),
+253-    "RobertaModel": ("roberta", "RobertaEmbeddingModel"),
+254:    "TeleChatForCausalLM": ("telechat2", "TeleChat2ForCausalLM"),
+255:    "TeleChat2ForCausalLM": ("telechat2", "TeleChat2ForCausalLM"),
+256-    "VoyageQwen3BidirectionalEmbedModel": (
+257-        "voyage",
+258-        "VoyageQwen3BidirectionalEmbedModel",
+--
+267-        "LlavaNextForConditionalGeneration",
+268-    ),
+269:    "Phi3VForCausalLM": ("phi3v", "Phi3VForCausalLM"),
+270-    "Qwen2VLForConditionalGeneration": ("qwen2_vl", "Qwen2VLForConditionalGeneration"),
+271-    "SiglipModel": ("siglip", "SiglipEmbeddingModel"),
+272-    # Technically Terratorch models work on images, both in
+--
+370-        "Cohere2VisionForConditionalGeneration",
+371-    ),
+372:    "DeepseekVLV2ForCausalLM": ("deepseek_vl2", "DeepseekVLV2ForCausalLM"),
+373:    "DeepseekOCRForCausalLM": ("deepseek_ocr", "DeepseekOCRForCausalLM"),
+374:    "DeepseekOCR2ForCausalLM": ("deepseek_ocr2", "DeepseekOCR2ForCausalLM"),
+375:    "DotsOCRForCausalLM": ("dots_ocr", "DotsOCRForCausalLM"),
+376-    "Eagle2_5_VLForConditionalGeneration": (
+377-        "eagle2_5_vl",
+378-        "Eagle2_5_VLForConditionalGeneration",
+--
+399-        "FunAudioChatForConditionalGeneration",
+400-    ),
+401:    "FuyuForCausalLM": ("fuyu", "FuyuForCausalLM"),
+402-    "Gemma3ForConditionalGeneration": ("gemma3_mm", "Gemma3ForConditionalGeneration"),
+403-    "Gemma3nForConditionalGeneration": (
+404-        "gemma3n_mm",
+--
+407-    "Gemma4ForConditionalGeneration": ("gemma4_mm", "Gemma4ForConditionalGeneration"),
+408-    "GlmAsrForConditionalGeneration": ("glmasr", "GlmAsrForConditionalGeneration"),
+409:    "GLM4VForCausalLM": ("glm4v", "GLM4VForCausalLM"),
+410-    "Glm4vForConditionalGeneration": ("glm4_1v", "Glm4vForConditionalGeneration"),
+411-    "Glm4vMoeForConditionalGeneration": ("glm4_1v", "Glm4vMoeForConditionalGeneration"),
+412-    "GlmOcrForConditionalGeneration": ("glm_ocr", "GlmOcrForConditionalGeneration"),
+--
+454-    "KimiVLForConditionalGeneration": ("kimi_vl", "KimiVLForConditionalGeneration"),
+455-    "KimiK25ForConditionalGeneration": ("kimi_k25", "KimiK25ForConditionalGeneration"),
+456:    "MoonshotKimiaForCausalLM": ("kimi_audio", "KimiAudioForConditionalGeneration"),
+457-    "LightOnOCRForConditionalGeneration": (
+458-        "lightonocr",
+459-        "LightOnOCRForConditionalGeneration",
+--
+477-    "MantisForConditionalGeneration": ("llava", "MantisForConditionalGeneration"),
+478-    "MiDashengLMModel": ("midashenglm", "MiDashengLMModel"),
+479:    "MiMoV2OmniForCausalLM": ("mimo_v2_omni", "MiMoV2OmniForCausalLM"),
+480-    "MiniMaxVL01ForConditionalGeneration": (
+481-        "minimax_vl_01",
+482-        "MiniMaxVL01ForConditionalGeneration",
+--
+492-        "Mistral3ForConditionalGeneration",
+493-    ),
+494:    "MolmoForCausalLM": ("molmo", "MolmoForCausalLM"),
+495-    "Molmo2ForConditionalGeneration": ("molmo2", "Molmo2ForConditionalGeneration"),
+496:    "Moondream3ForCausalLM": ("moondream3", "Moondream3ForCausalLM"),
+497:    "HfMoondream": ("moondream3", "Moondream3ForCausalLM"),
+498-    "NemotronH_Nano_VL_V2": ("nano_nemotron_vl", "NemotronH_Nano_VL_V2"),
+499-    "NemotronH_Nano_Omni_Reasoning_V3": ("nano_nemotron_vl", "NemotronH_Nano_VL_V2"),
+500-    "NemotronH_Super_Omni_Reasoning_V3": ("nano_nemotron_vl", "NemotronH_Nano_VL_V2"),
+--
+508-    "Ovis": ("ovis", "Ovis"),
+509-    "Ovis2_5": ("ovis2_5", "Ovis2_5"),
+510:    "Ovis2_6ForCausalLM": ("ovis2_5", "Ovis2_5"),
+511:    "Ovis2_6_MoeForCausalLM": ("ovis2_5", "Ovis2_5"),
+512-    "PaddleOCRVLForConditionalGeneration": (
+513-        "paddleocr_vl",
+514-        "PaddleOCRVLForConditionalGeneration",
+--
+518-        "PaliGemmaForConditionalGeneration",
+519-    ),
+520:    "Phi3VForCausalLM": ("phi3v", "Phi3VForCausalLM"),
+521:    "Phi4ForCausalLMV": ("phi4siglip", "Phi4ForCausalLMV"),
+522:    "Phi4MMForCausalLM": ("phi4mm", "Phi4MMForCausalLM"),
+523-    "PixtralForConditionalGeneration": ("pixtral", "PixtralForConditionalGeneration"),
+524-    "QianfanOCRForConditionalGeneration": (
+525-        "qianfan_ocr",
+--
+593-    "MiMoV2MTPModel": ("mimo_v2_mtp", "MiMoV2MTP"),
+594-    "MiMoV2OmniMTPModel": ("mimo_v2_mtp", "MiMoV2OmniMTP"),
+595:    "EagleCohereForCausalLM": ("cohere_eagle", "EagleCohereForCausalLM"),
+596:    "EagleLlamaForCausalLM": ("llama_eagle", "EagleLlamaForCausalLM"),
+597:    "EagleLlama4ForCausalLM": ("llama4_eagle", "EagleLlama4ForCausalLM"),
+598:    "EagleMiniCPMForCausalLM": ("minicpm_eagle", "EagleMiniCPMForCausalLM"),
+599:    "DFlashDraftModel": ("qwen3_dflash", "DFlashQwen3ForCausalLM"),
+600:    "PEagleDraftModel": ("llama_eagle3", "Eagle3LlamaForCausalLM"),
+601:    "PeagleLlamaForCausalLM": ("llama_eagle3", "Eagle3LlamaForCausalLM"),
+602:    "Eagle3LlamaForCausalLM": ("llama_eagle3", "Eagle3LlamaForCausalLM"),
+603:    "Eagle3MiniMaxM2ForCausalLM": ("llama_eagle3", "Eagle3LlamaForCausalLM"),
+604:    "LlamaForCausalLMEagle3": ("llama_eagle3", "Eagle3LlamaForCausalLM"),
+605:    "Eagle3Qwen2_5vlForCausalLM": ("llama_eagle3", "Eagle3LlamaForCausalLM"),
+606:    "Eagle3Qwen3vlForCausalLM": ("llama_eagle3", "Eagle3LlamaForCausalLM"),
+607:    "EagleMistralForCausalLM": ("mistral_eagle", "EagleMistralForCausalLM"),
+608:    "EagleMistralLarge3ForCausalLM": (
+609-        "mistral_large_3_eagle",
+610:        "EagleMistralLarge3ForCausalLM",
+611-    ),
+612:    "Eagle3DeepseekV2ForCausalLM": ("deepseek_eagle3", "Eagle3DeepseekV2ForCausalLM"),
+613:    "Eagle3DeepseekV3ForCausalLM": ("deepseek_eagle3", "Eagle3DeepseekV2ForCausalLM"),
+614:    "EagleDeepSeekMTPModel": ("deepseek_eagle", "EagleDeepseekV3ForCausalLM"),
+615-    "DeepSeekMTPModel": ("deepseek_mtp", "DeepSeekMTP"),
+616-    "DeepSeekV4MTPModel": ("vllm.models.deepseek_v4", "DeepSeekV4MTP"),
+617-    "Gemma4MTPModel": ("gemma4_mtp", "Gemma4MTP"),
+--
+638-_TRANSFORMERS_SUPPORTED_MODELS = {
+639-    # Text generation models
+640:    "SmolLM3ForCausalLM": ("transformers", "TransformersForCausalLM"),
+641-    # Multimodal models
+642-    "Emu3ForConditionalGeneration": (
+643-        "transformers",
+644:        "TransformersMultiModalForCausalLM",
+645-    ),
+646-}
+647-
+648-_TRANSFORMERS_BACKEND_MODELS = {
+649-    # Text generation models
+650:    "TransformersForCausalLM": ("transformers", "TransformersForCausalLM"),
+651:    "TransformersMoEForCausalLM": ("transformers", "TransformersMoEForCausalLM"),
+652-    # Multimodal models
+653:    "TransformersMultiModalForCausalLM": (
+654-        "transformers",
+655:        "TransformersMultiModalForCausalLM",
+656-    ),
+657:    "TransformersMultiModalMoEForCausalLM": (
+658-        "transformers",
+659:        "TransformersMultiModalMoEForCausalLM",
+660-    ),
+661-    # Embedding models
+662-    "TransformersEmbeddingModel": ("transformers", "TransformersEmbeddingModel"),
+--
+701-
+702-_PREVIOUSLY_SUPPORTED_MODELS = {
+703:    "MotifForCausalLM": "0.10.2",
+704:    "Phi3SmallForCausalLM": "0.9.2",
+705:    "Phi4FlashForCausalLM": "0.10.2",
+706:    "Phi4MultimodalForCausalLM": "0.12.0",
+707-    # encoder-decoder models except whisper
+708-    # have been removed for V0 deprecation.
+709-    "DonutForConditionalGeneration": "0.10.2",
+
+==================== /usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/__pycache__/registry.cpython-312.pyc ====================
+grep: /usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/__pycache__/registry.cpython-312.pyc: binary file matches
+
+==================== /usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/__pycache__/qwen3_dflash.cpython-312.pyc ====================
+grep: /usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/__pycache__/qwen3_dflash.cpython-312.pyc: binary file matches
+
+==================== /usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu_model_runner.py ====================
+2291-            block_table_tensor=block_table_gid_0,
+2292-            slot_mapping=slot_mapping_gid_0,
+2293:            causal=True,
+2294-            is_prefilling=is_prefilling,
+2295-            positions=self.positions[:num_tokens_padded],
+2296-        )
+--
+5241-        layer_ids = getattr(hf_config, "eagle_aux_hidden_state_layer_ids", None)
+5242-        if not layer_ids:
+5243:            dflash_config = getattr(hf_config, "dflash_config", None)
+5244-            eagle_config = getattr(hf_config, "eagle_config", None)
+5245-
+5246:            if dflash_config and isinstance(dflash_config, dict):
+5247-                # Add 1 to convert DFlash's aux layer id semantics
+5248-                layer_ids = [
+5249:                    i + 1 for i in (dflash_config.get("target_layer_ids") or [])
+5250-                ]
+5251-
+5252-            if eagle_config and isinstance(eagle_config, dict):
+
+==================== /usr/local/lib/python3.12/dist-packages/vllm/v1/worker/__pycache__/gpu_model_runner.cpython-312.pyc ====================
+grep: /usr/local/lib/python3.12/dist-packages/vllm/v1/worker/__pycache__/gpu_model_runner.cpython-312.pyc: binary file matches
+
+==================== /usr/local/lib/python3.12/dist-packages/vllm/v1/spec_decode/dflash.py ====================
+76-            attention_config=replace(
+77-                base.attention_config,
+78:                use_non_causal=True,
+79-            ),
+80-        )
+81-
+--
+185-            block_table_tensor=cad.block_table_tensor,
+186-            slot_mapping=query_slot_mapping,
+187:            causal=False,  # Non-causal attention is required for DFlash
+188-        )
+189-
+190-        return num_query_total, token_indices_to_sample, new_cad
+--
+283-        )
+284-        for layer_name, attn_metadata in per_layer.items():
+285:            assert getattr(attn_metadata, "causal", None) is False, (
+286-                f"Attention metadata for layer {layer_name} does not have"
+287:                " non-causal support, which is required for DFlash."
+288-                " Consider using a different attention backend, such as FlashAttention."
+289-            )
+290-        return per_group, per_layer
+--
+293-    def _get_eagle3_use_aux_hidden_state_from_config(self):
+294-        use_aux_hidden_state = True
+295:        dflash_config = getattr(
+296:            self.draft_model_config.hf_config, "dflash_config", None
+297-        )
+298:        if dflash_config is not None:
+299:            use_aux_hidden_state = dflash_config.get("use_aux_hidden_state", True)
+300-        return use_aux_hidden_state
+
+==================== /usr/local/lib/python3.12/dist-packages/vllm/v1/spec_decode/llm_base_proposer.py ====================
+20-from vllm.model_executor.model_loader import get_model
+21-from vllm.model_executor.models import supports_multimodal
+22:from vllm.model_executor.models.deepseek_eagle3 import Eagle3DeepseekV2ForCausalLM
+23-from vllm.model_executor.models.interfaces import SupportsMultiModal
+24:from vllm.model_executor.models.llama_eagle3 import Eagle3LlamaForCausalLM
+25:from vllm.model_executor.models.qwen3_dflash import DFlashQwen3ForCausalLM
+26-from vllm.multimodal import MULTIMODAL_REGISTRY
+27-from vllm.platforms import current_platform
+28-from vllm.utils.platform_utils import is_pin_memory_available
+--
+320-
+321-        model_hf_config = self.draft_model_config.hf_config
+322:        # DFlash stores mask_token_id in dflash_config
+323:        dflash_config = getattr(model_hf_config, "dflash_config", None)
+324:        if dflash_config and "mask_token_id" in dflash_config:
+325:            self.parallel_drafting_token_id = dflash_config["mask_token_id"]
+326-        elif hasattr(model_hf_config, "pard_token"):
+327-            self.parallel_drafting_token_id = model_hf_config.pard_token
+328-        elif hasattr(model_hf_config, "ptd_token_id"):
+--
+332-                "For parallel drafting, the draft model config must have "
+333-                "`pard_token`, `ptd_token_id`, or "
+334:                "`dflash_config.mask_token_id` specified in its config.json."
+335-            )
+336-
+337-        if self.pass_hidden_states_to_model:
+--
+451-                self.model,
+452-                (
+453:                    Eagle3LlamaForCausalLM,
+454:                    Eagle3DeepseekV2ForCausalLM,
+455:                    DFlashQwen3ForCausalLM,
+456-                ),
+457-            )
+458-            target_hidden_states = self.model.combine_hidden_states(
+--
+1015-            block_table_tensor=common_attn_metadata.block_table_tensor,
+1016-            slot_mapping=common_attn_metadata.slot_mapping[:total_num_tokens],
+1017:            causal=True,
+1018-            dcp_local_seq_lens=common_attn_metadata.dcp_local_seq_lens,
+1019-        )
+1020-
+--
+1126-            block_table_tensor=common_attn_metadata.block_table_tensor,
+1127-            slot_mapping=common_attn_metadata.slot_mapping[token_indices],
+1128:            causal=True,
+1129-            dcp_local_seq_lens=common_attn_metadata.dcp_local_seq_lens,
+1130-        )
+1131-
+--
+1226-                "HunYuanVLForConditionalGeneration",
+1227-                "InternS2PreviewForConditionalGeneration",
+1228:                "MiMoV2OmniForCausalLM",
+1229-                "Qwen2_5_VLForConditionalGeneration",
+1230-                "Qwen3_5ForConditionalGeneration",
+1231-                "Qwen3_5MoeForConditionalGeneration",
+
+==================== /usr/local/lib/python3.12/dist-packages/vllm/v1/spec_decode/__pycache__/dflash.cpython-312.pyc ====================
+grep: /usr/local/lib/python3.12/dist-packages/vllm/v1/spec_decode/__pycache__/dflash.cpython-312.pyc: binary file matches
+
+==================== /usr/local/lib/python3.12/dist-packages/vllm/v1/spec_decode/__pycache__/llm_base_proposer.cpython-312.pyc ====================
+grep: /usr/local/lib/python3.12/dist-packages/vllm/v1/spec_decode/__pycache__/llm_base_proposer.cpython-312.pyc: binary file matches
+
+==================== /usr/local/lib/python3.12/dist-packages/vllm/v1/attention/ops/prefix_prefill.py ====================
+90-    USE_SINKS: tl.constexpr,
+91-    USE_FP8: tl.constexpr,
+92:    CAUSAL: tl.constexpr = True,
+93-    MAX_Q_LEN: tl.constexpr = 0,
+94-    MAX_CTX_LEN: tl.constexpr = 0,
+95-    FP8_MIN: tl.constexpr = float8_info.min,
+--
+155-    acc = tl.zeros([BLOCK_M, BLOCK_DMODEL_PADDED], dtype=tl.float32)  # [M,D]
+156-
+157:    # compute query against context (no causal mask here)
+158-    for start_n in tl.range(
+159-        0, cur_batch_ctx_len, BLOCK_SIZE, loop_unroll_factor=num_unroll_cache
+160-    ):
+--
+285-    block_mask = tl.where(block_start_loc < cur_batch_query_len, 1, 0)
+286-
+287:    # compute query against itself (causal among queries by default;
+288:    # CAUSAL=False for bidirectional attention over query tokens, e.g. DFlash.)
+289:    if CAUSAL:
+290-        key_range_upper = block_mask * (start_m + 1) * BLOCK_M
+291-    else:
+292-        q_len_pad = (cur_batch_query_len + BLOCK_N - 1) // BLOCK_N * BLOCK_N
+--
+313-
+314-        valid_kv = (start_n + offs_n[None, :]) < cur_batch_query_len
+315:        if CAUSAL:
+316-            attn_mask = valid_kv & (offs_m[:, None] >= (start_n + offs_n[None, :]))
+317-        else:
+318-            attn_mask = valid_kv
+--
+668-    sinks=None,
+669-    is_block_table_ptr: bool = False,
+670:    causal: bool = True,
+671-):
+672-    q_dtype_is_f32 = q.dtype is torch.float32
+673-
+--
+735-
+736-    if alibi_slopes is not None:
+737:        assert causal, "Non-causal prefix attention is not supported with alibi"
+738-        assert sinks is None, "Sinks arg is not supported with alibi"
+739-        assert fp8_out_scale is None, "FP8 output not supported with alibi"
+740-        # need to reduce num. blocks when using fp32
+--
+873-        num_stages=1,
+874-        USE_SINKS=sinks is not None,
+875:        CAUSAL=causal,
+876-        **extra_kargs,
+877-    )
+878-    return
+
+==================== /usr/local/lib/python3.12/dist-packages/vllm/v1/attention/backends/rocm_attn.py ====================
+71-
+72-    # DFlash drafting sets this to False via CommonAttentionMetadata.
+73:    causal: bool = True
+74-
+75-
+76-class RocmAttentionMetadataBuilder(AttentionMetadataBuilder[RocmAttentionMetadata]):
+--
+158-            suffix_kv_lens=suffix_kv_lens,
+159-            prefix_scheduler_metadata=prefix_scheduler_metadata,
+160:            causal=common_attn_metadata.causal,
+161-        )
+162-        return attn_metadata
+163-
+--
+206-
+207-    @classmethod
+208:    def supports_non_causal(cls) -> bool:
+209-        return True
+210-
+211-    forward_includes_kv_cache_update: bool = False
+--
+345-            b_seq_len=seq_lens,
+346-            max_input_len=max_query_len,
+347:            is_causal=False,
+348-            softmax_scale=self.scale,
+349-            sliding_window_q=self.sliding_window[0],
+350-            sliding_window_k=self.sliding_window[1],
+--
+447-            output_scale=output_scale,
+448-            sinks=self.sinks,
+449:            causal=attn_metadata.causal,
+450-        )
+451-
+452-        return output
+
+==================== /usr/local/lib/python3.12/dist-packages/vllm/transformers_utils/configs/speculators/algos.py ====================
+37-    )
+38-    pre_trained_config["norm_before_fc"] = config_dict.get("norm_before_fc", False)
+39:    pre_trained_config["architectures"] = ["Eagle3LlamaForCausalLM"]
+40-    if config_dict.get("eagle_aux_hidden_state_layer_ids"):
+41-        pre_trained_config["eagle_aux_hidden_state_layer_ids"] = config_dict[
+42-            "eagle_aux_hidden_state_layer_ids"
+--
+60-        whose intermediate hidden states are used as auxiliary inputs
+61-    """
+62:    pre_trained_config["architectures"] = ["PeagleLlamaForCausalLM"]
+63-    pre_trained_config["draft_vocab_size"] = config_dict.get("draft_vocab_size")
+64-    if config_dict.get("target_hidden_size") is not None:
+65-        pre_trained_config["target_hidden_size"] = config_dict["target_hidden_size"]
+--
+89-        model whose intermediate hidden states are used as context for the
+90-        DFlash drafter. Mapped to both eagle_aux_hidden_state_layer_ids
+91:        (for gpu_model_runner) and dflash_config.target_layer_ids (for the
+92-        DFlash model).
+93-    """
+94-    pre_trained_config["architectures"] = ["DFlashDraftModel"]
+--
+101-
+102-    # DFlash configs use different indexing for the target layers, see #40727
+103:    pre_trained_config["dflash_config"] = {
+104-        "mask_token_id": config_dict["mask_token_id"],
+105-        "target_layer_ids": [i - 1 for i in aux_layer_ids],
+106-    }
+
+==================== /usr/local/lib/python3.12/dist-packages/vllm/transformers_utils/configs/speculators/__pycache__/algos.cpython-312.pyc ====================
+grep: /usr/local/lib/python3.12/dist-packages/vllm/transformers_utils/configs/speculators/__pycache__/algos.cpython-312.pyc: binary file matches
+
+==================== /usr/local/lib/python3.12/dist-packages/vllm/transformers_utils/configs/eagle.py ====================
+41-
+42-        # Eagle model name should follow naming convention of
+43:        # LlamaForCausalLM -> EagleLlamaForCausalLM
+44:        # LlamaForCausalLM -> Eagle3LlamaForCausalLM
+45:        # LlamaForCausalLMEagle3 -> LlamaForCausalLMEagle3
+46-        if method == "eagle":
+47-            assert self.model is not None, (
+48-                "model should not be None when method is eagle"
+
+==================== /usr/local/lib/python3.12/dist-packages/vllm/config/speculative.py ====================
+112-    """Attention backend to use for the draft model. When `None`, the backend is
+113-    automatically selected. Useful when the drafter requires a different attention
+114:    backend (e.g. DFlash needs a non-causal-capable backend like FLASH_ATTN)."""
+115-    max_model_len: int | None = Field(default=None, ge=1)
+116-    """The maximum model length of the draft model. Used when testing the
+117-    ability to skip speculation for some sequences."""
+--
+326-            )
+327-
+328:        if hf_config.architectures[0] == "MiMoForCausalLM":
+329-            hf_config.model_type = "mimo_mtp"
+330-            n_predict = getattr(hf_config, "num_nextn_predict_layers", None)
+331-            hf_config.update(
+--
+338-
+339-        if (arch := hf_config.architectures[0]) in (
+340:            "MiMoV2ForCausalLM",
+341:            "MiMoV2OmniForCausalLM",
+342-        ):
+343-            from vllm.model_executor.models.mimo_v2_mtp import (
+344-                _MIMO_V2_PRO_NUM_MTP_LAYERS,
+--
+346-
+347-            mtp_arch_maps = {
+348:                "MiMoV2ForCausalLM": "MiMoV2MTPModel",
+349:                "MiMoV2OmniForCausalLM": "MiMoV2OmniMTPModel",
+350-            }
+351-
+352-            hf_config.model_type = "mimo_v2_mtp"
+--
+362-            )
+363-
+364:        if hf_config.architectures[0] == "MiMoV2FlashForCausalLM":
+365-            from vllm.model_executor.models.mimo_v2_mtp import (
+366-                _MIMO_V2_FLASH_NUM_MTP_LAYERS,
+367-            )
+--
+379-            )
+380-
+381:        if hf_config.architectures[0] == "Glm4MoeForCausalLM":
+382-            hf_config.model_type = "glm4_moe_mtp"
+383-            n_predict = getattr(hf_config, "num_nextn_predict_layers", None)
+384-            hf_config.update(
+--
+389-            )
+390-
+391:        if hf_config.architectures[0] == "Glm4MoeLiteForCausalLM":
+392-            hf_config.model_type = "glm4_moe_lite_mtp"
+393-            n_predict = getattr(hf_config, "num_nextn_predict_layers", None)
+394-            hf_config.update(
+--
+491-            hf_config.update({"n_predict": n_predict, "architectures": ["Step3p5MTP"]})
+492-
+493:        if initial_architecture == "MistralLarge3ForCausalLM":
+494:            hf_config.update({"architectures": ["EagleMistralLarge3ForCausalLM"]})
+495-
+496-        if hf_config.model_type == "hy_v3":
+497-            hf_config.model_type = "hy_v3_mtp"
+
+==================== /usr/local/lib/python3.12/dist-packages/vllm/config/__pycache__/speculative.cpython-312.pyc ====================
+grep: /usr/local/lib/python3.12/dist-packages/vllm/config/__pycache__/speculative.cpython-312.pyc: binary file matches
+
+
+### how the DFlash proposer reads config (spec_decode/dflash.py if present)
+==================== /usr/local/lib/python3.12/dist-packages/vllm/v1/spec_decode/dflash.py ====================
+21:class DFlashProposer(SpecDecodeBaseProposer):
+22:    def __init__(
+37:        # Only next_token_ids and mask tokens are query tokens, all other context is K/V
+38:        self.max_query_tokens = self.max_batch_size * (1 + self.num_speculative_tokens)
+68:        # For DFlash we use the input embeddings to embed the mask token
+78:                use_non_causal=True,
+99:        # Q from query embeddings (bonus + mask tokens).
+102:        num_query_per_req = 1 + self.num_speculative_tokens
+113:            batch_size * self.num_speculative_tokens,
+150:            num_speculative_tokens=self.num_speculative_tokens,
+187:            causal=False,  # Non-causal attention is required for DFlash
+220:            self._draft_attn_layer_names
+222:            and next(iter(self._draft_attn_layer_names)) in slot_mappings
+278:    def build_per_group_and_layer_attn_metadata(
+281:        per_group, per_layer = super().build_per_group_and_layer_attn_metadata(
+284:        for layer_name, attn_metadata in per_layer.items():
+285:            assert getattr(attn_metadata, "causal", None) is False, (
+287:                " non-causal support, which is required for DFlash."
+295:        dflash_config = getattr(
+296:            self.draft_model_config.hf_config, "dflash_config", None
+298:        if dflash_config is not None:
+299:            use_aux_hidden_state = dflash_config.get("use_aux_hidden_state", True)
+
+==================== /usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/qwen3_dflash.py ====================
+39:from .qwen3 import Qwen3ForCausalLM
+57:    def __init__(
+70:        attn_type: str = AttentionType.DECODER,
+112:        self.attn = Attention(
+119:            prefix=f"{prefix}.attn",
+120:            attn_type=attn_type,
+148:        attn_output = self.attn(q, k, v)
+149:        output, _ = self.o_proj(attn_output)
+154:    def __init__(
+166:        attn_type = AttentionType.DECODER
+168:        self.self_attn = DFlashQwen3Attention(
+179:            prefix=f"{prefix}.self_attn",
+180:            attn_type=attn_type,
+206:        hidden_states = self.self_attn(
+218:    def __init__(
+226:        self.config = vllm_config.speculative_config.draft_model_config.hf_config
+227:        self.vocab_size = self.config.vocab_size
+230:        drafter_config = getattr(self.config, "eagle_config", {})
+231:        drafter_config.update(getattr(self.config, "dflash_config", {}))
+241:            self.config.vocab_size,
+242:            self.config.hidden_size,
+250:                    config=self.config,
+255:                for layer_idx in range(self.config.num_hidden_layers)
+259:            num_features_to_use = self.config.num_hidden_layers
+264:            if hasattr(self.config, "target_hidden_size"):
+265:                fc_input_size = self.config.target_hidden_size * num_features_to_use
+267:                fc_input_size = self.config.hidden_size * num_features_to_use
+270:                output_size=self.config.hidden_size,
+278:            self.config.hidden_size,
+279:            eps=self.config.rms_norm_eps,
+282:            self.config.hidden_size,
+283:            eps=self.config.rms_norm_eps,
+297:        layers_attn = [layer.self_attn for layer in self.layers]
+298:        attn0 = layers_attn[0]
+299:        has_bias = attn0.qkv_proj.bias is not None
+304:        kv_weights = [a.qkv_proj.weight[a.q_size :] for a in layers_attn]
+307:            kv_biases = [a.qkv_proj.bias[a.q_size :] for a in layers_attn]
+313:        self._k_norm_weights = [a.k_norm.weight.data for a in layers_attn]
+316:        self._rope_head_size = attn0.rotary_emb.head_size
+317:        self._rope_cos_sin_cache = attn0.rotary_emb.cos_sin_cache
+318:        self._rope_is_neox = attn0.rotary_emb.is_neox_style
+320:        for attn in layers_attn[1:]:
+322:                attn.rotary_emb.head_size == self._rope_head_size
+323:                and attn.rotary_emb.is_neox_style == self._rope_is_neox
+327:        self._num_attn_layers = len(layers_attn)
+328:        self._kv_size = attn0.kv_size
+329:        self._head_dim = attn0.head_dim
+330:        self._num_kv_heads = attn0.num_kv_heads
+331:        self._rms_norm_eps = attn0.q_norm.variance_epsilon
+333:        for attn in layers_attn[1:]:
+
+
+### grep get_dflash_causal / dflash_causal anywhere
+
+Wrote: /data/wenxuan/speculators/vllm_dflash_probe.out  (773 lines)
+Now:   git add vllm_dflash_probe.out && git commit -m probe && git push
