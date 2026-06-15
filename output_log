@@ -1,0 +1,79 @@
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-allava-val-weight-test\",position=\"6\"}": 0.0
+  },
+  "spec_draft_steps_total": 4495.0,
+  "spec_draft_tokens_total": 31465.0,
+  "spec_accepted_tokens_total": 11982.0,
+  "spec_accepted_tokens_by_position": {
+    "0": 3641.0,
+    "1": 2597.0,
+    "2": 1846.0,
+    "3": 1344.0,
+    "4": 1041.0,
+    "5": 841.0,
+    "6": 672.0
+  },
+  "spec_token_acceptance_rate": 0.3808040680120769,
+  "spec_first_position_acceptance_rate": 0.8100111234705228,
+  "spec_mean_accepted_tokens_per_draft": 2.6656284760845383
+}
+Stopping vLLM server pid=232258
+# ALLaVA Val Four-Way Benchmark
+
+| rank | method | tok/s | mean accept/draft | token accept | first-pos accept | completed |
+|---:|---|---:|---:|---:|---:|---:|
+| 1 | trained_dflash | 73.779 | 2.666 | 0.381 | 0.810 | 128/128 |
+| 2 | mtp | 65.634 | 2.916 | 0.417 | 0.838 | 128/128 |
+| 3 | dflash_original | 61.375 | 1.945 | 0.278 | 0.733 | 128/128 |
+| 4 | baseline | 30.139 | n/a | n/a | n/a | 128/128 |
+
+## Key Ratios
+
+- trained/original DFlash tok/s: `1.202`
+- trained/MTP tok/s: `1.124`
+- trained/baseline tok/s: `2.448`
+- original DFlash/baseline tok/s: `2.036`
+- MTP/baseline tok/s: `2.178`
+
+## Verdict
+
+Trained DFlash is the fastest config on this ALLaVA val slice.
+
+summary_jsonl=/home/wenxuan/speculators/output/three_way_both/20260615_020313/allava/allava_val_four_way_summary.jsonl
+summary_csv=/home/wenxuan/speculators/output/three_way_both/20260615_020313/allava/allava_val_four_way_summary.csv
+summary_md=/home/wenxuan/speculators/output/three_way_both/20260615_020313/allava/allava_val_summary.md
+
+Artifacts:
+  /home/wenxuan/speculators/output/three_way_both/20260615_020313/allava
+
+============================================================
+=== Combined cross-dataset summary ===
+============================================================
+# Three-way comparison — MMStar (OOD) + ALLaVA (in-domain)
+
+draft: `/home/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_distilled_10k_continue_dflash/dflash_ce_fp32_lr3e5_100k_0612_0831/checkpoints/checkpoint_best`
+
+| dataset | method | tok/s | mean accept/draft | token accept | first-pos | completed |
+|---|---|---:|---:|---:|---:|---:|
+| MMStar (OOD) | mtp | 72.556 | 2.822 | 0.403 | 0.828 | 128/128 |
+| MMStar (OOD) | trained_dflash | 76.106 | 2.416 | 0.345 | 0.801 | 128/128 |
+| MMStar (OOD) | dflash_original | 67.904 | 2.102 | 0.300 | 0.766 | 128/128 |
+| ALLaVA val (in-domain) | mtp | 65.634 | 2.916 | 0.417 | 0.838 | 128/128 |
+| ALLaVA val (in-domain) | trained_dflash | 73.779 | 2.666 | 0.381 | 0.810 | 128/128 |
+| ALLaVA val (in-domain) | dflash_original | 61.375 | 1.945 | 0.278 | 0.733 | 128/128 |
+
+## Trained DFlash vs ... (per dataset)
+
+**MMStar (OOD)**
+- vs original: mean-accept `1.150`, first-pos `1.046`, tok/s `1.121`
+- vs MTP: mean-accept `0.856`, first-pos `0.967`, tok/s `1.049`
+
+**ALLaVA val (in-domain)**
+- vs original: mean-accept `1.370`, first-pos `1.105`, tok/s `1.202`
+- vs MTP: mean-accept `0.914`, first-pos `0.967`, tok/s `1.124`
+
+  (also copied combined summary -> /home/wenxuan/speculators/output_log_debug for report-back)
+
+Artifacts:
+  combined: /home/wenxuan/speculators/output/three_way_both/20260615_020313/combined_summary.md
+  mmstar:   /home/wenxuan/speculators/output/three_way_both/20260615_020313/mmstar/mmstar_three_way_summary.md
+  allava:   /home/wenxuan/speculators/output/three_way_both/20260615_020313/allava/allava_val_summary.md
