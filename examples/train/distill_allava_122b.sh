@@ -41,6 +41,8 @@ export SERVED_MODEL_NAME="${SERVED_MODEL_NAME:-qwen3.5-122b-allava-distill}"
 export GPU_MEMORY_UTIL="${GPU_MEMORY_UTIL:-0.90}"
 export MAX_MODEL_LEN="${MAX_MODEL_LEN:-8192}"
 export MAX_NUM_SEQS="${MAX_NUM_SEQS:-32}"   # tiny KV (2 KV heads) -> push parallelism for throughput
+# Client must send requests in parallel too, else the 32-seq batch runs 1-at-a-time.
+export CONCURRENCY="${CONCURRENCY:-$MAX_NUM_SEQS}"
 export MAX_TOKENS="${MAX_TOKENS:-512}"
 export TEMPERATURE="${TEMPERATURE:-0}"       # greedy: MTP learns the verifier's argmax continuations
 export ENFORCE_EAGER="${ENFORCE_EAGER:-1}"
@@ -51,6 +53,7 @@ export RESUME="${RESUME:-1}"
 echo "=== 122B ALLaVA distillation ==="
 echo "  model:       $MODEL"
 echo "  serve:       TP=$TP on GPUs [$GPUS]  (mem_util=$GPU_MEMORY_UTIL, max_num_seqs=$MAX_NUM_SEQS)"
+echo "  concurrency: $CONCURRENCY  (client in-flight requests; was 1 before)"
 echo "  out_jsonl:   $OUT_JSONL"
 echo "  max_samples: $MAX_SAMPLES   skip=${SKIP_SAMPLES:-0}   max_tokens=$MAX_TOKENS   temp=$TEMPERATURE"
 

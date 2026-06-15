@@ -43,6 +43,9 @@ SERVED_MODEL_NAME="${SERVED_MODEL_NAME:-qwen3.5-9b-allava-distill}"
 MAX_MODEL_LEN="${MAX_MODEL_LEN:-8192}"
 MAX_NUM_BATCHED_TOKENS="${MAX_NUM_BATCHED_TOKENS:-$MAX_MODEL_LEN}"
 MAX_NUM_SEQS="${MAX_NUM_SEQS:-8}"
+# Client-side in-flight requests. Default to the server batch size so the vLLM
+# batch is actually saturated; before this flag the client was sequential (=1).
+CONCURRENCY="${CONCURRENCY:-$MAX_NUM_SEQS}"
 GPU_MEMORY_UTIL="${GPU_MEMORY_UTIL:-0.90}"
 ATTENTION_BACKEND="${ATTENTION_BACKEND:-flash_attn}"
 DTYPE="${DTYPE:-bfloat16}"
@@ -124,6 +127,7 @@ start_server() {
     echo "  shard:        $SHARD_INDEX/$NUM_SHARDS"
     echo "  port:         $PORT"
     echo "  gpus:         $GPUS"
+    echo "  max_num_seqs: $MAX_NUM_SEQS   client_concurrency: $CONCURRENCY"
     echo "  log:          $SERVER_LOG"
     printf '[cmd]'
     printf ' %q' env CUDA_VISIBLE_DEVICES="$GPUS" "${args[@]}"
@@ -160,6 +164,7 @@ DISTILL_ARGS=(
     --temperature "$TEMPERATURE"
     --top-p "$TOP_P"
     --request-timeout "$REQUEST_TIMEOUT"
+    --concurrency "$CONCURRENCY"
 )
 if [ "$RESUME" = "1" ]; then
     DISTILL_ARGS+=(--resume)

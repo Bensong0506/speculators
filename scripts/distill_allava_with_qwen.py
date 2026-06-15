@@ -132,6 +132,49 @@ def _load_model_name(endpoint: str, requested_model: str | None) -> str:
     return client.models.list().data[0].id
 
 
+def _bounded_parallel_map(fn, items, concurrency):
+    """Apply ``fn`` over ``items`` keeping up to ``concurrency`` calls in flight,
+    yielding ``(item, result)`` in the original order.
+
+    Order preservation matters: writes stay in input order, so count-based
+    ``--resume`` keeps mapping the first N outputs to the first N inputs.
+    Exceptions raised by ``fn`` are yielded as the result value (not raised) so
+    the caller can skip a failed item and continue, matching the prior loop.
+    """
+
+    def _wrapped(it):
+        try:
+            return fn(it)
+        except Exception as exc:  # noqa: BLE001
+            return exc
+
+    if concurrency <= 1:
+        for it in items:
+            yield it, _wrapped(it)
+        return
+
+    from collections import deque  # noqa: PLC0415
+    from concurrent.futures import ThreadPoolExecutor  # noqa: PLC0415
+
+    src = iter(items)
+    with ThreadPoolExecutor(max_workers=concurrency) as pool:
+        pending: deque = deque()
+        for _ in range(concurrency):  # prime the window
+            try:
+                nxt = next(src)
+            except StopIteration:
+                break
+            pending.append((nxt, pool.submit(_wrapped, nxt)))
+        while pending:
+            it, fut = pending.popleft()
+            yield it, fut.result()
+            try:
+                nxt = next(src)
+            except StopIteration:
+                continue
+            pending.append((nxt, pool.submit(_wrapped, nxt)))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
@@ -163,6 +206,17 @@ def main() -> None:
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--image-key", default="image")
     parser.add_argument("--conv-key", default="conversations")
+    parser.add_argument(
+        "--concurrency",
+        type=int,
+        default=1,
+        help=(
+            "Number of in-flight generation requests. >1 sends requests in "
+            "parallel via a thread pool while preserving input/write order, so "
+            "count-based --resume stays correct. Match it to the server's "
+            "--max-num-seqs to saturate the vLLM batch."
+        ),
+    )
     args = parser.parse_args()
 
     if args.max_samples <= 0:
@@ -177,6 +231,8 @@ def main() -> None:
         raise SystemExit("--shard-index must be in [0, --num-shards)")
     if args.total_samples is not None and args.total_samples <= 0:
         raise SystemExit("--total-samples must be positive when set")
+    if args.concurrency <= 0:
+        raise SystemExit("--concurrency must be positive")
 
     import openai  # noqa: PLC0415
 
@@ -205,19 +261,17 @@ def main() -> None:
     print(f"  shard:        {args.shard_index}/{args.num_shards}")
     print(f"  target_rows:  {target_rows}")
     print(f"  resume rows:  {existing}")
+    print(f"  concurrency:  {args.concurrency}")
 
     prompts = _iter_prompt_records(
         args.inputs, args.image_root, args.image_key, args.conv_key
     )
-    skipped_valid = 0
-    after_skip = 0
-    written = existing
-    skipped_existing = 0
-    generated_this_run = 0
-    started = time.perf_counter()
 
-    mode = "a" if args.resume else "w"
-    with args.out_jsonl.open(mode, encoding="utf-8") as out:
+    def _selected_prompts():
+        """Yield prompts passing skip/stride/shard/resume filters, in order."""
+        skipped_valid = 0
+        after_skip = 0
+        skipped_existing = 0
         for item in prompts:
             if skipped_valid < args.skip_samples:
                 skipped_valid += 1
@@ -226,7 +280,7 @@ def main() -> None:
             after_skip += 1
 
             if args.total_samples is not None and global_idx >= args.total_samples:
-                break
+                return
             if global_idx % args.stride != 0:
                 continue
             sharded_idx = global_idx // args.stride
@@ -237,22 +291,32 @@ def main() -> None:
                 skipped_existing += 1
                 continue
 
-            prompt = item["prompt"]
-            try:
-                response = client.chat.completions.create(
-                    model=model_name,
-                    messages=[_turn_to_openai(turn) for turn in prompt],
-                    max_tokens=args.max_tokens,
-                    temperature=args.temperature,
-                    top_p=args.top_p,
-                    timeout=args.request_timeout,
-                )
-            except Exception as exc:  # noqa: BLE001
-                print(f"[warn] request failed at output row {written + 1}: {exc}")
-                continue
+            yield item["prompt"]
 
-            answer = response.choices[0].message.content or ""
-            answer = answer.strip()
+    def _generate(prompt):
+        response = client.chat.completions.create(
+            model=model_name,
+            messages=[_turn_to_openai(turn) for turn in prompt],
+            max_tokens=args.max_tokens,
+            temperature=args.temperature,
+            top_p=args.top_p,
+            timeout=args.request_timeout,
+        )
+        return (response.choices[0].message.content or "").strip()
+
+    written = existing
+    generated_this_run = 0
+    started = time.perf_counter()
+
+    mode = "a" if args.resume else "w"
+    with args.out_jsonl.open(mode, encoding="utf-8") as out:
+        for prompt, result in _bounded_parallel_map(
+            _generate, _selected_prompts(), args.concurrency
+        ):
+            if isinstance(result, Exception):
+                print(f"[warn] request failed at output row {written + 1}: {result}")
+                continue
+            answer = result
             if not answer:
                 print(f"[warn] empty answer at output row {written + 1}; skipped")
                 continue
