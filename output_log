@@ -1,79 +1,75 @@
-    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-allava-val-weight-test\",position=\"6\"}": 0.0
+lm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mtp-mmstar-orig-vs-trained\",position=\"0\"}": 3561.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mtp-mmstar-orig-vs-trained\",position=\"1\"}": 2726.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mtp-mmstar-orig-vs-trained\",position=\"2\"}": 1961.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mtp-mmstar-orig-vs-trained\",position=\"3\"}": 1439.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mtp-mmstar-orig-vs-trained\",position=\"4\"}": 1103.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mtp-mmstar-orig-vs-trained\",position=\"5\"}": 831.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen3.5-9b-mtp-mmstar-orig-vs-trained\",position=\"6\"}": 620.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mtp-mmstar-orig-vs-trained\",position=\"0\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mtp-mmstar-orig-vs-trained\",position=\"1\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mtp-mmstar-orig-vs-trained\",position=\"2\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mtp-mmstar-orig-vs-trained\",position=\"3\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mtp-mmstar-orig-vs-trained\",position=\"4\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mtp-mmstar-orig-vs-trained\",position=\"5\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"qwen3.5-9b-mtp-mmstar-orig-vs-trained\",position=\"6\"}": 0.0
   },
-  "spec_draft_steps_total": 4495.0,
-  "spec_draft_tokens_total": 31465.0,
-  "spec_accepted_tokens_total": 11982.0,
+  "spec_draft_steps_total": 4278.0,
+  "spec_draft_tokens_total": 29946.0,
+  "spec_accepted_tokens_total": 12241.0,
   "spec_accepted_tokens_by_position": {
-    "0": 3641.0,
-    "1": 2597.0,
-    "2": 1846.0,
-    "3": 1344.0,
-    "4": 1041.0,
-    "5": 841.0,
-    "6": 672.0
+    "0": 3561.0,
+    "1": 2726.0,
+    "2": 1961.0,
+    "3": 1439.0,
+    "4": 1103.0,
+    "5": 831.0,
+    "6": 620.0
   },
-  "spec_token_acceptance_rate": 0.3808040680120769,
-  "spec_first_position_acceptance_rate": 0.8100111234705228,
-  "spec_mean_accepted_tokens_per_draft": 2.6656284760845383
+  "spec_token_acceptance_rate": 0.4087691177452748,
+  "spec_first_position_acceptance_rate": 0.832398316970547,
+  "spec_mean_accepted_tokens_per_draft": 2.8613838242169236
 }
-Stopping vLLM server pid=232258
-# ALLaVA Val Four-Way Benchmark
+Stopping vLLM server pid=161478
+# MMStar (OUT-OF-DOMAIN) — original MTP vs trained MTP
 
-| rank | method | tok/s | mean accept/draft | token accept | first-pos accept | completed |
-|---:|---|---:|---:|---:|---:|---:|
-| 1 | trained_dflash | 73.779 | 2.666 | 0.381 | 0.810 | 128/128 |
-| 2 | mtp | 65.634 | 2.916 | 0.417 | 0.838 | 128/128 |
-| 3 | dflash_original | 61.375 | 1.945 | 0.278 | 0.733 | 128/128 |
-| 4 | baseline | 30.139 | n/a | n/a | n/a | 128/128 |
+Forgetting check: the MTP was trained on ALLaVA, NOT MMStar. We want trained **~= original** (no regression), not trained >> original.
 
-## Key Ratios
+trained ckpt: `/data/wenxuan/speculators/output/mtp_qwen3.5_9b_mm_distilled/mtp_bf16_lr3e5_100k_0612_0823/checkpoints/checkpoint_best`  
+eval set: `/data/wenxuan/speculators/data/mmstar/mmstar_eval.jsonl`  
+requests: original 128/128, trained 128/128
 
-- trained/original DFlash tok/s: `1.202`
-- trained/MTP tok/s: `1.124`
-- trained/baseline tok/s: `2.448`
-- original DFlash/baseline tok/s: `2.036`
-- MTP/baseline tok/s: `2.178`
+| metric | original MTP | trained MTP | trained-original | trained/original |
+|---|---:|---:|---:|---:|
+| first-pos accept | 0.8279 | 0.8324 | 0.0045 | 1.0054 |
+| mean accept/draft | 2.8223 | 2.8614 | 0.0391 | 1.0138 |
+| token accept | 0.4032 | 0.4088 | 0.0056 | 1.0138 |
+| tok/s | 70.6953 | 71.2287 | 0.5334 | 1.0075 |
 
-## Verdict
+## verdict (forgetting check)
 
-Trained DFlash is the fastest config on this ALLaVA val slice.
-
-summary_jsonl=/home/wenxuan/speculators/output/three_way_both/20260615_020313/allava/allava_val_four_way_summary.jsonl
-summary_csv=/home/wenxuan/speculators/output/three_way_both/20260615_020313/allava/allava_val_four_way_summary.csv
-summary_md=/home/wenxuan/speculators/output/three_way_both/20260615_020313/allava/allava_val_summary.md
+PASS — no forgetting (and even improves OOD): trained/original mean-accept = 1.0138 (first-pos 0.8324 vs 0.8279). Finetuning the MTP head did not hurt OOD.
 
 Artifacts:
-  /home/wenxuan/speculators/output/three_way_both/20260615_020313/allava
+  summary:  /data/wenxuan/speculators/output/mtp_soup_sweep/20260615_081548/mmstar_a05/mtp_mmstar_orig_vs_trained_summary.md
+  per-arm:  /data/wenxuan/speculators/output/mtp_soup_sweep/20260615_081548/mmstar_a05/{original_mtp,trained_mtp}_summary.json
 
-============================================================
-=== Combined cross-dataset summary ===
-============================================================
-# Three-way comparison — MMStar (OOD) + ALLaVA (in-domain)
+=== Aggregating soup sweep ===
+# MTP soup (WiSE-FT) alpha sweep -- in-domain vs OOD
 
-draft: `/home/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_distilled_10k_continue_dflash/dflash_ce_fp32_lr3e5_100k_0612_0831/checkpoints/checkpoint_best`
+ckpt: `/data/wenxuan/speculators/output/mtp_qwen3.5_9b_mm_distilled/mtp_bf16_lr3e5_100k_0612_0823/checkpoints/checkpoint_best`  
+blend: `alpha*finetuned + (1-alpha)*native`  (alpha=1.0 = pure finetuned, 0.0 = native)
 
-| dataset | method | tok/s | mean accept/draft | token accept | first-pos | completed |
-|---|---|---:|---:|---:|---:|---:|
-| MMStar (OOD) | mtp | 72.556 | 2.822 | 0.403 | 0.828 | 128/128 |
-| MMStar (OOD) | trained_dflash | 76.106 | 2.416 | 0.345 | 0.801 | 128/128 |
-| MMStar (OOD) | dflash_original | 67.904 | 2.102 | 0.300 | 0.766 | 128/128 |
-| ALLaVA val (in-domain) | mtp | 65.634 | 2.916 | 0.417 | 0.838 | 128/128 |
-| ALLaVA val (in-domain) | trained_dflash | 73.779 | 2.666 | 0.381 | 0.810 | 128/128 |
-| ALLaVA val (in-domain) | dflash_original | 61.375 | 1.945 | 0.278 | 0.733 | 128/128 |
+| alpha | in mean-acc | in first-pos | in tok/s | OOD mean-acc | OOD first-pos | OOD tok/s |
+|---|---:|---:|---:|---:|---:|---:|
+| native (0.0) | 2.9162 | 0.8378 | 69.8521 | 2.8223 | 0.8279 | 70.6953 |
+| 0.5 | 3.1474 | 0.8458 | 71.8673 | 2.8614 | 0.8324 | 71.2287 |
 
-## Trained DFlash vs ... (per dataset)
+## verdict
 
-**MMStar (OOD)**
-- vs original: mean-accept `1.150`, first-pos `1.046`, tok/s `1.121`
-- vs MTP: mean-accept `0.856`, first-pos `0.967`, tok/s `1.049`
+**alpha=0.5** keeps in-domain up (mean-acc 3.147 > native 2.916) AND lifts OOD to 2.861 (>= native 2.822) -> comprehensive head, no retrain.
 
-**ALLaVA val (in-domain)**
-- vs original: mean-accept `1.370`, first-pos `1.105`, tok/s `1.202`
-- vs MTP: mean-accept `0.914`, first-pos `0.967`, tok/s `1.124`
-
-  (also copied combined summary -> /home/wenxuan/speculators/output_log_debug for report-back)
+[written] /data/wenxuan/speculators/output/mtp_soup_sweep/20260615_081548/soup_sweep_summary.md
 
 Artifacts:
-  combined: /home/wenxuan/speculators/output/three_way_both/20260615_020313/combined_summary.md
-  mmstar:   /home/wenxuan/speculators/output/three_way_both/20260615_020313/mmstar/mmstar_three_way_summary.md
-  allava:   /home/wenxuan/speculators/output/three_way_both/20260615_020313/allava/allava_val_summary.md
+  sweep summary: /data/wenxuan/speculators/output/mtp_soup_sweep/20260615_081548/soup_sweep_summary.md
+  per-alpha:     /data/wenxuan/speculators/output/mtp_soup_sweep/20260615_081548/{allava,mmstar}_a<XX>/{original_mtp,trained_mtp}_summary.json
