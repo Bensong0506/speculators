@@ -149,6 +149,13 @@ out_md.write_text("\n".join(md) + "\n", encoding="utf-8")
 print("\n".join(md))
 PY
 
+# Drop the combined summary into output_log_debug for easy report-back (the intranet
+# box can pull but not push). Disable with REPORT_TO_OUTPUT_LOG=0.
+if [ "${REPORT_TO_OUTPUT_LOG:-1}" = "1" ] && [ -f "$RUN_DIR/combined_summary.md" ]; then
+    cp -f "$RUN_DIR/combined_summary.md" "$REPO_ROOT/output_log_debug"
+    echo "  (also copied combined summary -> $REPO_ROOT/output_log_debug for report-back)"
+fi
+
 echo
 echo "Artifacts:"
 echo "  combined: $RUN_DIR/combined_summary.md"
