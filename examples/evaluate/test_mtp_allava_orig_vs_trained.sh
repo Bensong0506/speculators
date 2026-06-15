@@ -291,7 +291,13 @@ echo "  output:            $RUN_DIR"
 ORIG_SPEC="{\"method\":\"$ORIG_MTP_METHOD\",\"num_speculative_tokens\":$INFER_NUM_SPEC,\"enforce_eager\":true}"
 TRAINED_SPEC="{\"method\":\"$TRAINED_MTP_METHOD\",\"num_speculative_tokens\":$INFER_NUM_SPEC,\"enforce_eager\":true}"
 
-run_one original_mtp "$MODEL"         "$ORIG_SPEC"
+# SKIP_ORIGINAL=1 skips the native arm (it is alpha-independent) so a soup sweep
+# only measures it once; the summary then reads original_mtp_summary.json as n/a.
+if [ "${SKIP_ORIGINAL:-0}" = "1" ]; then
+    echo "SKIP_ORIGINAL=1 -> skipping native (original_mtp) arm"
+else
+    run_one original_mtp "$MODEL"         "$ORIG_SPEC"
+fi
 run_one trained_mtp  "$STITCHED_DIR"  "$TRAINED_SPEC"
 
 # ---- summary + sanity check ----

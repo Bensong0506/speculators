@@ -196,9 +196,39 @@ def _load_finetuned_weights(
     raise FileNotFoundError(f"No safetensors found at {checkpoint_dir}")
 
 
+def _merge_into(
+    existing: dict[str, torch.Tensor],
+    new_weights: dict[str, torch.Tensor],
+    alpha: float,
+) -> None:
+    """Write the finetuned ``new_weights`` into ``existing`` in place.
+
+    ``alpha == 1.0`` (default): replace — ``existing[key] = finetuned`` (the
+    original stitch behavior). ``alpha < 1.0``: WiSE-FT / model-soup
+    interpolation ``existing[key] = alpha*finetuned + (1-alpha)*native`` where
+    ``native`` is the verifier weight already sitting in ``existing[key]``.
+    The blend is done in fp32 and cast back to the native dtype.
+    """
+    if alpha >= 1.0:
+        existing.update(new_weights)
+        return
+    for key, finetuned in new_weights.items():
+        native = existing.get(key)
+        if native is None:
+            # Key only exists in the finetuned head -> nothing to blend against.
+            existing[key] = finetuned
+            continue
+        blended = (
+            alpha * finetuned.to(torch.float32)
+            + (1.0 - alpha) * native.to(torch.float32)
+        )
+        existing[key] = blended.to(native.dtype)
+
+
 def _stitch_sharded(
     output_dir: Path,
     native_weights: dict[str, torch.Tensor],
+    alpha: float = 1.0,
 ) -> None:
     index_path = output_dir / "model.safetensors.index.json"
     with index_path.open() as f:
@@ -226,7 +256,7 @@ def _stitch_sharded(
                 metadata = f.metadata()
                 for k in f.keys():  # noqa: SIM118
                     existing[k] = f.get_tensor(k)
-            existing.update(new_weights)
+            _merge_into(existing, new_weights, alpha)
             save_file(existing, str(shard_path), metadata=metadata)
             progress.advance(task)
 
@@ -234,6 +264,7 @@ def _stitch_sharded(
 def _stitch_single(
     safetensors_path: Path,
     native_weights: dict[str, torch.Tensor],
+    alpha: float = 1.0,
 ) -> None:
     existing: dict[str, torch.Tensor] = {}
     metadata = None
@@ -241,7 +272,7 @@ def _stitch_single(
         metadata = f.metadata()
         for k in f.keys():  # noqa: SIM118
             existing[k] = f.get_tensor(k)
-    existing.update(native_weights)
+    _merge_into(existing, native_weights, alpha)
     save_file(existing, str(safetensors_path), metadata=metadata)
 
 
@@ -249,13 +280,19 @@ def stitch(
     finetuned_checkpoint: Path,
     verifier_path: Path,
     output_path: Path,
+    alpha: float = 1.0,
 ) -> Path:
-    """Stitch finetuned MTP weights back into a verifier checkpoint."""
+    """Stitch finetuned MTP weights back into a verifier checkpoint.
+
+    ``alpha`` (default 1.0) interpolates the stitched MTP head between native
+    and finetuned: ``alpha*finetuned + (1-alpha)*native`` (WiSE-FT / soup).
+    """
+    blend = "" if alpha >= 1.0 else f"\n[bold]Alpha:[/]     {alpha} (soup: a*ft + (1-a)*native)"
     console.print(
         Panel(
             f"[bold]Finetuned:[/] {finetuned_checkpoint}\n"
             f"[bold]Verifier:[/]  {verifier_path}\n"
-            f"[bold]Output:[/]    {output_path}",
+            f"[bold]Output:[/]    {output_path}{blend}",
             title="[bold green]MTP Stitch[/]",
             border_style="green",
         )
@@ -283,11 +320,11 @@ def stitch(
 
     index_path = output_path / "model.safetensors.index.json"
     if index_path.exists():
-        _stitch_sharded(output_path, native_weights)
+        _stitch_sharded(output_path, native_weights, alpha)
     else:
         single = output_path / "model.safetensors"
         if single.exists():
-            _stitch_single(single, native_weights)
+            _stitch_single(single, native_weights, alpha)
         else:
             raise FileNotFoundError(f"No safetensors checkpoint found at {output_path}")
 
@@ -327,8 +364,20 @@ def main(
             ),
         ),
     ] = None,
+    alpha: Annotated[
+        float,
+        typer.Option(
+            help=(
+                "Interpolate the stitched MTP head between native and "
+                "finetuned: alpha*finetuned + (1-alpha)*native (WiSE-FT / "
+                "model soup). 1.0 = pure finetuned (default); 0.0 = native."
+            ),
+        ),
+    ] = 1.0,
 ) -> None:
     """Stitch finetuned MTP weights back into a verifier checkpoint."""
+    if not 0.0 <= alpha <= 1.0:
+        raise typer.BadParameter(f"--alpha must be in [0, 1], got {alpha}")
     if output_path is None:
         output_path = Path.cwd() / f"{verifier_path.name}-stitched"
 
@@ -336,6 +385,7 @@ def main(
         finetuned_checkpoint=finetuned_checkpoint,
         verifier_path=verifier_path,
         output_path=output_path,
+        alpha=alpha,
     )
 
 
