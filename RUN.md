@@ -391,20 +391,31 @@ bash examples/train/distill_allava_122b.sh
 ```
 
 **Step 2 — MTP train** (8× A800: verifier TP=4 on GPUs 0-3, ~61 GB/GPU but KV is
-tiny here so it fits; MTP trainer on GPUs 4-7):
+tiny here so it fits; MTP trainer on GPUs 4-7). Auto-picks the 122B distilled jsonl
+you just made (newest match) and derives MAX_SAMPLES from it — no path to type.
+Run the smoke block, eyeball the `data=...` echo, then the full block.
 
 ```bash
-# smoke first
+# setup + SMOKE (50 samples, 1 epoch) — validates the 122B TP + MTP wiring
+export MODEL=/data/wenxuan/Qwen3.5-122B-A10B
+export DISTILLED_ALLAVA_JSONL="$(ls -t "$(pwd)"/data/allava/allava_122b_distill_*k.jsonl 2>/dev/null | head -1)"
+export MAX_SAMPLES="$(wc -l < "$DISTILLED_ALLAVA_JSONL")"
+echo "data=$DISTILLED_ALLAVA_JSONL  samples=$MAX_SAMPLES"   # <- sanity-check the pick
 MAX_SAMPLES=50 EPOCHS=1 VALIDATE_INITIAL=0 \
-MODEL=/data/wenxuan/Qwen3.5-122B-A10B \
-DISTILLED_ALLAVA_JSONL=$(pwd)/data/allava/allava_122b_distill_10k.jsonl \
 bash examples/train/nohup_mtp_122b_allava_distilled.sh
-
-# full run: drop the smoke overrides
-MODEL=/data/wenxuan/Qwen3.5-122B-A10B \
-DISTILLED_ALLAVA_JSONL=$(pwd)/data/allava/allava_122b_distill_10k.jsonl \
-bash examples/train/nohup_mtp_122b_allava_distilled.sh
+tail -f run_logs/mtp_122b_*.nohup.log
 ```
+
+```bash
+# FULL run — after smoke passes (self-contained; trains on ALL distilled samples)
+export MODEL=/data/wenxuan/Qwen3.5-122B-A10B
+export DISTILLED_ALLAVA_JSONL="$(ls -t "$(pwd)"/data/allava/allava_122b_distill_*k.jsonl 2>/dev/null | head -1)"
+export MAX_SAMPLES="$(wc -l < "$DISTILLED_ALLAVA_JSONL")"
+bash examples/train/nohup_mtp_122b_allava_distilled.sh
+tail -f run_logs/mtp_122b_*.nohup.log
+```
+
+> Specific file instead of newest: `export DISTILLED_ALLAVA_JSONL=/abs/allava_122b_distill_100k.jsonl` before the run.
 
 - If TP=4 verifier OOMs: raise `GEN_GPU_MEM_UTIL` (→0.92), lower `SEQ_LENGTH`, serve
   int8, or use `VLLM_TP=8 VLLM_GPUS=0,1,2,3,4,5,6,7 GEN_GPU_MEM_UTIL=0.55 TRAIN_GPUS=6,7`
