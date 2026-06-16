@@ -1,56 +1,68 @@
 # NPU MTP 接受率:原生 MTP vs 训好的 MTP (vllm-ascend, serve-based)
 
-复用仓库自带的 `eval-guidellm` harness:`vllm serve` 起服务 → `guidellm` 压测 →
-`parse_logs.py` 从 server 日志的 `SpecDecoding metrics` 抽 per-position 接受率。
-两个 MTP 各跑一遍,串行对比。NPU 上 serve 由 vllm-ascend 接管,无需重装。
+`test_result_npu` 分支专用。一个命令跑完:自动 stitch 训好的 MTP 头 → 起服务 → guidellm 压测
+→ 从 server 日志抽 per-position 接受率 → native/trained 并排打印。**直接复制下面的块,不用从聊天里抄。**
 
-## 1. 准备(每次跑前)
+原理:训好的 MTP head 嵌在 verifier 权重里、不能直接 serve,所以先 `stitch_mtp.py` 缝进基座;
+native arm = 基座自带的 MTP 头,trained arm = 缝了你训好头的副本,两边同 method/spec/数据,只差权重。
+
+---
+
+## 0. 一次性:checkout + 依赖
 ```bash
 cd /path/to/speculators
 git fetch origin test_result_npu && git checkout test_result_npu && git pull
-pkill -f vllm || true
-export ASCEND_RT_VISIBLE_DEVICES=0        # 多卡 TP 写 0,1,2,3
-command -v guidellm >/dev/null || pip install guidellm   # harness 依赖
+export ASCEND_RT_VISIBLE_DEVICES=0                 # 多卡 TP 写 0,1,2,3
+pip install -q guidellm typer rich huggingface_hub 2>/dev/null || true   # harness + stitch 依赖
+chmod +x npu_mtp_accept/*.sh npu_mtp_accept/stitch_mtp.py
 ```
 
-## 2. 填两个模型路径 + 跑
+## 1. 跑(一条命令)
 ```bash
-export NATIVE_MTP_MODEL=/home/wenxuan/<原生/baseline 的 9B-MTP>    # ← 必填
-export TRAINED_MTP_MODEL=/home/wenxuan/<你训好的 9B-MTP>          # ← 必填
-export NUM_SPEC_TOKENS=3        # 改成你训练的 MTP 深度
+export MODEL=/home/model/Qwen3.5-9B                # 基座 = native arm + stitch verifier
+export TRAINED_MTP_CKPT=/home/wenxuan/.../checkpoint_best   # 你训练产出的原始 MTP ckpt(自动 stitch)
+export NUM_SPEC_TOKENS=3                            # = 你训练的 MTP 深度
 export TP=1
-# 内网不通 HF → 必须给本地数据集:
-export DATASET=/home/wenxuan/<your_eval>.jsonl
-
+export DATASET=/home/wenxuan/<本地eval>.jsonl       # 内网不通 HF,必须给本地集
 bash npu_mtp_accept/run_mtp_accept_compare.sh
 ```
-- MTP 若是**独立 speculator**(非内置头):再设 `NATIVE_MTP_DRAFT=` / `TRAINED_MTP_DRAFT=`。
-- "原生 MTP" = 官方/未微调那份;"训好的" = 你的 checkpoint。两者都 `METHOD=mtp`。
+- **已经 stitch 过了?** 不记得就当没 stitch(给 `TRAINED_MTP_CKPT` 让它自动缝);若确定有 stitch 好的目录,改成
+  `export TRAINED_MTP_MODEL=/path/to/stitched-dir`(跳过 stitch)。
+- 重新 stitch:`FORCE_STITCH=1`。缝出来的目录默认在 `npu_mtp_accept/stitched/`。
 
-## 3. 看结果
-脚本末尾直接并排打印两份 `acceptance_analysis.txt`:
+## 2. 看结果
+脚本末尾并排打印,训好的 per-position 接受率应高于原生:
 ```
 ----- NATIVE  (...) -----
 Weighted per-position acceptance rates: [0.79 0.59 0.44]
-Conditional acceptance rates:           [0.79 0.74 0.75]
 ----- TRAINED (...) -----
-Weighted per-position acceptance rates: [0.85 0.69 0.55]   ← 训好的应更高
+Weighted per-position acceptance rates: [0.85 0.69 0.55]   ← 训好的更高 = 有效
 ```
-原始日志在 `npu_mtp_accept/results/<时间戳>/{native,trained}/`(`vllm_server.log` +
-`acceptance_analysis.txt` + `guidellm_*`)。
+原始日志/中间结果:`npu_mtp_accept/results/<时间戳>/{native,trained}/`
+(`vllm_server.log`、`acceptance_analysis.txt`、`guidellm_*`)。
+
+## 3. 只想单独 stitch(可选)
+```bash
+python npu_mtp_accept/stitch_mtp.py /path/to/finetuned-mtp /home/model/Qwen3.5-9B \
+  --output-path npu_mtp_accept/stitched/my-trained-stitched
+# 然后:export TRAINED_MTP_MODEL=npu_mtp_accept/stitched/my-trained-stitched && bash ...compare.sh
+```
 
 ## 可调 env
 | env | 默认 | 说明 |
 |---|---|---|
-| `NATIVE_MTP_MODEL` / `TRAINED_MTP_MODEL` | (必填) | 两个对比模型 |
-| `NATIVE_MTP_DRAFT` / `TRAINED_MTP_DRAFT` | 空 | MTP 是独立 speculator 时填 |
+| `MODEL` | (必填) | 基座 9B = native arm + stitch verifier |
+| `TRAINED_MTP_CKPT` | — | 原始训练 ckpt(自动 stitch) |
+| `TRAINED_MTP_MODEL` | — | 已 stitch 的目录(给了就跳过 stitch) |
 | `NUM_SPEC_TOKENS` | 3 | = 训练的 MTP 深度 |
+| `MTP_METHOD` | mtp | trained≈native 时改 `qwen3_5_mtp` 重试 |
 | `DATASET` | HF math_reasoning | 内网改本地 jsonl |
 | `TP` / `MAX_MODEL_LEN` / `GPU_MEM_UTIL` | 1 / 8192 / 0.85 | |
-| `TEMP` | 0.6 | harness 默认采样 |
+| `FORCE_STITCH` | — | =1 重新 stitch |
 
 ## 注意
-- 接受率从 server 日志的 `SpecDecoding metrics: ... Per-position acceptance rate: ...` 抽,
-  所以必须有真实流量(guidellm 提供)。两份都没有该行 → 检查 spec config / 模型是否带 MTP。
-- 接受率只反映 draft 质量,与吞吐/掩盖无关;tok/s 对比是另一个实验。
-- 两次 serve 用同端口、串行跑;脚本每步后 `pkill -f vllm`。
+- **sanity**:若 trained ≈ native,多半 stitch 的头没被 vLLM 加载 → `export MTP_METHOD=qwen3_5_mtp` 重跑。
+- 接受率从 `vllm_server.log` 的 `SpecDecoding metrics: ... Per-position acceptance rate:` 抽,必须有真实流量(guidellm 提供)。
+- 接受率只反映 draft 质量,与吞吐/掩盖无关;tok/s 是另一个实验。
+- `stitch_mtp.py` 是自包含版(remap 表已内联),不依赖 `speculators.convert.mtp`;只需 torch/safetensors/typer/rich。
+- 每个 serve 前后都 `pkill -f vllm`;两 arm 串行、同端口。
