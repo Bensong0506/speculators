@@ -423,41 +423,6 @@ tail -f run_logs/mtp_122b_*.nohup.log
 - The base launcher now honours `VLLM_TP` / `VLLM_DP` / `VLLM_GPUS` / `TRAIN_GPUS` /
   `NUM_TRAIN_GPUS` / `GEN_GPU_MEM_UTIL` from env (they used to be hardcoded).
 
-### DFlash training on the ~122B verifier (warm-start, tensor-parallel)
-
-Same data + TP layout as 122B MTP, but trains a **separate DFlash draft**
-warm-started from a downloaded z-lab DFlash, with the DFlash winning recipe
-(**CE + fp32 + LR 3e-5**). `block_size` / aux target-layer-ids / draft_arch are read
-from `FINETUNE_FROM/config.json` (so the verifier matches the draft); a raw z-lab
-checkpoint is auto-converted to speculators format so its weights actually load.
-
-```bash
-# auto-picks the newest 122B distilled jsonl + MAX_SAMPLES from its rows.
-# FINETUNE_FROM = your downloaded z-lab 122B DFlash draft dir.
-export MODEL=/data/wenxuan/Qwen3.5-122B-A10B
-export FINETUNE_FROM=/data/wenxuan/Qwen3.5-122B-DFlash      # <- your downloaded draft
-export ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V           # <- where the images are
-
-# SMOKE first (validates TP + warm-start weight load + DFlash wiring)
-MAX_SAMPLES=50 EPOCHS=1 VALIDATE_INITIAL=0 \
-bash examples/train/nohup_dflash_122b_allava_distilled.sh
-tail -f run_logs/dflash_122b_*.nohup.log
-```
-
-```bash
-# FULL run -- after smoke passes (self-contained)
-export MODEL=/data/wenxuan/Qwen3.5-122B-A10B
-export FINETUNE_FROM=/data/wenxuan/Qwen3.5-122B-DFlash
-export ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V
-bash examples/train/nohup_dflash_122b_allava_distilled.sh
-tail -f run_logs/dflash_122b_*.nohup.log
-```
-
-- DFlash trains a separate draft, so **fp32 is fine** (unlike MTP, which stays bf16).
-  If the fp32 trainer OOMs: `HIDDEN_STATES_DTYPE=bfloat16` (weaker recipe, less memory).
-- Experimental: 122B DFlash warm-start is unvalidated. If smoke surfaces a weight /
-  arch mismatch, send the log — the draft's config may need a different draft_arch.
-
 ---
 
 ## Files
@@ -479,7 +444,6 @@ tail -f run_logs/dflash_122b_*.nohup.log
 | Eval client (throughput + acceptance) | `examples/evaluate/eval_qwen35_9b.sh` + `examples/evaluate/bench_mm_speculative.py` |
 | Distill ALLaVA with the 122B (for its MTP) | `examples/train/distill_allava_122b.sh` |
 | MTP train on ~122B verifier (tensor-parallel) | `examples/train/nohup_mtp_122b_allava_distilled.sh` |
-| DFlash train on ~122B verifier (warm-start, TP) | `examples/train/nohup_dflash_122b_allava_distilled.sh` |
 | MTP: original vs trained (ALLaVA, auto-stitch) | `examples/evaluate/test_mtp_allava_orig_vs_trained.sh` |
 | MTP: original vs trained (MMStar OOD forgetting) | `examples/evaluate/test_mtp_mmstar_orig_vs_trained.sh` |
 | Stitch finetuned MTP head into verifier | `scripts/stitch_mtp.py` |
