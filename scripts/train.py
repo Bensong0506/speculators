@@ -249,10 +249,22 @@ def create_transformer_layer_config(  # noqa: C901
         for i in range(num_layers)
     ]
 
+    # MoE verifiers (e.g. Qwen3.5-MoE / Qwen3.5-122B-A10B) don't expose a dense
+    # `intermediate_size`; they name the per-expert FFN width `moe_intermediate_size`.
+    # Fall back to it so the (dense) draft layer still gets a valid FFN width.
+    intermediate_size = getattr(verifier_config, "intermediate_size", None)
+    if intermediate_size is None:
+        intermediate_size = getattr(verifier_config, "moe_intermediate_size", None)
+    if intermediate_size is None:
+        raise AttributeError(
+            f"{type(verifier_config).__name__} has neither 'intermediate_size' "
+            "nor 'moe_intermediate_size'"
+        )
+
     config = config_class(
         vocab_size=verifier_config.vocab_size,
         hidden_size=verifier_config.hidden_size,
-        intermediate_size=verifier_config.intermediate_size,
+        intermediate_size=intermediate_size,
         num_hidden_layers=num_layers,
         num_attention_heads=num_attention_heads,
         num_key_value_heads=num_key_value_heads,
