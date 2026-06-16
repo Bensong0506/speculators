@@ -1,166 +1,117 @@
-(EngineCore_DP1 pid=134241) Process EngineCore_DP1:
-(EngineCore_DP1 pid=134241) Traceback (most recent call last):
-(EngineCore_DP1 pid=134241)   File "/usr/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
-(EngineCore_DP1 pid=134241)     self.run()
-(EngineCore_DP1 pid=134241)   File "/usr/lib/python3.12/multiprocessing/process.py", line 108, in run
-(EngineCore_DP1 pid=134241)     self._target(*self._args, **self._kwargs)
-(EngineCore_DP1 pid=134241)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 1169, in run_engine_core
-(EngineCore_DP1 pid=134241)     raise e
-(EngineCore_DP1 pid=134241)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 1139, in run_engine_core
-(EngineCore_DP1 pid=134241)     engine_core = EngineCoreProc(*args, engine_index=dp_rank, **kwargs)
-(EngineCore_DP1 pid=134241)                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-(EngineCore_DP1 pid=134241)   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
-(EngineCore_DP1 pid=134241)     return func(*args, **kwargs)
-(EngineCore_DP1 pid=134241)            ^^^^^^^^^^^^^^^^^^^^^
-(EngineCore_DP1 pid=134241)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 905, in __init__
-(EngineCore_DP1 pid=134241)     super().__init__(
-(EngineCore_DP1 pid=134241)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 121, in __init__
-(EngineCore_DP1 pid=134241)     self.model_executor = executor_class(vllm_config)
-(EngineCore_DP1 pid=134241)                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-(EngineCore_DP1 pid=134241)   File "/us)
-(EngineCore_DP1 pid=134241) ERROR 06-13 03:38:11 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 200, in _init_executor
-(EngineCore_DP1 pid=134241) ERROR 06-13 03:38:11 [core.py:1165]     self.workers = WorkerProc.wait_for_ready(unready_workers)
-(EngineCore_DP1 pid=134241) ERROR 06-13 03:38:11 [core.py:1165]                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-(EngineCore_DP1 pid=134241) ERROR 06-13 03:38:11 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 747, in wait_for_ready
-(EngineCore_DP1 pid=134241) ERROR 06-13 03:38:11 [core.py:1165]     raise e from None
-(EngineCore_DP1 pid=134241) ERROR 06-13 03:38:11 [core.py:1165] Exception: WorkerProc initialization failed due to an exception in a background process. See stack trace for root cause.
-(EngineCore_DP0 pid=134240) ERROR 06-13 03:38:11 [core.py:1165] EngineCore failed to start.
-(EngineCore_DP0 pid=134240) ERROR 06-13 03:38:11 [core.py:1165] Traceback (most recent call last):
-(EngineCore_DP0 pid=134240) ERROR 06-13 03:38:11 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 1139, in run_engine_core
-(EngineCore_DP0 pid=134240) ERROR 06-13 03:38:11 [core.py:1165]     engine_core = EngineCoreProc(*args, engine_index=dp_rank, **kwargs)
-(EngineCore_DP0 pid=134240) ERROR 06-13 03:38:11 [core.py:1165]                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-(EngineCore_DP0 pid=134240) ERROR 06-13 03:38:11 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
-(EngineCore_DP0 pid=134240) ERROR 06-13 03:38:11 [core.py:1165]     return func(*args, **kwargs)
-(EngineCore_DP0 pid=134240) ERROR 06-13 03:38:11 [core.py:1165]            ^^^^^^^^^^^^^^^^^^^^^
-(EngineCore_DP0 pid=134240) ERROR 06-13 03:38:11 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 905, in __init__
-(EngineCore_DP0 pid=134240) ERROR 06-13 03:38:11 [core.py:1165]     super().__init__(
-(EngineCore_DP0 pid=134240) ERROR 06-13 03:38:11 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 121, in __init__
-(EngineCore_DP0 pid=134240) ERROR 06-13 03:38:11 [core.py:1165]     self.model_executor = executor_class(vllm_config)
-(EngineCore_DP0 pid=134240) ERROR 06-13 03:38:11 [core.py:1165]                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-(EngineCore_DP0 pid=134240) ERROR 06-13 03:38:11 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 107, in __init__
-(EngineCore_DP0 pid=134240) ERROR 06-13 03:38:11 [core.py:1165]     super().__init__(vllm_config)
-(EngineCore_DP0 pid=134240) ERROR 06-13 03:38:11 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
-(EngineCore_DP0 pid=134240) ERROR 06-13 03:38:11 [core.py:1165]     return func(*args, **kwargs)
-(EngineCore_DP0 pid=134240) ERROR 06-13 03:38:11 [core.py:1165]            ^^^^^^^^^^^^^^^^^^^^^
-(EngineCore_DP0 pid=134240) ERROR 06-13 03:38:11 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/abstract.py", line 109, in __init__
-(EngineCore_DP0 pid=134240) ERROR 06-13 03:38:11 [core.py:1165]     self._init_executor()
-(EngineCore_DP0 pid=134240) ERROR 06-13 03:38:11 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 200, in _init_executor
-(EngineCore_DP0 pid=134240) ERROR 06-13 03:38:11 [core.py:1165]     self.workers = WorkerProc.wait_for_ready(unready_workers)
-(EngineCore_DP0 pid=134240) ERROR 06-13 03:38:11 [core.py:1165]                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-(EngineCore_DP0 pid=134240) ERROR 06-13 03:38:11 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 747, in wait_for_ready
-(EngineCore_DP0 pid=134240) ERROR 06-13 03:38:11 [core.pyr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 107, in __init__
-(EngineCore_DP1 pid=134241)     super().__init__(vllm_config)
-(EngineCore_DP1 pid=134241)   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
-(EngineCore_DP1 pid=134241)     return func(*args, **kwargs)
-(EngineCore_DP1 pid=134241)            ^^^^^^^^^^^^^^^^^^^^^
-(EngineCore_DP1 pid=134241)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/abstract.py", line 109, in __init__
-(EngineCore_DP1 pid=134241)     self._init_executor()
-(EngineCore_DP1 pid=134241)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 200, in _init_executor
-(EngineCore_DP1 pid=134241)     self.workers = WorkerProc.wait_for_ready(unready_workers)
-(EngineCore_DP1 pid=134241)                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-(EngineCore_DP1 pid=134241)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 747, in wait_for_ready
-(EngineCore_DP1 pid=134241)     raise e from None
-(EngineCore_DP1 pid=134241) Exception: WorkerProc initialization failed due to an exception in a background process. See stack trace for root cause.
-(EngineCore_DP0 pid=134240) Process EngineCore_DP0:
-(EngineCore_DP0 pid=134240) Traceback (most recent call last):
-(EngineCore_DP0 pid=134240)   File "/usr/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
-(EngineCore_DP0 pid=134240)     self.run()
-(EngineCore_DP0 pid=134240)   File "/usr/lib/python3.12/multiprocessing/process.py", line 108, in run
-(EngineCore_DP0 pid=134240)     self._target(*self._args, **self._kwargs)
-(EngineCore_DP0 pid=134240)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 1169, in run_engine_core
-(EngineCore_DP0 pid=134240)     raise e
-(EngineCore_DP0 pid=134240)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 1139, in run_engine_core
-(EngineCore_DP0 pid=134240)     engine_core = EngineCoreProc(*args, engine_index=dp_rank, **kwargs)
-(EngineCore_DP0 pid=134240)                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-(EngineCore_DP0 pid=134240)   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
-(EngineCore_DP0 pid=134240)     return func(*args, **kwargs)
-(EngineCore_DP0 pid=134240)            ^^^^^^^^^^^^^^^^^^^^^
-(EngineCore_DP0 pid=134240)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 905, in __init__
-(EngineCore_DP0 pid=134240)     super().__init__(
-(EngineCore_DP0 pid=134240)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 121, in __init__
-(EngineCore_DP0 pid=134240)     self.model_executor = executor_class(vllm_config)
-(EngineCore_DP0 pid=134240)                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-(EngineCore_DP0 pid=134240)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 107, in __init__
-(EngineCore_DP0 pid=134240)     super().__init__(vllm_config)
-(EngineCore_DP0 pid=134240)   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
-(EngineCore_DP0 pid=134240)     return func(*args, **kwargs)
-(EngineCore_DP0 pid=134240)            ^^^^^^^^^^^^^^^^^^^^^
-(EngineCore_DP0 pid=134240)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/abstract.py", line 109, in __init__
-(EngineCore_DP0 pid=134240)     self._init_executor()
-(EngineCore_DP0 pid=134240)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 200, in _init_executor
-(EngineCore_DP0 pid=134240)     self.workers = WorkerProc.wait_for_ready(unready_workers)
-(EngineCore_DP0 pid=134240)                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-(EngineCore_DP0 pid=134240)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 747, in wait_for_ready
-(EngineCore_DP0 pid=134240)     raise e from None
-(EngineCore_DP0 pid=134240) Exception: WorkerProc initialization failed due to an exception in a background process. See stack trace for root cause.
-(Worker pid=135867) [transformers] The `use_fast` parameter is deprecated and will be removed in a future version. Use `backend="torchvision"` instead of `use_fast=True`, or `backend="pil"` instead of `use_fast=False`.
-(Worker pid=135860) [transformers] The `use_fast` parameter is deprecated and will be removed in a future version. Use `backend="torchvision"` instead of `use_fast=True`, or `backend="pil"` instead of `use_fast=False`.
-Traceback (most recent call last):
-  File "<frozen runpy>", line 198, in _run_module_as_main
-  File "<frozen runpy>", line 88, in _run_code
-  File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/cli/main.py", line 98, in <module>
-    main()
-  File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/cli/main.py", line 92, in main
-    args.dispatch_function(args)
-  File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/cli/serve.py", line 144, in cmd
-    run_multi_api_server(args)
-  File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/cli/serve.py", line 320, in run_multi_api_server
-    with launch_core_engines(
-         ^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/contextlib.py", line 144, in __exit__
-    next(self.gen)
-  File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/utils.py", line 1150, in launch_core_engines
-    wait_for_engine_startup(
-  File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/utils.py", line 1209, in wait_for_engine_startup
-    raise RuntimeError(
-RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
-Loading safetensors checkpoint shards:   0% Completed | 0/4 [00:00<?, ?it/s]
-Loading safetensors checkpoint shards:   0% Completed | 0/4 [00:00<?, ?it/s]
-Loading safetensors checkpoint shards:  25% Completed | 1/4 [00:00<00:02,  1.49it/s]
-Loading safetensors checkpoint shards:  25% Completed | 1/4 [00:00<00:01,  1.52it/s]
-Loading safetensors checkpoint shards:  50% Completed | 2/4 [00:01<00:01,  1.46it/s]
-Loading safetensors checkpoint shards:  50% Completed | 2/4 [00:01<00:01,  1.45it/s]
-Loading safetensors checkpoint shards:  75% Completed | 3/4 [00:02<00:00,  1.44it/s]
-Loading safetensors checkpoint shards:  75% Completed | 3/4 [00:02<00:00,  1.44it/s]
-Loading safetensors checkpoint shards: 100% Completed | 4/4 [00:02<00:00,  1.53it/s]
-Loading safetensors checkpoint shards: 100% Completed | 4/4 [00:02<00:00,  1.50it/s]
-(Worker pid=135867) 
-Loading safetensors checkpoint shards: 100% Completed | 4/4 [00:02<00:00,  1.56it/s]
-Loading safetensors checkpoint shards: 100% Completed | 4/4 [00:02<00:00,  1.52it/s]
-(Worker pid=135860) 
-/usr/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 2 leaked semaphore objects to clean up at shutdown
-  warnings.warn('resource_tracker: There appear to be %d '
-/usr/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 2 leaked shared_memory objects to clean up at shutdown
-  warnings.warn('resource_tracker: There appear to be %d '
-:1165]     raise e from None
-(EngineCore_DP0 pid=134240) ERROR 06-13 03:38:11 [core.py:1165] Exception: WorkerProc initialization failed due to an exception in a background process. See stack trace for root cause.
-(Worker pid=135867) INFO 06-13 03:38:16 [gpu_model_runner.py:5037] Starting to load model /data/wenxuan/Qwen3.5-9B...
-(Worker pid=135860) INFO 06-13 03:38:16 [gpu_model_runner.py:5037] Starting to load model /data/wenxuan/Qwen3.5-9B...
-(Worker pid=135867) INFO 06-13 03:38:19 [gpu_model_runner.py:5217] Using auxiliary layers from speculative config: (1, 8, 15, 22, 29, 32)
-(Worker pid=135860) INFO 06-13 03:38:20 [gpu_model_runner.py:5217] Using auxiliary layers from speculative config: (1, 8, 15, 22, 29, 32)
-(Worker pid=135867) INFO 06-13 03:38:20 [interface.py:649] Setting attention block size to 528 tokens to ensure that attention page size is >= mamba page size.
-(Worker pid=135867) ERROR 06-13 03:38:20 [multiproc_executor.py:870] WorkerProc failed to start.
-(Worker pid=135867) ERROR 06-13 03:38:20 [multiproc_executor.py:870] Traceback (most recent call last):
-(Worker pid=135867) ERROR 06-13 03:38:20 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 845, in worker_main
-(Worker pid=135867) ERROR 06-13 03:38:20 [multiproc_executor.py:870]     ready_writer.send(
-(Worker pid=135867) ERROR 06-13 03:38:20 [multiproc_executor.py:870]   File "/usr/lib/python3.12/multiprocessing/connection.py", line 206, in send
-(Worker pid=135867) ERROR 06-13 03:38:20 [multiproc_executor.py:870]     self._send_bytes(_ForkingPickler.dumps(obj))
-(Worker pid=135867) ERROR 06-13 03:38:20 [multiproc_executor.py:870]   File "/usr/lib/python3.12/multiprocessing/connection.py", line 427, in _send_bytes
-(Worker pid=135867) ERROR 06-13 03:38:20 [multiproc_executor.py:870]     self._send(header + buf)
-(Worker pid=135867) ERROR 06-13 03:38:20 [multiproc_executor.py:870]   File "/usr/lib/python3.12/multiprocessing/connection.py", line 384, in _send
-(Worker pid=135867) ERROR 06-13 03:38:20 [multiproc_executor.py:870]     n = write(self._handle, buf)
-(Worker pid=135867) ERROR 06-13 03:38:20 [multiproc_executor.py:870]         ^^^^^^^^^^^^^^^^^^^^^^^^
-(Worker pid=135867) ERROR 06-13 03:38:20 [multiproc_executor.py:870] BrokenPipeError: [Errno 32] Broken pipe
-(Worker pid=135860) INFO 06-13 03:38:20 [interface.py:649] Setting attention block size to 528 tokens to ensure that attention page size is >= mamba page size.
-(Worker pid=135860) ERROR 06-13 03:38:20 [multiproc_executor.py:870] WorkerProc failed to start.
-(Worker pid=135860) ERROR 06-13 03:38:20 [multiproc_executor.py:870] Traceback (most recent call last):
-(Worker pid=135860) ERROR 06-13 03:38:20 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 845, in worker_main
-(Worker pid=135860) ERROR 06-13 03:38:20 [multiproc_executor.py:870]     ready_writer.send(
-(Worker pid=135860) ERROR 06-13 03:38:20 [multiproc_executor.py:870]   File "/usr/lib/python3.12/multiprocessing/connection.py", line 206, in send
-(Worker pid=135860) ERROR 06-13 03:38:20 [multiproc_executor.py:870]     self._send_bytes(_ForkingPickler.dumps(obj))
-(Worker pid=135860) ERROR 06-13 03:38:20 [multiproc_executor.py:870]   File "/usr/lib/python3.12/multiprocessing/connection.py", line 427, in _send_bytes
-(Worker pid=135860) ERROR 06-13 03:38:20 [multiproc_executor.py:870]     self._send(header + buf)
-(Worker pid=135860) ERROR 06-13 03:38:20 [multiproc_executor.py:870]   File "/usr/lib/python3.12/multiprocessing/connection.py", line 384, in _send
-(Worker pid=135860) ERROR 06-13 03:38:20 [multiproc_executor.py:870]     n = write(self._handle, buf)
-(Worker pid=135860) ERROR 06-13 03:38:20 [multiproc_executor.py:870]         ^^^^^^^^^^^^^^^^^^^^^^^^
-(Worker pid=135860) ERROR 06-13 03:38:20 [multiproc_executor.py:870] BrokenPipeError: [Errno 32] Broken pipe
+eCore pid=240826) WARNING 06-16 02:07:33 [vllm.py:1058] Inductor compilation was disabled by user settings, optimizations settings that are only active during inductor compilation will be ignored.
+(EngineCore pid=240826) INFO 06-16 02:07:33 [kernel.py:270] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['vllm_c', 'native'], fused_add_rms_norm=['vllm_c', 'native'])
+(EngineCore pid=240826) WARNING 06-16 02:07:33 [vllm.py:1576] max_num_scheduled_tokens is set to 6144 based on the speculative decoding settings. This may lead to suboptimal performance. Consider increasing max_num_batched_tokens to accommodate the additional draft token slots, or decrease num_speculative_tokens or max_num_seqs.
+(EngineCore pid=240826) INFO 06-16 02:07:33 [vllm.py:1234] Cudagraph is disabled under eager mode
+(EngineCore pid=240826) INFO 06-16 02:07:33 [compilation.py:312] Enabled custom fusions: norm_quant, act_quant
+(APIServer pid=240529) INFO 06-16 02:07:33 [api_server.py:592] Supported tasks: ['generate']
+(APIServer pid=240529) WARNING 06-16 02:07:33 [model.py:1509] Default vLLM sampling parameters have been overridden by the model's `generation_config.json`: `{'temperature': 0.6, 'top_k': 20, 'top_p': 0.95}`. If this is not intended, please relaunch vLLM instance with `--generation-config vllm`.
+(APIServer pid=240529) INFO 06-16 02:07:34 [hf.py:488] Detected the chat template content format to be 'openai'. You can set `--chat-template-content-format` to override this.
+(APIServer pid=240529) WARNING 06-16 02:07:34 [base.py:246] Chat template warmup failed
+(APIServer pid=240529) WARNING 06-16 02:07:34 [base.py:246] Traceback (most recent call last):
+(APIServer pid=240529) WARNING 06-16 02:07:34 [base.py:246]   File "/usr/local/lib/python3.12/dist-packages/vllm/renderers/base.py", line 239, in warmup
+(APIServer pid=240529) WARNING 06-16 02:07:34 [base.py:246]     self.render_chat([[{"role": "user", "content": "warmup"}]], chat_params)
+(APIServer pid=240529) WARNING 06-16 02:07:34 [base.py:246]   File "/usr/local/lib/python3.12/dist-packages/vllm/renderers/base.py", line 977, in render_chat
+(APIServer pid=240529) WARNING 06-16 02:07:34 [base.py:246]     self.render_messages(conversation, chat_params)
+(APIServer pid=240529) WARNING 06-16 02:07:34 [base.py:246]   File "/usr/local/lib/python3.12/dist-packages/vllm/renderers/hf.py", line 831, in render_messages
+(APIServer pid=240529) WARNING 06-16 02:07:34 [base.py:246]     conversation, mm_data, mm_uuids = parse_chat_messages(
+(APIServer pid=240529) WARNING 06-16 02:07:34 [base.py:246]                                       ^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=240529) WARNING 06-16 02:07:34 [base.py:246]   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/chat_utils.py", line 1863, in parse_chat_messages
+(APIServer pid=240529) WARNING 06-16 02:07:34 [base.py:246]     sub_messages = _parse_chat_message_content(
+(APIServer pid=240529) WARNING 06-16 02:07:34 [base.py:246]                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=240529) WARNING 06-16 02:07:34 [base.py:246]   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/chat_utils.py", line 1741, in _parse_chat_message_content
+(APIServer pid=240529) WARNING 06-16 02:07:34 [base.py:246]     result = _parse_chat_message_content_parts(
+(APIServer pid=240529) WARNING 06-16 02:07:34 [base.py:246]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=240529) WARNING 06-16 02:07:34 [base.py:246]   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/chat_utils.py", line 1562, in _parse_chat_message_content_parts
+(APIServer pid=240529) WARNING 06-16 02:07:34 [base.py:246]     mm_parser = mm_tracker.create_parser(mm_processor_kwargs=mm_processor_kwargs)
+(APIServer pid=240529) WARNING 06-16 02:07:34 [base.py:246]                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=240529) WARNING 06-16 02:07:34 [base.py:246]   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/chat_utils.py", line 798, in create_parser
+(APIServer pid=240529) WARNING 06-16 02:07:34 [base.py:246]     return MultiModalContentParser(self, mm_processor_kwargs=mm_processor_kwargs)
+(APIServer pid=240529) WARNING 06-16 02:07:34 [base.py:246]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=240529) WARNING 06-16 02:07:34 [base.py:246]   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/chat_utils.py", line 913, in __init__
+(APIServer pid=240529) WARNING 06-16 02:07:34 [base.py:246]     self._connector: MediaConnector = MEDIA_CONNECTOR_REGISTRY.load(
+(APIServer pid=240529) WARNING 06-16 02:07:34 [base.py:246]                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=240529) WARNING 06-16 02:07:34 [base.py:246]   File "/usr/local/lib/python3.12/dist-packages/vllm/utils/registry.py", line 51, in load
+(APIServer pid=240529) WARNING 06-16 02:07:34 [base.py:246]     return cls(*args, **kwargs)
+(APIServer pid=240529) WARNING 06-16 02:07:34 [base.py:246]            ^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=240529) WARNING 06-16 02:07:34 [base.py:246]   File "/usr/local/lib/python3.12/dist-packages/vllm/multimodal/media/connector.py", line 110, in __init__
+(APIServer pid=240529) WARNING 06-16 02:07:34 [base.py:246]     raise ValueError(
+(APIServer pid=240529) WARNING 06-16 02:07:34 [base.py:246] ValueError: Invalid `--allowed-local-media-path`: The path /data/wenxuan/ALLaVA-4V does not exist.
+(APIServer pid=240529) INFO 06-16 02:07:50 [base.py:224] Multi-modal warmup completed in 16.352s
+(APIServer pid=240529) INFO 06-16 02:07:51 [base.py:224] Readonly multi-modal warmup completed in 0.546s
+(APIServer pid=240529) INFO 06-16 02:07:51 [api_server.py:596] Starting vLLM server on http://0.0.0.0:8000
+(APIServer pid=240529) INFO 06-16 02:07:51 [launcher.py:37] Available routes are:
+(APIServer pid=240529) INFO 06-16 02:07:51 [launcher.py:46] Route: /openapi.json, Methods: HEAD, GET
+(APIServer pid=240529) INFO 06-16 02:07:51 [launcher.py:46] Route: /docs, Methods: HEAD, GET
+(APvLLM server ready.
+=== Step 3: Training ===
+W0616 02:07:53.426000 242579 torch/distributed/run.py:851] 
+W0616 02:07:53.426000 242579 torch/distributed/run.py:851] *****************************************
+W0616 02:07:53.426000 242579 torch/distributed/run.py:851] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W0616 02:07:53.426000 242579 torch/distributed/run.py:851] *****************************************
+[02:07:59] INFO     Started distributed with local_rank=2,           utils.py:40
+                    world_size=4                                                
+[02:07:59] INFO     Started distributed with local_rank=3,           utils.py:40
+                    world_size=4                                                
+[02:07:59] INFO     Started distributed with local_rank=1,           utils.py:40
+                    world_size=4                                                
+[02:07:59] INFO     Started distributed with local_rank=0,           utils.py:40
+                    world_size=4                                                
+           WARNING  No vocab mappings found, and can't generate new train.py:341
+                    ones because either                                         
+                    token_freq_path='output/mtp_122b_mm_distilled/t             
+                    oken_freq.pt' doesn't exist or                              
+                    --draft-vocab-size is None. Using full verifier             
+                    vocab                                                       
+[rank2]: Traceback (most recent call last):
+[rank2]:   File "/home/wenxuan/speculators/scripts/train.py", line 942, in <module>
+[rank2]:     main(args)
+[rank2]:   File "/home/wenxuan/speculators/scripts/train.py", line 381, in main
+[rank2]:     transformer_layer_config = create_transformer_layer_config(
+[rank2]:                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home/wenxuan/speculators/scripts/train.py", line 255, in create_transformer_layer_config
+[rank2]:     intermediate_size=verifier_config.intermediate_size,
+[rank2]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/dist-packages/transformers/configuration_utils.py", line 425, in __getattribute__
+[rank2]:     return super().__getattribute__(key)
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]: AttributeError: 'Qwen3_5MoeTextConfig' object has no attribute 'intermediate_size'. Did you mean: 'moe_intermediate_size'?
+[rank3]: Traceback (most recent call last):
+[rank3]:   File "/home/wenxuan/speculators/scripts/train.py", line 942, in <module>
+[rank3]:     main(args)
+[rank3]:   File "/home/wenxuan/speculators/scripts/train.py", line 381, in main
+[rank3]:     transformer_layer_config = create_transformer_layer_config(
+[rank3]:                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/wenxuan/speculators/scripts/train.py", line 255, in create_transformer_layer_config
+[rank3]:     intermediate_size=verifier_config.intermediate_size,
+[rank3]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/transformers/configuration_utils.py", line 425, in __getattribute__
+[rank3]:     return super().__getattribute__(key)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]: AttributeError: 'Qwen3_5MoeTextConfig' object has no attribute 'intermediate_size'. Did you mean: 'moe_intermediate_size'?
+[rank1]: Traceback (most recent call last):
+[rank1]:   File "/home/wenxuan/speculators/scripts/train.py", line 942, in <module>
+[rank1]:     main(args)
+[rank1]:   File "/home/wenxuan/speculators/scripts/train.py", line 381, in main
+[rank1]:     transformer_layer_config = create_transformer_layer_config(
+[rank1]:                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/wenxuan/speculators/scripts/train.py", line 255, in create_transformer_layer_config
+[rank1]:     intermediate_size=verifier_config.intermediate_size,
+[rank1]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/dist-packages/transformers/configuration_utils.py", line 425, in __getattribute__
+[rank1]:     return super().__getattribute__(key)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]: AttributeError: 'Qwen3_5MoeTextConfig' object has no attribute 'intermediate_size'. Did you mean: 'moe_intermediate_size'?
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/home/wenxuan/speculators/scripts/train.py", line 942, in <module>
+[rank0]:     main(args)
+[rank0]:   File "/home/wenxuan/speculators/scripts/train.py", line 381, in main
+[rank0]:     transformer_layer_config = create_transformer_layer_config(
+[rank0]:                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/wenxuan/speculators/scripts/train.py", line 255, in create_transformer_layer_config
+[rank0]:     intermediate_size=verifier_config.intermediate_size,
+[rank0]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/transformers/configuration_utils.py", line 425, in __getattribute__
+[rank0]:     return super().__getattribute__(key)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]: AttributeError: 'Qwen3_5MoeTextConfig' object has no attribute 'intermediate_size'. Did you mean: 'moe_intermediate_size'?
+[rank0]:[W616 02:08:00.084726598 ProcessGroupNCCL.cpp:1575] Warning: WARNING
