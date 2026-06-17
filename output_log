@@ -1,28 +1,33 @@
-+-----------------------------------------------------ulators# export MODEL=/data/wenxuan/Qwen3.5-122B-A10B            # 122B verifiercfc86-tmp1108:/data/wenxuan/speculators# export MODEL=/data/wenxuan/Qwen3.5-122B-A10B     
-export BASELINE_DRAFT=/data/wenxuan/Qwen3.5-122B-DFlash # 原始 122B DFlash(对照)
-export DRAFT=/data/wenxuan/speculators/output/dflash_122b_mm_distilled/dflash_122b_allava_distilled_20260616_061245/checkpoints/checkpoint_best  # 你训好的 122B DFlash2b_mm_distilled/dflash_122b_allava_distilled_20260616_061
-export ALLAVA_JSONL=/data/wenxuan/speculators/data/allava/allava_122b_distill_10k.jsonl       # 自动切后 10% 
-export MMSTAR_ROOT=/data/wenxuan/mmstar                 # MMStar 根(默认 $DEFAULT_ROOT/mmstar,不对就设)  10% 
-export TP=4 GPUS=0,1,2,3 INFER_NUM_SPEC=7 NUM_PROMPTS=128 MMStar 根(默认 $DEFAULT_ROOT/mmstar,不对就设)
-bash examples/evaluate/test_three_way_mmstar_allava.sh128
-=== Three-way on BOTH datasets ===way_mmstar_allava.sh
-  draft:           /data/wenxuan/speculators/output/dflash_122b_mm_distilled/dflash_122b_allava_distilled_20260616_061245/checkpoints/checkpoint_best
-  infer_num_spec:  7
-  num_prompts:     128
-  allava_jsonl:    /data/wenxuan/speculators/data/allava/allava_122b_distill_10k.jsonl
-  output:          /data/wenxuan/speculators/output/three_way_both/20260617_024915
+  "spec_mean_accepted_tokens_per_draft": 2.2834629962098543
+}
+Stopping vLLM server pid=188447
+# ALLaVA Val Four-Way Benchmark
 
-============================================================
-=== [1/2] MMStar three-way (OOD) ===
-============================================================
-[fatal] BASELINE_DRAFT not found: /data/wenxuan/Qwen3.5-122B-DFlash
-WARN: MMStar sub-run returned nonzero (see /data/wenxuan/speculators/output/three_way_both/20260617_024915/mmstar)
+| rank | method | tok/s | mean accept/draft | token accept | first-pos accept | completed |
+|---:|---|---:|---:|---:|---:|---:|
+| 1 | mtp | 34.375 | 3.209 | 0.458 | 0.865 | 128/128 |
+| 2 | trained_dflash | 30.918 | 2.283 | 0.326 | 0.745 | 128/128 |
+| 3 | dflash_original | 26.645 | 1.753 | 0.250 | 0.691 | 128/128 |
+| 4 | baseline | 11.756 | n/a | n/a | n/a | 128/128 |
 
-============================================================
-=== [2/2] ALLaVA four-way (in-domain) ===
-============================================================
-[fatal] BASELINE_DRAFT not found: /data/wenxuan/Qwen3.5-122B-DFlash
-WARN: ALLaVA sub-run returned nonzero (see /data/wenxuan/speculators/output/three_way_both/20260617_024915/allava)
+## Key Ratios
+
+- trained/original DFlash tok/s: `1.160`
+- trained/MTP tok/s: `0.899`
+- trained/baseline tok/s: `2.630`
+- original DFlash/baseline tok/s: `2.266`
+- MTP/baseline tok/s: `2.924`
+
+## Verdict
+
+Trained DFlash improves acceptance over original DFlash but is not the fastest config.
+
+summary_jsonl=/data/wenxuan/speculators/output/three_way_both/20260617_025446/allava/allava_val_four_way_summary.jsonl
+summary_csv=/data/wenxuan/speculators/output/three_way_both/20260617_025446/allava/allava_val_four_way_summary.csv
+summary_md=/data/wenxuan/speculators/output/three_way_both/20260617_025446/allava/allava_val_summary.md
+
+Artifacts:
+  /data/wenxuan/speculators/output/three_way_both/20260617_025446/allava
 
 ============================================================
 === Combined cross-dataset summary ===
@@ -33,26 +38,82 @@ draft: `/data/wenxuan/speculators/output/dflash_122b_mm_distilled/dflash_122b_al
 
 | dataset | method | tok/s | mean accept/draft | token accept | first-pos | completed |
 |---|---|---:|---:|---:|---:|---:|
-| MMStar (OOD) | mtp | n/a | n/a | n/a | n/a | n/a/n/a |
-| MMStar (OOD) | trained_dflash | n/a | n/a | n/a | n/a | n/a/n/a |
-| MMStar (OOD) | dflash_original | n/a | n/a | n/a | n/a | n/a/n/a |
-| ALLaVA val (in-domain) | mtp | n/a | n/a | n/a | n/a | n/a/n/a |
-| ALLaVA val (in-domain) | trained_dflash | n/a | n/a | n/a | n/a | n/a/n/a |
-| ALLaVA val (in-domain) | dflash_original | n/a | n/a | n/a | n/a | n/a/n/a |
+| MMStar (OOD) | mtp | 33.590 | 3.238 | 0.463 | 0.847 | 128/128 |
+| MMStar (OOD) | trained_dflash | 30.415 | 2.133 | 0.305 | 0.750 | 128/128 |
+| MMStar (OOD) | dflash_original | 28.513 | 1.967 | 0.281 | 0.710 | 128/128 |
+| ALLaVA val (in-domain) | mtp | 34.375 | 3.209 | 0.458 | 0.865 | 128/128 |
+| ALLaVA val (in-domain) | trained_dflash | 30.918 | 2.283 | 0.326 | 0.745 | 128/128 |
+| ALLaVA val (in-domain) | dflash_original | 26.645 | 1.753 | 0.250 | 0.691 | 128/128 |
 
 ## Trained DFlash vs ... (per dataset)
 
 **MMStar (OOD)**
-- vs original: mean-accept `n/a`, first-pos `n/a`, tok/s `n/a`
-- vs MTP: mean-accept `n/a`, first-pos `n/a`, tok/s `n/a`
+- vs original: mean-accept `1.084`, first-pos `1.056`, tok/s `1.067`
+- vs MTP: mean-accept `0.659`, first-pos `0.886`, tok/s `0.906`
 
 **ALLaVA val (in-domain)**
-- vs original: mean-accept `n/a`, first-pos `n/a`, tok/s `n/a`
-- vs MTP: mean-accept `n/a`, first-pos `n/a`, tok/s `n/a`
+- vs original: mean-accept `1.302`, first-pos `1.078`, tok/s `1.160`
+- vs MTP: mean-accept `0.711`, first-pos `0.862`, tok/s `0.899`
 
   (also copied combined summary -> /data/wenxuan/speculators/output_log_debug for report-back)
 
 Artifacts:
-  combined: /data/wenxuan/speculators/output/three_way_both/20260617_024915/combined_summary.md
-  mmstar:   /data/wenxuan/speculators/output/three_way_both/20260617_024915/mmstar/mmstar_three_way_summary.md
-  allava:   /data/wenxuan/speculators/output/three_way_both/20260617_024915/allava/allava_val_summary.md
+  combined: /data/wenxuan/speculators/output/three_way_both/20260617_025446/combined_summary.md
+  mmstar:   /data/wenxuan/speculators/output/three_way_both/20260617_025446/mmstar/mmstar_three_way_summary.md
+  allava:   /data/wenxuan/speculators/output/three_way_both/20260617_025446/allava/allava_val_summary.md    
+
+ "vllm:spec_decode_num_accepted_tokens_created{engine=\"0\",model_name=\"/home/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"/home/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\",position=\"0\"}": 7222.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"/home/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\",position=\"1\"}": 5490.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"/home/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\",position=\"2\"}": 3941.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"/home/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\",position=\"3\"}": 2783.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"/home/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\",position=\"4\"}": 2086.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"/home/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\",position=\"5\"}": 1522.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"/home/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\",position=\"6\"}": 1107.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"/home/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\",position=\"0\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"/home/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\",position=\"1\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"/home/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\",position=\"2\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"/home/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\",position=\"3\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"/home/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\",position=\"4\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"/home/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\",position=\"5\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"/home/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\",position=\"6\"}": 0.0
+  },
+  "spec_draft_steps_total": 8738.0,
+  "spec_draft_tokens_total": 61166.0,
+  "spec_accepted_tokens_total": 24151.0,
+  "spec_accepted_tokens_by_position": {
+    "0": 7222.0,
+    "1": 5490.0,
+    "2": 3941.0,
+    "3": 2783.0,
+    "4": 2086.0,
+    "5": 1522.0,
+    "6": 1107.0
+  },
+  "spec_token_acceptance_rate": 0.3948435405290521,
+  "spec_first_position_acceptance_rate": 0.8265049210345616,
+  "spec_mean_accepted_tokens_per_draft": 2.7639047837033646
+}
+
+################ 原生 MTP vs 训好的 MTP best ################
+
+=== allava ===
+metric                                        native   trained    ratio
+spec_mean_accepted_tokens_per_draft            3.066     3.376    1.101
+spec_token_acceptance_rate                     0.438     0.482    1.101
+spec_first_position_acceptance_rate            0.848     0.873    1.029
+output_tok_per_sec                            33.337    36.630    1.099
+completed                                        128       128    1.000
+num_requested                                    128       128    1.000
+
+=== mmstar ===
+metric                                        native   trained    ratio
+spec_mean_accepted_tokens_per_draft            2.930     2.764    0.943
+spec_token_acceptance_rate                     0.419     0.395    0.943
+spec_first_position_acceptance_rate            0.831     0.827    0.995
+output_tok_per_sec                            33.348    31.775    0.953
+completed                                        128       128    1.000
+num_requested                                    128       128    1.000
+
+[sanity] trained ≈ native => stitch 的头没被加载,换 MTP_METHOD=mtp 重跑
+[INFO] 结果/日志: /home/wenxuan/speculators/mtp_accept/results/20260617_024459/    
