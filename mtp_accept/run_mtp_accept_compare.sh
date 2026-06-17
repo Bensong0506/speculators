@@ -32,7 +32,7 @@ fi
 MTP_METHOD="${MTP_METHOD:-qwen3_5_mtp}"      # trained≈native 时换 mtp 重试
 NUM_SPEC_TOKENS="${NUM_SPEC_TOKENS:-7}"
 NUM_PROMPTS="${NUM_PROMPTS:-128}"; MAX_TOKENS="${MAX_TOKENS:-256}"
-TP="${TP:-1}"; GPUS="${GPUS:-0}"; PORT="${PORT:-8100}"
+TP="${TP:-4}"; GPUS="${GPUS:-0,1,2,3}"; PORT="${PORT:-8100}"   # 122B 必须 TP,heads=32 → 只 {4,8}(8 卡用 TP=8 GPUS=0,1,2,3,4,5,6,7)
 MAX_MODEL_LEN="${MAX_MODEL_LEN:-8192}"; MAX_NUM_BATCHED_TOKENS="${MAX_NUM_BATCHED_TOKENS:-8192}"
 MAX_NUM_SEQS="${MAX_NUM_SEQS:-1}"; GPU_MEMORY_UTIL="${GPU_MEMORY_UTIL:-0.85}"; DTYPE="${DTYPE:-bfloat16}"
 ATTENTION_BACKEND="${ATTENTION_BACKEND:-flash_attn}"   # GPU 多模态推荐 flash_attn

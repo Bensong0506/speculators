@@ -15,13 +15,13 @@ chmod +x mtp_accept/*.sh mtp_accept/stitch_mtp.py
 
 ## 1. 跑 MTP best(自动 stitch + 两数据集 native/trained 各一臂)
 ```bash
-export MODEL=/home/wenxuan/Qwen3.5-9B
-export TRAINED_MTP_CKPT=/home/wenxuan/.../checkpoints/checkpoint_best   # MTP best
+export MODEL=/data/wenxuan/Qwen3.5-122B-A10B   # 122B verifier(MoE);路径按机器(/home 或 /data)
+export TRAINED_MTP_CKPT=/home/wenxuan/.../checkpoints/checkpoint_best   # MTP best(122B)
 export ALLAVA_JSONL=$PWD/data/allava/allava_qwen35_distill_100k.jsonl  # 完整集,脚本自动切后 10% 当 val(无泄漏)
 export ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V
 # 想改比例:VAL_RATIO=0.1(默认);已有现成 val 则改给 ALLAVA_VAL_JSONL 跳过切分
 export MMSTAR_JSONL=$PWD/data/mmstar/mmstar.jsonl MMSTAR_IMAGE_ROOT=/home/wenxuan/mmstar/images  # 可选 OOD
-export NUM_SPEC_TOKENS=7 TP=1 GPUS=0
+export NUM_SPEC_TOKENS=7 TP=4 GPUS=0,1,2,3      # ⚠️ 122B 必须 TP∈{4,8}(heads=32);8 卡用 TP=8 GPUS=0,1,2,3,4,5,6,7
 bash mtp_accept/run_mtp_accept_compare.sh
 ```
 - 已 stitch 的目录 → 改设 `TRAINED_MTP_MODEL=/path/to/stitched`,跳过 stitch。
@@ -29,6 +29,7 @@ bash mtp_accept/run_mtp_accept_compare.sh
   数据在 `mtp_accept/results/<时间戳>/`,汇总也进 `output_log_debug/`。
 
 ## 注意
+- ⚠️ **122B**:MoE ~244GB bf16,**必须 TP∈{4,8}**(heads=32,不能 6);单卡/TP=1 会 OOM。stitch 已 MoE+分片感知,但会**整体 copytree verifier ~244GB**(每个 stitched 模型),先确认磁盘够(想省盘见下方「stitch 省盘」)。
 - 接受率来自 server `/metrics` 的 spec_decode delta;图片必须在 `--allowed-local-media-path` 下。
 - sanity:trained ≈ native → `export MTP_METHOD=mtp` 重跑。
 - 代理坑已修(脚本内 `no_proxy=localhost`),`/health` 不会再超时。
