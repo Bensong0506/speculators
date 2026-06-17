@@ -286,9 +286,35 @@ def stitch(
     native_weights = {_remap_key(k): v for k, v in weights.items()}
     console.print(f"  Remapped [cyan]{len(native_weights)}[/] keys to native format")
 
-    with _spinner() as progress:
-        progress.add_task("Copying verifier checkpoint", total=None)
-        shutil.copytree(verifier_path, output_path, dirs_exist_ok=True)
+    # 122B 省盘:未改动的分片/文件 hardlink(瞬间、~0 占盘),只对带 MTP 头的分片真拷贝(才能被重写)。
+    output_path.mkdir(parents=True, exist_ok=True)
+    _src_index = verifier_path / "model.safetensors.index.json"
+    if _src_index.exists():
+        _wm = json.loads(_src_index.read_text())["weight_map"]
+        _modify = {_wm[k] for k in native_weights if k in _wm}
+    else:
+        _modify = {"model.safetensors"}
+    _linked = _copied = 0
+    for _src in sorted(verifier_path.rglob("*")):
+        if _src.is_dir():
+            continue
+        _rel = _src.relative_to(verifier_path)
+        _dst = output_path / _rel
+        _dst.parent.mkdir(parents=True, exist_ok=True)
+        if _dst.exists() or _dst.is_symlink():
+            _dst.unlink()
+        if _rel.name in _modify or _rel.as_posix() in _modify:
+            shutil.copy2(_src, _dst); _copied += 1
+        else:
+            try:
+                _dst.hardlink_to(_src)
+            except OSError:
+                try:
+                    _dst.symlink_to(_src.resolve())
+                except OSError:
+                    shutil.copy2(_src, _dst)
+            _linked += 1
+    console.print(f"  Placed verifier: hardlinked [cyan]{_linked}[/] files, real-copied [yellow]{_copied}[/] shard(s)")
 
     index_path = output_path / "model.safetensors.index.json"
     if index_path.exists():
