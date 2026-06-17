@@ -1,40 +1,50 @@
-# [GPU / test_result] MTP best checkpoint:原生 vs 训好的 (ALLaVA + MMStar)
+# [122B / test_result122B] MTP & DFlash best-checkpoint 接受率 (ALLaVA + MMStar)
 
-GPU 走 `test_result`(本目录),NPU 走 `test_result_npu:npu_mtp_accept/`,两边隔离。
-方式 = test_result 多模态评测:serve(`qwen3_5_mtp` + `--attention-backend flash_attn` +
-`--allowed-local-media-path` + `--limit-mm-per-prompt '{"image":1}'`)+ `mmstar_weight_client.py`
-→ `{arm}_summary.json`。native 臂 = serve 基座;trained 臂 = serve 自动 stitch 的目录。
+122B 专用分支(与 9B 的 `test_result` / `test_result_npu` 隔开)。**两个评测都在这个文件里,别从聊天抄。**
+两者都同时跑 **ALLaVA(in-domain)+ MMStar(OOD)**,完整 jsonl 自动切后 10% 当 val(无泄漏)。
 
-## 0. checkout + 依赖
+- **MTP best** → 本目录 `mtp_accept/`(serve native vs stitch 后的 trained,`qwen3_5_mtp`)
+- **DFlash best** → 仓库自带 `examples/evaluate/test_three_way_mmstar_allava.sh`(三路:mtp / trained_dflash / 原始 dflash)
+
+⚠️ **122B**:MoE ~244GB,**必须 TP∈{4,8}**(heads=32,不能 1/6);4 卡 → TP=4。MTP 的 stitch 已省盘(只真拷贝带 MTP 头的 1~2 分片,其余 hardlink,不再 244GB 全拷)。
+
+## 0. checkout + 依赖(两台都做)
 ```bash
 cd /path/to/speculators
-git checkout test_result && git pull
-pip install -q typer rich huggingface_hub 2>/dev/null || true   # stitch 用
-chmod +x mtp_accept/*.sh mtp_accept/stitch_mtp.py
+git checkout test_result122B && git pull
+pip install -q guidellm typer rich huggingface_hub 2>/dev/null || true
 ```
 
-## 1. 跑 MTP best(自动 stitch + 两数据集 native/trained 各一臂)
+## 1. MTP best(机器 1) —— 跑 ALLaVA + MMStar
 ```bash
-export MODEL=/data/wenxuan/Qwen3.5-122B-A10B   # 122B verifier(MoE);路径按机器(/home 或 /data)
-export TRAINED_MTP_CKPT=/home/wenxuan/.../checkpoints/checkpoint_best   # MTP best(122B)
-export ALLAVA_JSONL=$PWD/data/allava/allava_qwen35_distill_100k.jsonl  # 完整集,脚本自动切后 10% 当 val(无泄漏)
-export ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V
-# 想改比例:VAL_RATIO=0.1(默认);已有现成 val 则改给 ALLAVA_VAL_JSONL 跳过切分
-export MMSTAR_JSONL=$PWD/data/mmstar/mmstar.jsonl MMSTAR_IMAGE_ROOT=/home/wenxuan/mmstar/images  # 可选 OOD
-export NUM_SPEC_TOKENS=7 TP=4 GPUS=0,1,2,3      # ⚠️ 122B 必须 TP∈{4,8}(heads=32);8 卡用 TP=8 GPUS=0,1,2,3,4,5,6,7
+export MODEL=/data/wenxuan/Qwen3.5-122B-A10B            # 122B verifier;路径按机器
+export TRAINED_MTP_CKPT=/home/wenxuan/.../checkpoint_best   # MTP best(自动 stitch)
+export ALLAVA_JSONL=$PWD/data/allava/<完整>.jsonl       # 完整集,自动切后 10%
+export ALLAVA_IMAGE_ROOT=/data/wenxuan/ALLaVA-4V        # = --allowed-local-media-path
+export MMSTAR_JSONL=$PWD/data/mmstar/mmstar.jsonl       # ← 设了才跑 MMStar(OOD)
+export MMSTAR_IMAGE_ROOT=/data/wenxuan/mmstar/images
+export NUM_SPEC_TOKENS=7 TP=4 GPUS=0,1,2,3
 bash mtp_accept/run_mtp_accept_compare.sh
 ```
-- 已 stitch 的目录 → 改设 `TRAINED_MTP_MODEL=/path/to/stitched`,跳过 stitch。
-- 末尾打印 native vs trained 对比表(mean-accept / token-accept / first-pos / tok/s + ratio);
-  数据在 `mtp_accept/results/<时间戳>/`,汇总也进 `output_log_debug/`。
+末尾打印 native vs trained 的 per-position 对比表;结果在 `mtp_accept/results/<时间戳>/` + `output_log_debug/`。
+- 已 stitch 好 → 改设 `TRAINED_MTP_MODEL=/path/to/stitched` 跳过。
+- sanity:trained ≈ native → `export MTP_METHOD=mtp` 重跑。
+
+## 2. DFlash best(机器 2) —— ALLaVA + MMStar 已内置
+`test_three_way_mmstar_allava.sh` 一次跑 **MMStar(OOD)+ ALLaVA(in-domain)**,三路对比,**MMStar 自动包含**,无需额外开关:
+```bash
+export MODEL=/data/wenxuan/Qwen3.5-122B-A10B            # 122B verifier
+export BASELINE_DRAFT=/data/wenxuan/Qwen3.5-122B-DFlash # 原始 122B DFlash(对照)
+export DRAFT=/home/wenxuan/.../122b-dflash/checkpoint_best  # 你训好的 122B DFlash
+export ALLAVA_JSONL=$PWD/data/allava/<完整>.jsonl       # 自动切后 10%
+export MMSTAR_ROOT=/data/wenxuan/mmstar                 # MMStar 根(默认 $DEFAULT_ROOT/mmstar,不对就设)
+export TP=4 GPUS=0,1,2,3 INFER_NUM_SPEC=7 NUM_PROMPTS=128
+bash examples/evaluate/test_three_way_mmstar_allava.sh
+```
+产出 `output/three_way_both/<时间戳>/combined_summary.md`(MMStar + ALLaVA 一张表),也复制进 `output_log_debug/`。
 
 ## 注意
-- ⚠️ **122B**:MoE ~244GB bf16,**必须 TP∈{4,8}**(heads=32,不能 6);单卡/TP=1 会 OOM。stitch 已 MoE+分片感知,但会**整体 copytree verifier ~244GB**(每个 stitched 模型),先确认磁盘够(想省盘见下方「stitch 省盘」)。
-- 接受率来自 server `/metrics` 的 spec_decode delta;图片必须在 `--allowed-local-media-path` 下。
-- sanity:trained ≈ native → `export MTP_METHOD=mtp` 重跑。
-- 代理坑已修(脚本内 `no_proxy=localhost`),`/health` 不会再超时。
-- ALLaVA val jsonl 没有就用 `scripts/llava_to_jsonl.py` 转;MMStar 用 `scripts/mmstar_to_jsonl.py`。
-
----
-DFlash best checkpoint(另一台 GPU)走仓库自带脚本,不在本目录,见 README/§ 下方命令:
-`DRAFT=.../checkpoints/checkpoint_best INFER_NUM_SPEC=7 NUM_PROMPTS=128 GPUS=0 bash examples/evaluate/test_three_way_mmstar_allava.sh`
+- 接受率:MTP 从 `/metrics` spec_decode delta;DFlash 脚本自带统计 → `*_summary.json`(`spec_mean_accepted_tokens_per_draft` / `token_acceptance` / `first_position` / `output_tok_per_sec`)。
+- 图片必须在 `--allowed-local-media-path`(`ALLAVA_IMAGE_ROOT` / MMStar images)下,否则 404、接受率全 0。
+- 路径前缀 `/home` vs `/data` 按机器调;不通 HF 没事,全吃本地。
+- 8 卡换 `TP=8 GPUS=0,1,2,3,4,5,6,7`。
