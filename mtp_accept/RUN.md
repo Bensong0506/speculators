@@ -17,8 +17,9 @@ chmod +x mtp_accept/*.sh mtp_accept/stitch_mtp.py
 ```bash
 export MODEL=/home/wenxuan/Qwen3.5-9B
 export TRAINED_MTP_CKPT=/home/wenxuan/.../checkpoints/checkpoint_best   # MTP best
-export ALLAVA_VAL_JSONL=$PWD/data/allava/allava_val.jsonl
+export ALLAVA_JSONL=$PWD/data/allava/allava_qwen35_distill_100k.jsonl  # 完整集,脚本自动切后 10% 当 val(无泄漏)
 export ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V
+# 想改比例:VAL_RATIO=0.1(默认);已有现成 val 则改给 ALLAVA_VAL_JSONL 跳过切分
 export MMSTAR_JSONL=$PWD/data/mmstar/mmstar.jsonl MMSTAR_IMAGE_ROOT=/home/wenxuan/mmstar/images  # 可选 OOD
 export NUM_SPEC_TOKENS=7 TP=1 GPUS=0
 bash mtp_accept/run_mtp_accept_compare.sh

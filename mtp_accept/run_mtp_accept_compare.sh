@@ -11,8 +11,9 @@ CLIENT="examples/evaluate/mmstar_weight_client.py"
 export no_proxy="localhost,127.0.0.1,::1" NO_PROXY="localhost,127.0.0.1,::1"
 
 : "${MODEL:?set MODEL=/abs/path/to/Qwen3.5-9B (基座 = native 臂 + stitch verifier)}"
-: "${ALLAVA_VAL_JSONL:?set ALLAVA_VAL_JSONL=/abs/path/to/allava_val.jsonl}"
 : "${ALLAVA_IMAGE_ROOT:?set ALLAVA_IMAGE_ROOT=/abs/path (= --allowed-local-media-path)}"
+VAL_RATIO="${VAL_RATIO:-0.1}"   # 没现成 val 时,从完整 ALLAVA_JSONL 切「后 VAL_RATIO」当 val 尾巴(无泄漏)
+[ -n "${ALLAVA_VAL_JSONL:-}" ] || : "${ALLAVA_JSONL:?set ALLAVA_JSONL=/abs/path/to/full_allava.jsonl (完整集,自动切后 ${VAL_RATIO};或直接给现成 ALLAVA_VAL_JSONL)}"
 command -v vllm >/dev/null || { echo "[ERROR] 环境里没有 vllm"; exit 1; }
 [ -f "$CLIENT" ] || { echo "[ERROR] 缺 $CLIENT (checkout test_result?)"; exit 1; }
 
@@ -39,6 +40,26 @@ MMSTAR_JSONL="${MMSTAR_JSONL:-}"; MMSTAR_IMAGE_ROOT="${MMSTAR_IMAGE_ROOT:-}"
 SPEC="{\"method\":\"$MTP_METHOD\",\"num_speculative_tokens\":$NUM_SPEC_TOKENS,\"enforce_eager\":true}"
 
 STAMP="$(date +%Y%m%d_%H%M%S)"; RUN="${RUN_DIR:-$HERE/results/$STAMP}"; mkdir -p "$RUN"
+
+# 没给现成 val -> 从完整 ALLAVA_JSONL 切「后 VAL_RATIO」当 val 尾巴(和 test_dflash_allava_val_weights.sh 同逻辑)
+if [ -z "${ALLAVA_VAL_JSONL:-}" ]; then
+  ALLAVA_VAL_JSONL="$RUN/allava_val_tail.jsonl"
+  python3 - "$ALLAVA_JSONL" "$ALLAVA_VAL_JSONL" "$VAL_RATIO" <<'PY'
+import sys
+from pathlib import Path
+src, dst, ratio = Path(sys.argv[1]), Path(sys.argv[2]), float(sys.argv[3])
+if not 0 < ratio < 1:
+    raise SystemExit(f"[fatal] VAL_RATIO must be in (0,1): {ratio}")
+lines = [l for l in src.read_text(encoding="utf-8").splitlines() if l.strip()]
+if not lines:
+    raise SystemExit(f"[fatal] ALLAVA_JSONL empty: {src}")
+val = lines[int(len(lines) * (1 - ratio)):]
+if not val:
+    raise SystemExit(f"[fatal] val tail empty: rows={len(lines)} ratio={ratio}")
+dst.write_text("\n".join(val) + "\n", encoding="utf-8")
+print(f"[info] ALLaVA val tail -> {dst}  rows={len(val)} (of {len(lines)}, 后 {ratio})")
+PY
+fi
 echo "[INFO] native=$MODEL"; echo "[INFO] trained=$TRAINED_MTP_MODEL"
 echo "[INFO] method=$MTP_METHOD spec=$NUM_SPEC_TOKENS prompts=$NUM_PROMPTS backend=$ATTENTION_BACKEND run=$RUN"
 
