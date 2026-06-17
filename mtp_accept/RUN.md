@@ -34,7 +34,10 @@ bash mtp_accept/run_mtp_accept_compare.sh
 `test_three_way_mmstar_allava.sh` 一次跑 **MMStar(OOD)+ ALLaVA(in-domain)**,三路对比,**MMStar 自动包含**,无需额外开关:
 ```bash
 export MODEL=/data/wenxuan/Qwen3.5-122B-A10B            # 122B verifier
-export BASELINE_DRAFT=/data/wenxuan/Qwen3.5-122B-DFlash # 原始 122B DFlash(对照)
+export BASELINE_DRAFT=<你下载的原始 122B DFlash 真实路径>   # ⚠️ 占位!这是 dflash_original 对照臂,找不到会 [fatal] 直接退
+#   就是你 warm-start 用的那份 z-lab 122B DFlash;不知道路径:
+#   find /data/wenxuan /home/wenxuan /data/models /home/models -maxdepth 3 -iname '*122[Bb]*DFlash*' -type d 2>/dev/null
+#   (确实没有原始 122B DFlash → 告诉我,我把对照臂改成可选,只比 trained_dflash vs mtp)
 export DRAFT=/home/wenxuan/.../122b-dflash/checkpoint_best  # 你训好的 122B DFlash
 export ALLAVA_JSONL=$PWD/data/allava/<完整>.jsonl       # 自动切后 10%
 export MMSTAR_ROOT=/data/wenxuan/mmstar                 # MMStar 根(默认 $DEFAULT_ROOT/mmstar,不对就设)
