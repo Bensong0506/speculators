@@ -31,8 +31,9 @@ python3 scripts/mmstar_to_jsonl.py   # 产 data/mmstar/mmstar.jsonl(详见脚本
 ```bash
 export MODEL=/home/model/Qwen3.5-9B                       # 基座 = native 臂
 export TRAINED_MTP_CKPT=/home/wenxuan/.../checkpoint_best # 原始训练 ckpt(自动 stitch)
-export ALLAVA_VAL_JSONL=$PWD/data/allava/allava_val.jsonl
+export ALLAVA_JSONL=$PWD/data/allava/allava_qwen35_distill_100k.jsonl  # 完整集,自动切后 10% 当 val(无泄漏)
 export ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V          # = --allowed-local-media-path
+# 已有现成 val 则改给 ALLAVA_VAL_JSONL 跳过切分;比例 VAL_RATIO=0.1(默认)
 # 可选 OOD:
 export MMSTAR_JSONL=$PWD/data/mmstar/mmstar.jsonl
 export MMSTAR_IMAGE_ROOT=/home/wenxuan/mmstar/images
