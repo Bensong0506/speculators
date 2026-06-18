@@ -425,6 +425,62 @@ tail -f run_logs/mtp_122b_*.nohup.log
 
 ---
 
+## MTP 50k 接受率 A/B（122B · steps=7 · beta 0.6 vs 1.0）
+
+目标:提升 MTP 接受率(尤其中后位)。两台机器并行,**唯一变量 = `STEP_WEIGHT_BETA`**。
+**关键修复**:launcher 默认 `NUM_SPECULATIVE_STEPS=3`,但我们 serve/eval 是 **spec=7** → 后 4 位从没训过、纯外推。两臂都改 **steps=7**(训你真正服务的深度),把 A/B 预算花在 beta 上。
+- 机器1 = A:`STEP_WEIGHT_BETA=0.6`(现衰减 [.51,.31,.18])· 机器2 = B:`STEP_WEIGHT_BETA=1.0`(等权)。
+- 依据:first-pos 已饱和(~0.87),等权把权重从 pos-1 挪给中后位(openPangu:配平最优、压小后位掉 1–1.7%)。
+
+### 训练(两台都 `git checkout mtp-training && git pull`)
+先 smoke 确认 steps=7 不 OOM(122B verifier 占 GPU0-3,trainer 在 4-7,steps=7 让 trainer 显存 ×~2):
+```bash
+pkill -f vllm || true
+MAX_SAMPLES=50 EPOCHS=1 NUM_SPECULATIVE_STEPS=7 STEP_WEIGHT_BETA=0.6 \
+  MODEL=/data/wenxuan/Qwen3.5-122B-A10B \
+  DISTILLED_ALLAVA_JSONL=$PWD/data/allava/allava_122b_distill_50k.jsonl \
+  RUN_NAME=mtp122b_smoke_s7 bash examples/train/nohup_mtp_122b_allava_distilled.sh
+tail -f run_logs/mtp122b_smoke_s7.nohup.log
+```
+smoke 过 → 正式(B 只改 `STEP_WEIGHT_BETA` 与 `RUN_NAME`):
+```bash
+# 机器1 (A · beta=0.6)
+MAX_SAMPLES=50000 NUM_SPECULATIVE_STEPS=7 STEP_WEIGHT_BETA=0.6 \
+  MODEL=/data/wenxuan/Qwen3.5-122B-A10B \
+  DISTILLED_ALLAVA_JSONL=$PWD/data/allava/allava_122b_distill_50k.jsonl \
+  RUN_NAME=mtp122b_50k_s7_b06 bash examples/train/nohup_mtp_122b_allava_distilled.sh
+
+# 机器2 (B · beta=1.0)
+MAX_SAMPLES=50000 NUM_SPECULATIVE_STEPS=7 STEP_WEIGHT_BETA=1.0 \
+  MODEL=/data/wenxuan/Qwen3.5-122B-A10B \
+  DISTILLED_ALLAVA_JSONL=$PWD/data/allava/allava_122b_distill_50k.jsonl \
+  RUN_NAME=mtp122b_50k_s7_b10 bash examples/train/nohup_mtp_122b_allava_distilled.sh
+```
+checkpoint:`output/mtp_122b_mm_distilled/<RUN_NAME>/checkpoints/checkpoint_best`,按 wandb val 选 best。
+(训练在前 90% 上、留后 10% 当 val;eval 用同一 jsonl 的后 10% → 无泄漏。)
+
+### 评估(各取 checkpoint_best · 用 test_result122B 的 122B-ready `mtp_accept`)
+checkpoint 在磁盘上,切分支不丢:
+```bash
+git checkout test_result122B && git pull
+# A:
+MODEL=/data/wenxuan/Qwen3.5-122B-A10B \
+TRAINED_MTP_CKPT=$PWD/output/mtp_122b_mm_distilled/mtp122b_50k_s7_b06/checkpoints/checkpoint_best \
+ALLAVA_JSONL=$PWD/data/allava/allava_122b_distill_50k.jsonl ALLAVA_IMAGE_ROOT=/data/wenxuan/ALLaVA-4V \
+MMSTAR_JSONL=$PWD/data/mmstar/mmstar.jsonl MMSTAR_IMAGE_ROOT=/data/wenxuan/mmstar/images \
+NUM_SPEC_TOKENS=7 TP=4 GPUS=0,1,2,3 RUN_DIR=$PWD/mtp_accept/results/A_b06 \
+bash mtp_accept/run_mtp_accept_compare.sh
+# B: 同上,换 TRAINED_MTP_CKPT=.../mtp122b_50k_s7_b10/... 、RUN_DIR=.../B_b10
+```
+比:**B(等权)中后位 per-position 接受是否高于 A**、mean-accept A vs B、各自 vs native。
+
+### 坑
+- **steps=7 OOM**:`SEQ_LENGTH=3072`,或 `VLLM_TP=8 VLLM_GPUS=0,1,2,3,4,5,6,7 GEN_GPU_MEM_UTIL=0.55 TRAIN_GPUS=6,7`,或退 `NUM_SPECULATIVE_STEPS=5`(两台一致)。
+- 两台 `MODEL` / 数据必须完全一致,否则 A/B 不可比。
+- sanity:trained ≈ native → `MTP_METHOD=mtp` 重评(stitch 头没加载)。
+
+---
+
 ## Files
 
 | What | Path |
