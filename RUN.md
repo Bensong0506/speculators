@@ -425,36 +425,36 @@ tail -f run_logs/mtp_122b_*.nohup.log
 
 ---
 
-## MTP 50k 接受率 A/B（122B · steps=7 · beta 0.6 vs 1.0）
+## MTP 50k 接受率 A/B（122B · steps=5 / seq=4096 · beta 0.6 vs 1.0）
 
 目标:提升 MTP 接受率(尤其中后位)。两台机器并行,**唯一变量 = `STEP_WEIGHT_BETA`**。
-**关键修复**:launcher 默认 `NUM_SPECULATIVE_STEPS=3`,但我们 serve/eval 是 **spec=7** → 后 4 位从没训过、纯外推。两臂都改 **steps=7**(训你真正服务的深度),把 A/B 预算花在 beta 上。
-- 机器1 = A:`STEP_WEIGHT_BETA=0.6`(现衰减 [.51,.31,.18])· 机器2 = B:`STEP_WEIGHT_BETA=1.0`(等权)。
+**深度选 steps=5(不是 7、不砍 seq)**:launcher 默认 `NUM_SPECULATIVE_STEPS=3`,serve/eval 是 spec=7。steps=7 在 seq=4096 下 **trainer OOM**(全词表 248320 × seq × 7 步 logits 撑爆 GPU4-7);**steps 7→5 省 ~8G > 缺口 5G,在 `SEQ_LENGTH=4096` 全长下放得下、无需截断 seq**(截 seq 会丢 VLM 图+回答的训练信号),且仍比原来 3 深。两臂都用 **steps=5 / seq=4096(全长)**;最终 deploy 深度由 serve-time spec sweep 定(见末尾)。
+- 机器1 = A:`STEP_WEIGHT_BETA=0.6`(现衰减)· 机器2 = B:`STEP_WEIGHT_BETA=1.0`(等权)。
 - 依据:first-pos 已饱和(~0.87),等权把权重从 pos-1 挪给中后位(openPangu:配平最优、压小后位掉 1–1.7%)。
 
 ### 训练(两台都 `git checkout mtp-training && git pull`)
-先 smoke 确认 steps=7 不 OOM(122B verifier 占 GPU0-3,trainer 在 4-7,steps=7 让 trainer 显存 ×~2):
+先 smoke(50 条)确认 steps=5 跑通、显存有余:
 ```bash
 pkill -f vllm || true
-MAX_SAMPLES=50 EPOCHS=1 NUM_SPECULATIVE_STEPS=7 STEP_WEIGHT_BETA=0.6 \
+MAX_SAMPLES=50 EPOCHS=1 NUM_SPECULATIVE_STEPS=5 STEP_WEIGHT_BETA=0.6 \
   MODEL=/data/wenxuan/Qwen3.5-122B-A10B \
   DISTILLED_ALLAVA_JSONL=$PWD/data/allava/allava_122b_distill_50k.jsonl \
-  RUN_NAME=mtp122b_smoke_s7 bash examples/train/nohup_mtp_122b_allava_distilled.sh
-tail -f run_logs/mtp122b_smoke_s7.nohup.log
+  RUN_NAME=mtp122b_smoke_s5 bash examples/train/nohup_mtp_122b_allava_distilled.sh
+tail -f run_logs/mtp122b_smoke_s5.nohup.log
 ```
 smoke 过 → 正式(B 只改 `STEP_WEIGHT_BETA` 与 `RUN_NAME`):
 ```bash
 # 机器1 (A · beta=0.6)
-MAX_SAMPLES=50000 NUM_SPECULATIVE_STEPS=7 STEP_WEIGHT_BETA=0.6 \
+MAX_SAMPLES=50000 NUM_SPECULATIVE_STEPS=5 STEP_WEIGHT_BETA=0.6 \
   MODEL=/data/wenxuan/Qwen3.5-122B-A10B \
   DISTILLED_ALLAVA_JSONL=$PWD/data/allava/allava_122b_distill_50k.jsonl \
-  RUN_NAME=mtp122b_50k_s7_b06 bash examples/train/nohup_mtp_122b_allava_distilled.sh
+  RUN_NAME=mtp122b_50k_s5_b06 bash examples/train/nohup_mtp_122b_allava_distilled.sh
 
 # 机器2 (B · beta=1.0)
-MAX_SAMPLES=50000 NUM_SPECULATIVE_STEPS=7 STEP_WEIGHT_BETA=1.0 \
+MAX_SAMPLES=50000 NUM_SPECULATIVE_STEPS=5 STEP_WEIGHT_BETA=1.0 \
   MODEL=/data/wenxuan/Qwen3.5-122B-A10B \
   DISTILLED_ALLAVA_JSONL=$PWD/data/allava/allava_122b_distill_50k.jsonl \
-  RUN_NAME=mtp122b_50k_s7_b10 bash examples/train/nohup_mtp_122b_allava_distilled.sh
+  RUN_NAME=mtp122b_50k_s5_b10 bash examples/train/nohup_mtp_122b_allava_distilled.sh
 ```
 checkpoint:`output/mtp_122b_mm_distilled/<RUN_NAME>/checkpoints/checkpoint_best`,按 wandb val 选 best。
 (训练在前 90% 上、留后 10% 当 val;eval 用同一 jsonl 的后 10% → 无泄漏。)
@@ -465,21 +465,18 @@ checkpoint 在磁盘上,切分支不丢:
 git checkout test_result122B && git pull
 # A:
 MODEL=/data/wenxuan/Qwen3.5-122B-A10B \
-TRAINED_MTP_CKPT=$PWD/output/mtp_122b_mm_distilled/mtp122b_50k_s7_b06/checkpoints/checkpoint_best \
+TRAINED_MTP_CKPT=$PWD/output/mtp_122b_mm_distilled/mtp122b_50k_s5_b06/checkpoints/checkpoint_best \
 ALLAVA_JSONL=$PWD/data/allava/allava_122b_distill_50k.jsonl ALLAVA_IMAGE_ROOT=/data/wenxuan/ALLaVA-4V \
 MMSTAR_JSONL=$PWD/data/mmstar/mmstar.jsonl MMSTAR_IMAGE_ROOT=/data/wenxuan/mmstar/images \
 NUM_SPEC_TOKENS=7 TP=4 GPUS=0,1,2,3 RUN_DIR=$PWD/mtp_accept/results/A_b06 \
 bash mtp_accept/run_mtp_accept_compare.sh
-# B: 同上,换 TRAINED_MTP_CKPT=.../mtp122b_50k_s7_b10/... 、RUN_DIR=.../B_b10
+# B: 同上,换 TRAINED_MTP_CKPT=.../mtp122b_50k_s5_b10/... 、RUN_DIR=.../B_b10
 ```
 比:**B(等权)中后位 per-position 接受是否高于 A**、mean-accept A vs B、各自 vs native。
 
-### 坑
-- **steps=7 OOM(已实测 2026-06-17,trainer 端而非 verifier)**:报错在 `src/speculators/models/mtp/core.py forward` 的 `mtp_layers[0]` —— 7 步 unroll × 全词表 (248320) logits/激活把 4 张 trainer 卡(GPU4-7)撑爆(verifier TP=4 在 GPU0-3 已正常出 hidden states)。修(按杠杆大小):
-  1. **砍 `SEQ_LENGTH`(最大杠杆,logits 显存 ∝ seq×steps)**:`SEQ_LENGTH=2048 PREPROCESS_SEQ_LENGTH=1792`(3072 实测临界,直接上 2048 稳)。改 seq 会触发重新 preprocess(50 条很快)。
-  2. 还紧:`NUM_SPECULATIVE_STEPS=5`(仍比原来 3 深;两台一致)。
-  3. **别**用 error 提示的 `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` —— 会破坏 vLLM 的 hidden-states connector(踩过)。
-  - 实测重试命令:`SEQ_LENGTH=2048 PREPROCESS_SEQ_LENGTH=1792 MAX_SAMPLES=50 EPOCHS=1 NUM_SPECULATIVE_STEPS=7 STEP_WEIGHT_BETA=0.6 MODEL=... DISTILLED_ALLAVA_JSONL=... RUN_NAME=mtp122b_smoke_s7_seq2048 bash examples/train/nohup_mtp_122b_allava_distilled.sh`
+### deploy 深度 / 坑
+- **deploy 深度用 serve-time spec sweep 定(不重训)**:现有 trained MTP 上 serve `num_speculative_tokens` ∈ {3,5,7},量 tok/s + accept-length,取最高那个 = deploy 深度,也是未来训练该用的 steps。数据:per-position 条件接受率稳在 ~0.73(深位仍产出 token)→ 不是越小越好,实测定。sweep 若说 3 最优 → 以后训 3,永不 OOM。
+- **steps=7 OOM(实测 2026-06-17,trainer 端)**:`src/speculators/models/mtp/core.py` 的 `mtp_layers[0]` 7 步 unroll × 全词表(248320)× seq logits 撑爆 GPU4-7(verifier TP=4 在 0-3 没事)。**本轮 steps=5 / seq=4096 全长 = 不 OOM、不截断**。万一 steps=5 仍紧:先 `SEQ_LENGTH=3072`(轻截),最后才 `NUM_SPECULATIVE_STEPS=3`。**别**用 `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`(破坏 vLLM hidden-states connector)。
 - 两台 `MODEL` / 数据必须完全一致,否则 A/B 不可比。
 - sanity:trained ≈ native → `MTP_METHOD=mtp` 重评(stitch 头没加载)。
 
