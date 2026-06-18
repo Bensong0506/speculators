@@ -1,88 +1,43 @@
-# HANDOFF 2026-06-16 — MTP soup win + 122B MTP running + 122B DFlash queued
+# HANDOFF 2026-06-17 — 122B MTP/DFlash speculator(下个 session 读这个)
 
-Read me first: `git show test_result:HANDOFF.md`. Repo `Bensong0506/speculators`.
-Intranet is **pull-only**; results come back via `output_log` / `output_debug` on a
-branch. Deliver runnable scripts (commit + pull), don't make the user hand-copy.
+一行接上:`git show test_result:HANDOFF.md`。**「一切命令进 RUN.md」是硬规矩**(`mtp-training:RUN.md` = 449 行单一来源;`test_result122B:mtp_accept/RUN.md`)。
 
-## Branch map (each line = a separate concern, don't mix)
-- **`mtp-training`** (tip `59beae7`) — MTP training + shared infra. Has: distill
-  `--concurrency`, MTP soup tooling, RUN.md 122B auto-detect, the **MoE
-  `intermediate_size` fix (`86cca58`)**. **122B MTP training is RUNNING here.**
-  (The 122B DFlash launcher was here then reverted → it now lives only on the
-  branch below.)
-- **`dflash-122b-distill`** (tip `ccf78aa`) — **122B DFlash training home.** Has the
-  DFlash 122B launcher + RUN.md DFlash section + the `intermediate_size` fix.
-  NOT yet run.
-- **`test_result`** (tip `4af8e8a`) — reports, `output_log` (results回传), customer
-  HTML deck. Reports: `dflash_100k_three_way_report.md`,
-  `speculative_decoding_overview.md`, customer `spec_decoding_customer_report.html`.
+## 分支布局(本 session 重构,别再混 9B/122B)
+| branch | tip | 用途 |
+|---|---|---|
+| `test_result` | 48cad26 | **9B / GPU**(canonical handoff 在这) |
+| `test_result_npu` | fe095d5 | 9B / NPU(`npu_mtp_accept/`) |
+| **`test_result122B`** | 0364986 | **122B / GPU 评测**(`mtp_accept/` + DFlash 三路 + 报告) |
+| `mtp-training` | a50322a | **MTP 训练**(122B launcher + RUN.md「MTP 50k A/B」节) |
+| `dflash-122b-distill` | 4738c03 | **蒸馏数据生成**(`distill_allava_122b*.sh`) |
 
-## Done this session
-1. **DFlash 100k three-way eval analyzed + report** (`test_result` `03774ed`):
-   in-domain ALLaVA trained-DFlash 73.8 tok/s, mean-accept **2.666 (+37% vs orig)**,
-   first-pos 0.810; OOD MMStar 76.1 tok/s, mean-accept **2.416 (+15%)**. DFlash
-   fastest on both; **domains both up**. + `speculative_decoding_overview.md` (`21bfede`).
-2. **Distill was sequential (concurrency=1)** → added `--concurrency` (order-preserving
-   thread pool) to `scripts/distill_allava_with_qwen.py` + wired into distill shells
-   (`mtp-training` `963eadf`). Big distill speedup.
-3. **MTP OOD fix = WiSE-FT / weight soup** (`mtp-training` `ccf8052`): `stitch_mtp.py
-   --alpha` (blend finetuned+native head), `sweep_mtp_soup_alpha.sh`, `SKIP_ORIGINAL`.
-   **User ran α=0.5 — comprehensive WIN** (see Key results). ckpt:
-   `output/mtp_qwen3.5_9b_mm_distilled/mtp_bf16_lr3e5_100k_0612_0823/checkpoints/checkpoint_best`.
-4. **Customer HTML deck** (Huawei red/white). **Canonical = LOCAL HD file** (8 slides,
-   1280×720 fullscreen-scaling, includes the soup conclusion + an "MTP vs DFlash"
-   intro slide): `~/Documents/Codex/2026-05-27/spec_decoding_customer_report.html`
-   (on the user's Mac). The GitHub copy on `test_result` (`4af8e8a`) is the OLDER
-   7-slide version — STALE (no soup conclusion). User said they'd upload HD manually;
-   `.pptx` export still offered, not done.
-5. **122B MTP**: RUN.md auto-detect block (`39b3de9`). First run crashed →
-   **fixed `scripts/train.py` MoE bug** (`86cca58`): `create_transformer_layer_config`
-   read dense `intermediate_size`; 122B MoE only has `moe_intermediate_size` → added
-   fallback (runs for BOTH mtp & dflash). User: **MTP 122B now running.**
-6. **122B DFlash launcher** `nohup_dflash_122b_allava_distilled.sh` → moved to
-   `dflash-122b-distill`. Warm-starts from a downloaded z-lab 122B DFlash; base reads
-   block_size/aux-layers/arch from `FINETUNE_FROM`; CE+fp32+lr3e5; auto-detect data.
-7. **DFlash v2 blog** (lmsys 2026-06-15): **SGLang-only, NOT vLLM**; not training-free;
-   pretrained v2 drafts only for 397B + Qwen3-4B (NOT 9B/122B). Verdict: can't adopt
-   short-term → **stay on DFlash v1** (the vLLM path that already works).
+## ⏳ 下个 session 第一件事:MTP 50k 接受率 A/B(进行中)
+命令全在 `mtp-training:RUN.md` 的「MTP 50k 接受率 A/B」节。
+- **目标**:提升 MTP 接受率(中后位)。两台 A800,**唯一变量 = `STEP_WEIGHT_BETA`**;配置 **steps=5 / seq=4096(全长)**、50k 数据。机器1 A=`beta=0.6`、机器2 B=`beta=1.0`。
+- **当前状态**:steps=7 的 smoke **OOM 了**(trainer 端,全词表 248320 × seq × 7 步 logits 撑爆 GPU4-7)→ 决定改 **steps=5 全长**(省 ~8G,不截 seq)。**下一步:跑 steps=5 smoke(RUN.md 有命令)→ 过了起两台正式。**
+- 跑完:各取 `checkpoint_best`,切 `test_result122B` 用 `mtp_accept/run_mtp_accept_compare.sh` 评(ALLaVA+MMStar),比 **B(等权)中后位 per-position 是否高于 A**。
+- 然后:**纯 serve 的 spec sweep(3/5/7,不重训)** 定 deploy 深度(per-position 条件接受率 ~0.73 没塌,深位还产出,别先入为主定 3)。
 
-## Key results (the numbers that matter)
-- **MTP soup α=0.5 = both domains above native, zero retrain** (the headline win):
-  | metric | native | finetuned (α=1) | **soup α=0.5** |
-  |---|---|---|---|
-  | in-domain accept | 2.916 | 3.142 | **3.147 (+7.9%)** |
-  | OOD accept | 2.822 | 2.694 (−4.6% down) | **2.861 (+1.4% up)** |
-  Soup recovered the OOD regression AND kept in-domain. MTP is now "comprehensive".
-- **DFlash 100k**: in-domain +37% accept / +20% tok/s (2.45× baseline), OOD +15%.
-- **Why DFlash > MTP throughput**: DFlash drafts in PARALLEL (1 fwd, `dflash.py`
-  parallel_drafting); MTP is AUTOREGRESSIVE (k fwds). At equal accept, parallel wins
-  on `T_draft`. (Confirmed in vllm-fork code.)
+## ✅ 本 session 做完的
+1. **122B 评测出报告** = `test_result122B:examples/evaluate/mtp_dflash_122b_report.md`:
+   - **MTP best vs 原生**:ALLaVA mean-accept 3.066→3.376(**+10.1%**)/ tok/s +9.9% ✅;MMStar(OOD)−5.7%/−4.7%(first-pos 不动)。
+   - **训好的 DFlash vs 原始**:ALLaVA **+30.2%**、MMStar +8.4% ✅;但仍落后 MTP。
+   - **MTP 最强**(2.92× no-spec baseline)。
+2. **50k 蒸馏完成**(10k→50k):`dflash-122b-distill:distill_allava_122b_split.sh`,两台各 20k(SKIP/MAX 自动分片)、32 并发、TP=8、temp=0 → `data/allava/allava_122b_distill_50k.jsonl`。
+3. **分支重构** + **stitch 自包含 + hardlink 省盘**(122B 不再 244GB 全拷)+ mtp_accept 自动切后 10% val。
+4. **DFlash v2 / SGLang↔vLLM 源码结论**:DFlash 算法在 vLLM 自 **0.20.0**、vllm-ascend 自 **0.19.1rc1**(0.18 都没);「掩盖」= `async_scheduling` + fused materialize,vLLM 自带、**不用从 SGLang 移植**;async 帮 DFlash 不帮 MTP(并行 draft → host-bound)。
 
-## Next session — first actions
-1. **MTP 122B training is RUNNING** (`mtp-training`) — check its result when done
-   (in-domain + OOD accept/throughput). Stitch + eval like the 9B
-   (`test_mtp_{allava,mmstar}_orig_vs_trained.sh`).
-2. **122B DFlash NOT run yet** (`dflash-122b-distill`): smoke first —
-   ```
-   git checkout dflash-122b-distill && git pull
-   MODEL=/data/wenxuan/Qwen3.5-122B-A10B \
-   FINETUNE_FROM=<downloaded z-lab 122B DFlash dir> \
-   ALLAVA_IMAGE_ROOT=<real image path on training node> \
-   MAX_SAMPLES=50 EPOCHS=1 VALIDATE_INITIAL=0 \
-   bash examples/train/nohup_dflash_122b_allava_distilled.sh
-   ```
-   **Experimental/unvalidated.** Likely failure points: draft arch/weight mismatch on
-   warm-start load, or fp32 trainer OOM (`HIDDEN_STATES_DTYPE=bfloat16`). Send log.
-3. **Customer deck**: HD version is local-only + canonical; GitHub copy is stale. If
-   user wants it on GitHub or as `.pptx`, sync/generate from the local HD file.
+## 💡 关键经验(借自 openPangu MTP 报告 + 实测)
+- **step-weight 配平**:我们默认 FastMTP `beta=0.6` 衰减 [.51,.31,.18] 压中后位;openPangu:配平最优、压小后位掉 1–1.7%。→ A/B 测 `beta=1.0`(等权);first-pos 已饱和 ~0.87,空间全在中后位。
+- **train-what-you-serve 深度**:launcher 默认 train steps=3 但 serve spec=7 → 后位没训过(本想 steps=7,OOM → steps=5 折中)。
+- **TPOT ∝ 1/L**(L=每步吐 token=accept+1 bonus):+9% 接受 → TPOT 降 ~6.3%(metric 不含 bonus)~8.3%(含);实测 +10.1% 接受 ≈ +9.9% tok/s 印证。
 
-## Gotchas / workflow (keep)
-- `pkill -f vllm` before runs. Path prefix: training node uses **`/home/wenxuan`**;
-  the 122B scripts default image/model paths to `/data/wenxuan` → **set
-  `ALLAVA_IMAGE_ROOT` to the real path** (this bit the MTP 122B run).
-- **MTP must be bf16** (`HIDDEN_STATES_DTYPE`; fp32 breaks the MTP lm_head). **DFlash
-  uses fp32** (separate draft — the winning recipe).
-- 122B = Qwen3.5-122B-A10B MoE, heads=32 → **VLLM_TP in {4,8}, not 6**.
-- DFlash = parallel draft; MTP = autoregressive. MTP=accept ceiling, DFlash=throughput
-  ceiling (soup narrowed it; v2 would close it but is SGLang-only).
-- eval `ALLAVA_JSONL` must match the training jsonl (val tail = last 10%).
+## ⚠️ 坑(记牢)
+- **MTP 必须 bf16**(fp32 崩 lm_head);DFlash 用 fp32。
+- **122B heads=32 → TP 只能 {4,8}**;verifier TP=4(GPU0-3)+ trainer(4-7)。
+- **steps 大 → trainer OOM**(全词表 248320 × seq × steps logits)→ 砍 steps 别砍 seq(截 VLM 样本丢信号);**别**用 `PYTORCH_CUDA_ALLOC_CONF=expandable_segments`(破坏 vLLM hidden-states connector)。
+- **DFlash eval 的 `BASELINE_DRAFT`** 必须是真实原始 122B DFlash 路径(占位符会 `[fatal]` 退,本 session 踩过)。
+- **MTP head 不能裸 serve** → `stitch_mtp.py` 缝进 verifier;stitched = base + 训好的头,**可直接上线(质量=base,只提速)**;搬运注意 hardlink 会实体化(生产建议在目标机现 stitch)。
+- 路径 `/data/wenxuan` vs `/home/wenxuan` 按机器调;跑前 `pkill -f vllm`;内网只 pull,结果走 `output_log`/`output_debug` 回传;`/health` 探活要 `no_proxy=localhost`(否则走代理超时)。
+
+下个 session:`git show test_result:HANDOFF.md` → 跑 steps=5 smoke → A/B → eval → spec sweep。
