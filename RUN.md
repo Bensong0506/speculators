@@ -475,7 +475,11 @@ bash mtp_accept/run_mtp_accept_compare.sh
 比:**B(等权)中后位 per-position 接受是否高于 A**、mean-accept A vs B、各自 vs native。
 
 ### 坑
-- **steps=7 OOM**:`SEQ_LENGTH=3072`,或 `VLLM_TP=8 VLLM_GPUS=0,1,2,3,4,5,6,7 GEN_GPU_MEM_UTIL=0.55 TRAIN_GPUS=6,7`,或退 `NUM_SPECULATIVE_STEPS=5`(两台一致)。
+- **steps=7 OOM(已实测 2026-06-17,trainer 端而非 verifier)**:报错在 `src/speculators/models/mtp/core.py forward` 的 `mtp_layers[0]` —— 7 步 unroll × 全词表 (248320) logits/激活把 4 张 trainer 卡(GPU4-7)撑爆(verifier TP=4 在 GPU0-3 已正常出 hidden states)。修(按杠杆大小):
+  1. **砍 `SEQ_LENGTH`(最大杠杆,logits 显存 ∝ seq×steps)**:`SEQ_LENGTH=2048 PREPROCESS_SEQ_LENGTH=1792`(3072 实测临界,直接上 2048 稳)。改 seq 会触发重新 preprocess(50 条很快)。
+  2. 还紧:`NUM_SPECULATIVE_STEPS=5`(仍比原来 3 深;两台一致)。
+  3. **别**用 error 提示的 `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` —— 会破坏 vLLM 的 hidden-states connector(踩过)。
+  - 实测重试命令:`SEQ_LENGTH=2048 PREPROCESS_SEQ_LENGTH=1792 MAX_SAMPLES=50 EPOCHS=1 NUM_SPECULATIVE_STEPS=7 STEP_WEIGHT_BETA=0.6 MODEL=... DISTILLED_ALLAVA_JSONL=... RUN_NAME=mtp122b_smoke_s7_seq2048 bash examples/train/nohup_mtp_122b_allava_distilled.sh`
 - 两台 `MODEL` / 数据必须完全一致,否则 A/B 不可比。
 - sanity:trained ≈ native → `MTP_METHOD=mtp` 重评(stitch 头没加载)。
 
