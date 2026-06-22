@@ -63,3 +63,51 @@ num_requested                                    128       128    1.000
 
 [sanity] trained ≈ native => stitch 的头没被加载,换 MTP_METHOD=mtp 重跑
 [INFO] 结果/日志: /data/wenxuan/speculators/mtp_accept/results/arm_a/
+
+
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"/data/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\",position=\"3\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"/data/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\",position=\"4\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"/data/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\",position=\"5\"}": 0.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"/data/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\",position=\"6\"}": 0.0
+  },
+  "spec_draft_steps_total": 8520.0,
+  "spec_draft_tokens_total": 59640.0,
+  "spec_accepted_tokens_total": 24380.0,
+  "spec_accepted_tokens_by_position": {
+    "0": 7058.0,
+    "1": 5459.0,
+    "2": 4006.0,
+    "3": 2899.0,
+    "4": 2156.0,
+    "5": 1613.0,
+    "6": 1189.0
+  },
+  "spec_token_acceptance_rate": 0.40878604963112003,
+  "spec_first_position_acceptance_rate": 0.8284037558685446,
+  "spec_mean_accepted_tokens_per_draft": 2.8615023474178405
+}
+
+################ 原生 MTP vs 训好的 MTP best ################
+
+=== allava ===
+metric                                        native   trained    ratio
+spec_mean_accepted_tokens_per_draft            3.066     3.419    1.115
+spec_token_acceptance_rate                     0.438     0.488    1.115
+spec_first_position_acceptance_rate            0.848     0.866    1.020
+output_tok_per_sec                            34.307    36.816    1.073
+completed                                        128       128    1.000
+num_requested                                    128       128    1.000
+
+=== mmstar ===
+metric                                        native   trained    ratio
+spec_mean_accepted_tokens_per_draft            2.930     2.862    0.976
+spec_token_acceptance_rate                     0.419     0.409    0.976
+spec_first_position_acceptance_rate            0.831     0.828    0.997
+output_tok_per_sec                            33.915    32.365    0.954
+completed                                        128       128    1.000
+num_requested                                    128       128    1.000
+
+[sanity] trained ≈ native => stitch 的头没被加载,换 MTP_METHOD=mtp 重跑
+[INFO] 结果/日志: /data/wenxuan/speculators/mtp_accept/results/arm_a/
+[INFO] ARM=a 完成 -> /data/wenxuan/speculators/mtp_accept/results/arm_a
+       两台都跑完:比 A vs B 的 *_trained_summary.json(mean-accept / 中后位 per-position);各自 vs native 已在本机表里。
