@@ -80,14 +80,13 @@ b{font-weight:500;}
           <section class="hw-slide">
             <div class="hw-accent"></div>
             <p class="hw-kicker">起点与原理</p>
-            <h2 class="hw-h">基线、原版方案与初始难题</h2>
+            <h2 class="hw-h">基线与投机解码原理</h2>
             <p style="font-size:25px;color:#555;margin:0 0 26px;line-height:1.6;">原理:小模型先猜 k 个 token,大模型一次并行校验、接受正确前缀 —— 输出与原模型完全一致,只换取速度。</p>
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
               <div class="hw-mc"><div class="hw-mc-l">无投机解码</div><div class="hw-mc-v">30.1</div><div class="hw-mc-u">tok/s · 1.0×</div></div>
               <div class="hw-mc"><div class="hw-mc-l">原版 DFlash draft</div><div class="hw-mc-v">61.4</div><div class="hw-mc-u">tok/s · 2.0×</div></div>
               <div class="hw-mc"><div class="hw-mc-l">原生 MTP 头</div><div class="hw-mc-v">66.4</div><div class="hw-mc-u">tok/s · 2.2×</div></div>
             </div>
-            <div class="hw-note">初始难题:DFlash draft 直接拿原始数据训练,反而<b>输给原版(0.83×)</b> —— 必须先解决"训练数据"问题。详见下页。</div>
             <div class="hw-foot">Qwen3.5-9B · @spec7 · n=128 · 域内 ALLaVA / 域外 MMStar</div>
           </section>
 
@@ -163,6 +162,23 @@ b{font-weight:500;}
 
           <section class="hw-slide">
             <div class="hw-accent"></div>
+            <p class="hw-kicker">路线一 · DFlash 122B</p>
+            <h2 class="hw-h">122B 实验:训练后 DFlash 两域均超过原始</h2>
+            <p class="hw-sub2">Qwen3.5-122B-A10B 上同样用自蒸馏数据训练 DFlash draft;目标是验证 DFlash 在大模型 verifier 上是否仍能稳定提升。</p>
+            <table class="hw-tbl">
+              <colgroup><col style="width:18%"><col style="width:23%"><col style="width:23%"><col style="width:22%"><col style="width:14%"></colgroup>
+              <thead><tr><th>数据集</th><th>原始 DFlash</th><th>训好 DFlash</th><th>提升</th><th>MTP 参考</th></tr></thead>
+              <tbody>
+                <tr class="best"><td>ALLaVA</td><td>1.753 / 26.65</td><td>2.283 / 30.92</td><td>接受 +30.2%<br>速度 +16.0%</td><td>3.209 / 34.38</td></tr>
+                <tr class="best"><td>MMStar</td><td>1.967 / 28.51</td><td>2.133 / 30.42</td><td>接受 +8.4%<br>速度 +6.7%</td><td>3.238 / 33.59</td></tr>
+              </tbody>
+            </table>
+            <div class="hw-note">结论:DFlash 蒸馏训练在 122B 上有效,域内域外均超过原始 DFlash;对无投机 baseline,训好 DFlash 约 <b>2.6×</b>,MTP 约 <b>2.9×</b>。</div>
+            <div class="hw-foot">表格单元:接受长度 / tok/s · @spec7 · n=128 · ALLaVA 域内 / MMStar 域外</div>
+          </section>
+
+          <section class="hw-slide">
+            <div class="hw-accent"></div>
             <p class="hw-kicker">路线二 · MTP</p>
             <h2 class="hw-h">微调:域内强,域外回退(待补)</h2>
             <p class="hw-sub2">同样基于蒸馏数据;MTP 头用 bf16 微调(fp32 会破坏其 lm_head)。</p>
@@ -232,7 +248,7 @@ b{font-weight:500;}
               <div style="border:1px solid #E6E6E6;border-radius:18px;padding:28px;">
                 <div style="font-size:26px;font-weight:500;color:#C7000B;margin-bottom:12px;">DFlash · 主打吞吐</div>
                 <div style="font-size:48px;font-weight:500;color:#1F1F1F;">73.8<span style="font-size:22px;color:#888;"> tok/s</span></div>
-                <div style="font-size:21px;color:#666;margin-top:12px;line-height:1.5;">9B 端到端最快(2.45×),<span style="color:#C7000B;">域内域外双提升</span>;122B 上训练后同样超过原始 DFlash。</div>
+                <div style="font-size:21px;color:#666;margin-top:12px;line-height:1.5;">9B 端到端最快(2.45×),<span style="color:#C7000B;">域内域外双提升</span>;122B 上接受 +30.2% / +8.4%。</div>
               </div>
               <div style="border:1px solid #E6E6E6;border-radius:18px;padding:28px;">
                 <div style="font-size:26px;font-weight:500;color:#C7000B;margin-bottom:12px;">MTP · 主打接受率</div>
