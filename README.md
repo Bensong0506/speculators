@@ -9,11 +9,13 @@ diff 基准:`upstream/main = vllm-project/speculators @ d1a3ff3`。
 ## 2. 关键结果(详见 `reports/`)
 | 对比 | in-domain (ALLaVA) | OOD (MMStar) |
 |---|---|---|
-| 训好的 MTP vs 原生 MTP | mean-accept **+10.1%** / tok/s +9.9% ✅ | −5.7%(轻微,正常微调专化) |
+| 122B MTP `β=0.6` vs 原生 MTP | mean-accept **+11.5%** / tok/s +7.3% ✅ | −2.4%(已优于 `β=1.0`) |
+| 122B MTP 权重汤 `α=0.5` vs 原生 MTP | mean-accept **+10.2%** / tok/s +4.5% ✅ | **+2.3%** ✅ |
 | 训好的 DFlash vs 原始 DFlash | mean-accept **+30.2%** ✅ | +8.4% ✅ |
 | 最强方法 | **MTP(2.92× no-spec baseline)** | MTP |
 
 - 实测 **接受率与吞吐近 1:1**(+10.1% 接受 → +9.9% tok/s),印证 `throughput ∝ 接受长度`。
+- 新结果:122B 上 `α=0.5` MTP soup 不用重训,保住 ALLaVA 大部分增益,同时把 MMStar 从轻微回退修到**正收益**。
 - 报告:`reports/mtp_dflash_122b_report.md`(122B)、`mtp_finetune_report.md`(9B MTP)、`dflash_ce_finetune_report.md` · `dflash_100k_three_way_report.md`(9B DFlash)。
 
 ## 3. 代码贡献(`diff/`,vs upstream d1a3ff3)
@@ -40,4 +42,4 @@ diff 基准:`upstream/main = vllm-project/speculators @ d1a3ff3`。
 3. **评测** `scripts/eval/mtp_accept/` —— serve native vs 训好的,读 `/metrics` per-position 接受率(ALLaVA 域内 + MMStar 域外)。
 4. **部署** `scripts/eval/mtp_accept/stitch_mtp.py` —— 把训好的 MTP 头缝回 verifier → 可直接上线(质量 = base,仅提速)。
 
-> 进行中:MTP 50k 数据的 step-weight A/B(beta=0.6 vs 1.0)+ deploy 深度 spec sweep。
+> 最新:step-weight A/B 已确认 `β=0.6` 更优;122B MTP soup `α=0.5` 已把 OOD 修到正收益。下一步做更细的 `α` sweep + deploy 深度 spec sweep。
