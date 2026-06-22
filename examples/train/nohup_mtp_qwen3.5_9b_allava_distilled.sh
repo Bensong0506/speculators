@@ -88,6 +88,16 @@ export MEDIA_ROOT="$ALLAVA_IMAGE_ROOT"
 export OUTPUT_DIR="${OUTPUT_DIR:-./output/mtp_qwen3.5_9b_mm_distilled}"
 export SAVE_PATH="${SAVE_PATH:-./output/mtp_qwen3.5_9b_mm_distilled/${RUN_NAME}/checkpoints}"
 
+# Keep the 9B MTP smoke path isolated from the base multimodal launcher's DP=4
+# default. DP=4 is useful for fast data generation, but it opens neighboring
+# vLLM ports and can collide with stale 122B/old smoke servers.
+export VLLM_GPUS="${VLLM_GPUS:-0}"
+export VLLM_TP="${VLLM_TP:-1}"
+export VLLM_DP="${VLLM_DP:-1}"
+export GEN_GPU_MEM_UTIL="${GEN_GPU_MEM_UTIL:-0.85}"
+export TRAIN_GPUS="${TRAIN_GPUS:-4,5,6,7}"
+export NUM_TRAIN_GPUS="${NUM_TRAIN_GPUS:-4}"
+
 # --- training knobs ---
 export MAX_SAMPLES="${MAX_SAMPLES:-10000}"
 export EPOCHS="${EPOCHS:-20}"
@@ -97,7 +107,7 @@ export HIDDEN_STATES_DTYPE="${HIDDEN_STATES_DTYPE:-bfloat16}"
 export SEQ_LENGTH="${SEQ_LENGTH:-4096}"
 export PREPROCESS_SEQ_LENGTH="${PREPROCESS_SEQ_LENGTH:-3584}"
 export NO_RESUME_FROM_CHECKPOINT="${NO_RESUME_FROM_CHECKPOINT:-1}"
-export VALIDATE_INITIAL="${VALIDATE_INITIAL:-1}"
+export VALIDATE_INITIAL="${VALIDATE_INITIAL:-0}"
 export VLLM_PORT="${VLLM_PORT:-18009}"  # avoid stale/default :8000 servers during smoke
 
 export LOGGER="${LOGGER:-wandb}"
@@ -111,9 +121,12 @@ echo "  run_name:    $RUN_NAME"
 echo "  verifier:    $MODEL   (must contain native mtp.* weights)"
 echo "  dataset:     $DATASET"
 echo "  save_path:   $SAVE_PATH"
+echo "  vLLM:        TP=$VLLM_TP DP=$VLLM_DP on GPUs [$VLLM_GPUS]  (mem_util=$GEN_GPU_MEM_UTIL)"
+echo "  trainer:     $NUM_TRAIN_GPUS GPUs [$TRAIN_GPUS]"
 echo "  spec_steps:  $NUM_SPECULATIVE_STEPS   step_weight_beta=$STEP_WEIGHT_BETA"
 echo "  self_force:  train=$MTP_SELF_FORCING_P   val=$MTP_VAL_SELF_FORCING_P"
 echo "  epochs:      $EPOCHS   lr=$LR   max_samples=$MAX_SAMPLES"
+echo "  validate_initial: $VALIDATE_INITIAL"
 echo "  vllm_port:   $VLLM_PORT"
 echo "  log:         $NOHUP_LOG_PATH"
 

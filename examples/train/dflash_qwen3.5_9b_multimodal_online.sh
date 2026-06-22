@@ -475,6 +475,25 @@ echo "=== Step 2: Launching vLLM server ==="
 filter_vllm_access_logs() {
     grep -v -E '^\(ApiServer_[^)]*\) INFO: .*"(POST /v1/chat/completions|GET /health|GET /v1/models) HTTP/1\.1" 200 OK$'
 }
+check_vllm_ports_free() {
+    python3 - "$VLLM_PORT" "$VLLM_DP" <<'PY'
+import socket
+import sys
+
+start = int(sys.argv[1])
+# vLLM may use port+1 for its internal distributed rendezvous even when DP=1.
+count = max(2, int(sys.argv[2]))
+busy = []
+for port in range(start, start + count):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.settimeout(0.2)
+        if sock.connect_ex(("127.0.0.1", port)) == 0:
+            busy.append(port)
+if busy:
+    print(",".join(str(p) for p in busy))
+    raise SystemExit(1)
+PY
+}
 # The generation server re-tokenizes the FULL multimodal prompt (text + image
 # token expansion + chat template), which can exceed the training sequence
 # length SEQ_LENGTH and get rejected with HTTP 400 "Input length (N) exceeds
@@ -484,6 +503,11 @@ filter_vllm_access_logs() {
 GEN_MAX_MODEL_LEN="${GEN_MAX_MODEL_LEN:-$((SEQ_LENGTH + 2048))}"
 echo "    gen vLLM max-model-len: $GEN_MAX_MODEL_LEN (training stays at $SEQ_LENGTH)"
 echo "    vLLM parallelism: TP=$VLLM_TP x DP=$VLLM_DP on GPUs [$VLLM_GPUS], mem_util=$GEN_GPU_MEM_UTIL"
+if ! BUSY_PORTS="$(check_vllm_ports_free)"; then
+    echo "[fatal] vLLM port(s) already in use: $BUSY_PORTS"
+    echo "        Stop stale vLLM/train processes or choose a free VLLM_PORT."
+    exit 1
+fi
 CUDA_VISIBLE_DEVICES="$VLLM_GPUS" python3 scripts/launch_vllm.py "$MODEL" \
     --target-layer-ids $TARGET_LAYER_IDS \
     -- --tensor-parallel-size "$VLLM_TP" \
