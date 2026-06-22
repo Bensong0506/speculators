@@ -256,8 +256,8 @@ b{font-weight:500;}
                 <div style="font-size:21px;color:#666;margin-top:12px;line-height:1.5;">9B 与 122B 均完成权重插值验证;122B 域外 <span style="color:#C7000B;">+2.3%</span>,通用场景双正。</div>
               </div>
             </div>
-            <div style="margin-top:26px;font-size:24px;color:#444;line-height:1.7;">
-              <span style="color:#C7000B;">下一步</span> — 当前版本只汇报 MTP 与 DFlash;后续进入 D-Cut 阶段,做 DFlash 校验深度动态剪枝与高并发部署优化,结果另行展开。
+            <div style="margin-top:24px;font-size:22px;color:#444;line-height:1.62;">
+              <span style="color:#C7000B;">下一步 · D-Cut</span> — 高并发场景下,draft 已足够便宜,投机推理瓶颈会转向 verifier 校验;因此需要减少每轮 verify token 数。D-Cut 对 DFlash 校验深度做动态剪枝,例如 spec=7 若平均只校验 4 个 token,verify token 约减少 <b>43%</b>。当前 GPU 路径已跑通,下一步迁移至 NPU。
             </div>
             <div class="hw-foot">口径:Qwen3.5 多模态 9B / 122B · 投机步数 7 · 128 条样本 · 域内 ALLaVA / 域外 MMStar</div>
           </section>
