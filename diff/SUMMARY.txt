@@ -1,0 +1,83 @@
+# 改动文件汇总(各分支 vs upstream/main d1a3ff3)
+
+## origin/mtp-training
+ examples/train/extract_allava_images.sh            |  60 +++
+ examples/train/find_allava.sh                      |  54 ++
+ ...nohup_dflash_qwen3.5_9b_allava_distilled_10k.sh | 130 +++++
+ .../train/nohup_dflash_qwen3.5_9b_allava_full.sh   |  88 ++++
+ examples/train/nohup_mtp_122b_allava_distilled.sh  | 128 +++++
+ .../train/nohup_mtp_qwen3.5_9b_allava_distilled.sh |  88 ++++
+ .../nohup_mtp_qwen3.5_9b_allava_distilled_100k.sh  |  46 ++
+ examples/train/view_tensorboard.sh                 |  20 +
+ output_debug                                       |  65 +++
+ scripts/convert_zlab_dflash_to_speculators.py      |  97 ++++
+ scripts/distill_allava_with_qwen.py                | 347 +++++++++++++
+ scripts/llava_to_jsonl.py                          | 158 ++++++
+ scripts/mmstar_to_jsonl.py                         | 268 ++++++++++
+ scripts/stitch_mtp.py                              |  62 ++-
+ scripts/train.py                                   | 266 +++++++---
+ setup.py                                           |   2 +-
+ src/speculators/data_generation/preprocessing.py   |   7 +
+ src/speculators/models/dflash/core.py              |  10 +-
+ src/speculators/train/data.py                      | 163 +++---
+ src/speculators/train/trainer.py                   |  23 +-
+ tests/e2e/regression/test_mtp_online_acceptance.py |   4 +-
+ .../regression/test_training_only_acceptance.py    | 113 ++---
+ tests/e2e/utils.py                                 |  32 +-
+ tests/integration/datagen/test_preprocessing.py    |  31 ++
+ 46 files changed, 5764 insertions(+), 232 deletions(-)
+
+## origin/test_result122B
+ src/speculators/models/peagle/core.py              |    8 +-
+ src/speculators/models/utils.py                    |    8 -
+ src/speculators/train/data.py                      |   95 +-
+ src/speculators/train/trainer.py                   |    5 +-
+ src/speculators/utils/loading.py                   |   28 +-
+ tests/conftest.py                                  |   34 -
+ tests/e2e/regression/test_mtp_online_acceptance.py |   51 -
+ .../regression/test_training_only_acceptance.py    |  113 +--
+ tests/e2e/smoke/test_mtp_conversion_roundtrip.py   |  208 ----
+ tests/e2e/smoke/test_mtp_finetuning.py             |  173 ----
+ tests/e2e/utils.py                                 |   59 +-
+ tests/integration/conftest.py                      |   72 +-
+ tests/integration/datagen/test_preprocessing.py    |   31 +
+ tests/integration/models/test_model_forward.py     |   95 +-
+ tests/unit/conftest.py                             |   15 -
+ tests/unit/convert/test_eagle3_converter.py        |    4 +-
+ tests/unit/convert/test_eagle_utils.py             |   20 +-
+ tests/unit/convert/test_mtp_converter.py           |  171 ----
+ tests/unit/models/conftest.py                      |   35 -
+ tests/unit/models/test_mtp_config.py               |  186 ----
+ tests/unit/models/test_mtp_data.py                 |   25 -
+ tests/unit/models/test_mtp_frozen_weights.py       |   41 -
+ tests/unit/models/test_mtp_model.py                |  115 ---
+ tests/unit/train/test_data.py                      |   14 +-
+ 128 files changed, 11878 insertions(+), 4710 deletions(-)
+
+## origin/dflash-122b-distill
+ examples/train/find_allava.sh                      |  54 ++
+ .../train/nohup_dflash_122b_allava_distilled.sh    | 124 +++++
+ ...nohup_dflash_qwen3.5_9b_allava_distilled_10k.sh | 130 +++++
+ .../train/nohup_dflash_qwen3.5_9b_allava_full.sh   |  88 ++++
+ examples/train/nohup_mtp_122b_allava_distilled.sh  | 128 +++++
+ .../train/nohup_mtp_qwen3.5_9b_allava_distilled.sh |  88 ++++
+ .../nohup_mtp_qwen3.5_9b_allava_distilled_100k.sh  |  46 ++
+ examples/train/view_tensorboard.sh                 |  20 +
+ output_debug                                       | 117 +++++
+ scripts/convert_zlab_dflash_to_speculators.py      |  97 ++++
+ scripts/distill_allava_with_qwen.py                | 347 +++++++++++++
+ scripts/llava_to_jsonl.py                          | 158 ++++++
+ scripts/mmstar_to_jsonl.py                         | 268 ++++++++++
+ scripts/stitch_mtp.py                              |  62 ++-
+ scripts/train.py                                   | 266 +++++++---
+ setup.py                                           |   2 +-
+ src/speculators/data_generation/preprocessing.py   |   7 +
+ src/speculators/models/dflash/core.py              |  10 +-
+ src/speculators/train/data.py                      | 163 +++---
+ src/speculators/train/trainer.py                   |  23 +-
+ tests/e2e/regression/test_mtp_online_acceptance.py |   4 +-
+ .../regression/test_training_only_acceptance.py    | 113 ++---
+ tests/e2e/utils.py                                 |  32 +-
+ tests/integration/datagen/test_preprocessing.py    |  31 ++
+ 48 files changed, 5970 insertions(+), 232 deletions(-)
+
