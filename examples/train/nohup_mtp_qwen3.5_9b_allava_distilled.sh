@@ -48,6 +48,28 @@ if [ "${ALLOW_NON_9B_DATA:-0}" != "1" ] && [[ "$DISTILLED_ALLAVA_JSONL" =~ 122[B
     echo "        Use the 9B-distilled ALLaVA jsonl, or set ALLOW_NON_9B_DATA=1 intentionally."
     exit 1
 fi
+ROOT_TAG="$(python3 - "$ALLAVA_IMAGE_ROOT" <<'PY'
+import hashlib
+import sys
+
+print(hashlib.sha1(sys.argv[1].encode()).hexdigest()[:8])
+PY
+)"
+LOCAL_DISTILLED_ALLAVA_JSONL="${LOCAL_DISTILLED_ALLAVA_JSONL:-${DISTILLED_ALLAVA_JSONL%.jsonl}.local_${ROOT_TAG}.jsonl}"
+if [ "${REWRITE_DISTILLED_IMAGE_PATHS:-1}" = "1" ]; then
+    if [ ! -s "$LOCAL_DISTILLED_ALLAVA_JSONL" ] \
+        || [ "$DISTILLED_ALLAVA_JSONL" -nt "$LOCAL_DISTILLED_ALLAVA_JSONL" ]; then
+        echo "Rewriting distilled image paths for local image root:"
+        echo "  source:     $DISTILLED_ALLAVA_JSONL"
+        echo "  image_root: $ALLAVA_IMAGE_ROOT"
+        echo "  output:     $LOCAL_DISTILLED_ALLAVA_JSONL"
+        python3 scripts/rewrite_jsonl_image_paths.py \
+            --in-jsonl "$DISTILLED_ALLAVA_JSONL" \
+            --out-jsonl "$LOCAL_DISTILLED_ALLAVA_JSONL" \
+            --image-root "$ALLAVA_IMAGE_ROOT"
+    fi
+    export DISTILLED_ALLAVA_JSONL="$LOCAL_DISTILLED_ALLAVA_JSONL"
+fi
 
 # --- MTP-specific ---
 export SPECULATOR_TYPE=mtp

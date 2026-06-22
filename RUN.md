@@ -460,6 +460,11 @@ NUM_SPECULATIVE_STEPS=5 STEP_WEIGHT_BETA=1.0 \
 用 9B launcher 跑 122B;122B 要走 `examples/train/nohup_mtp_122b_allava_distilled.sh`
 并配置 `VLLM_TP=4`。
 
+9B launcher 会自动把 distilled jsonl 里的图片绝对路径重写到当前
+`ALLAVA_IMAGE_ROOT` 下,生成 `*.local_<hash>.jsonl` 后再训练。这样同一份
+`allava_qwen35_distill_*.jsonl` 即使是在 `/data/wenxuan/ALLaVA-4V` 上生成的,
+也可以在只有 `/home/wenxuan/ALLaVA-4V` 的机器上直接跑。
+
 如果 val 抖得厉害,下一轮只改 `MTP_SELF_FORCING_P=0.25`。最终仍用
 `examples/evaluate/test_mtp_allava_orig_vs_trained.sh` 看真实 mean accept 和
 per-position accept;关键看 pos 3-5 有没有涨,而不是只看 teacher-forced loss。

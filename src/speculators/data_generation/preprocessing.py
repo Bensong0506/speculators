@@ -758,6 +758,11 @@ def load_and_preprocess_dataset(
     combined_dataset.shuffle(seed=seed)
     if max_samples is not None and len(combined_dataset) > max_samples:
         combined_dataset = combined_dataset.select(range(max_samples))
+    if len(combined_dataset) == 0:
+        raise ValueError(
+            "No valid samples remained after preprocessing. Check that local image "
+            "paths in the dataset exist on this machine and are supported formats."
+        )
 
     log.subsection("Computing token frequency distribution")
     save_token_frequency_distribution(
