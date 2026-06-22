@@ -92,10 +92,11 @@ run_arm(){ # $1 arm  $2 model  $3 media  $4 dataset
   cleanup
 }
 
-run_arm allava_native  "$MODEL"             "$ALLAVA_IMAGE_ROOT" "$ALLAVA_VAL_JSONL"
+# SKIP_NATIVE=1 跳过 native 臂(native 与 trained 头无关;soup α sweep 里只需测一次)
+[ -n "${SKIP_NATIVE:-}" ] || run_arm allava_native  "$MODEL"             "$ALLAVA_IMAGE_ROOT" "$ALLAVA_VAL_JSONL"
 run_arm allava_trained "$TRAINED_MTP_MODEL" "$ALLAVA_IMAGE_ROOT" "$ALLAVA_VAL_JSONL"
 if [ -n "$MMSTAR_JSONL" ] && [ -n "$MMSTAR_IMAGE_ROOT" ]; then
-  run_arm mmstar_native  "$MODEL"             "$MMSTAR_IMAGE_ROOT" "$MMSTAR_JSONL"
+  [ -n "${SKIP_NATIVE:-}" ] || run_arm mmstar_native  "$MODEL"             "$MMSTAR_IMAGE_ROOT" "$MMSTAR_JSONL"
   run_arm mmstar_trained "$TRAINED_MTP_MODEL" "$MMSTAR_IMAGE_ROOT" "$MMSTAR_JSONL"
 fi
 

@@ -68,3 +68,24 @@ ARM=b CKPT=$PWD/output/mtp_122b_mm_distilled/mtp122b_50k_s5_b10/checkpoints/chec
 - 结果在 `mtp_accept/results/arm_{a,b}/`;summary 带 `arm_` 前缀进 `output_log_debug`(两台不撞名)。
 - 两台跑完:比 **A vs B 的 `*_trained_summary.json`**(B 等权的中后位 per-position 是否更高、mean-accept A vs B);各自 vs native 已在本机表里。
 - 训的是 steps=5,想看"匹配训练深度"的读数可加 `NUM_SPEC_TOKENS=5`。
+
+## 权重汤 / WiSE-FT(soup)—— 修域外回退,零重训(sweep_mtp_soup_122b.sh)
+
+A/B 选定的 best(arm A · `beta=0.6`)域内 +11.5% 但域外(MMStar)−2.4%。把**微调头与原生头按
+alpha 混权**(`alpha*finetuned + (1-alpha)*native`)常能把域外拉回原生附近、域内基本不丢——9B
+上 alpha=0.5 把域外 −4.6% 救成 +1.4%、域内仍 +7.9%。只混已有权重,不重训、不要新数据。
+
+一键 sweep(native 只测一次;每个 soup 只真拷 MTP 头分片、其余 hardlink,不是 244GB):
+```bash
+git checkout test_result122B && git pull
+MODEL=/data/wenxuan/Qwen3.5-122B-A10B \
+MTP_CKPT=$PWD/output/mtp_122b_mm_distilled/mtp122b_50k_s5_b06/checkpoints/checkpoint_best \
+ALLAVA_JSONL=$PWD/data/allava/allava_122b_distill_50k.jsonl ALLAVA_IMAGE_ROOT=/data/wenxuan/ALLaVA-4V \
+MMSTAR_JSONL=$PWD/data/mmstar/mmstar.jsonl MMSTAR_IMAGE_ROOT=/data/wenxuan/mmstar/images \
+ALPHAS="0.5" TP=4 GPUS=0,1,2,3 NUM_SPEC_TOKENS=7 \
+bash mtp_accept/sweep_mtp_soup_122b.sh
+```
+- 先跑 `ALPHAS="0.5"`(最省,9B 的赢点);要扫多点:`ALPHAS="0.3 0.5 0.7"`。
+- **自检**:`ALPHAS="1.0"` 必须复现 arm A(纯微调头,域内 ≈3.42)——不复现说明 blend/缝合有问题。
+- 产出 `mtp_accept/results/soup_sweep/<时间戳>/soup_sweep_summary.md`(native / 各 alpha × 域内+域外 一张表 + 结论),也进 `output_log_debug/`。
+- 单点手动版(不用 sweep):`python3 mtp_accept/stitch_mtp.py $MTP_CKPT $MODEL --alpha 0.5 --output-path mtp_accept/stitched/soup_a05` 然后把它当 `TRAINED_MTP_MODEL=...soup_a05` 传给 `run_mtp_accept_compare.sh`。
