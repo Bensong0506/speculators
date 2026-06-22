@@ -1,51 +1,318 @@
-[rank1]: ValueError: An explicit model name was passed (/home/wenxuan/Qwen3.5-122B-A10B) which doesn't match found model_id /home/wenxuan/Qwen3.5-9B.Please make sure --endpoint is set to the correct vllm instance.
-
-Epoch -1   0%                                0/1  [ 0:00:11 < -:--:-- , ? it/s ]
-[rank0]: Traceback (most recent call last):
-[rank0]:   File "/home/wenxuan/speculators/scripts/train.py", line 973, in <module>
-[rank0]:     main(args)
-[rank0]:   File "/home/wenxuan/speculators/scripts/train.py", line 576, in main
-[rank0]:     trainer.run_training()
-[rank0]:   File "/home/wenxuan/speculators/src/speculators/train/graceful_shutdown.py", line 118, in wrapper
-[rank0]:     return fn(self, *args, **kwargs)
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/home/wenxuan/speculators/src/speculators/train/trainer.py", line 352, in run_training
-[rank0]:     self.val_epoch(-1, phase="initial_val", sampler_epoch=0)
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/_contextlib.py", line 124, in decorate_context
-[rank0]:     return func(*args, **kwargs)
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/home/wenxuan/speculators/src/speculators/train/trainer.py", line 271, in val_epoch
-[rank0]:     for batch in val_loader:
-[rank0]:                  ^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/tqdm/std.py", line 1181, in __iter__
-[rank0]:     for obj in iterable:
-[rank0]:                ^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/data/dataloader.py", line 741, in __next__
-[rank0]:     data = self._next_data()
-[rank0]:            ^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/data/dataloader.py", line 1548, in _next_data
-[rank0]:     return self._process_data(data, worker_id)
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/data/dataloader.py", line 1586, in _process_data
-[rank0]:     data.reraise()
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/_utils.py", line 785, in reraise
-[rank0]:     raise exception
-[rank0]: ValueError: Caught ValueError in DataLoader worker process 0.
-[rank0]: Original Traceback (most recent call last):
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/data/_utils/worker.py", line 358, in _worker_loop
-[rank0]:     data = fetcher.fetch(index)  # type: ignore[possibly-undefined]
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/data/_utils/fetch.py", line 54, in fetch
-[rank0]:     data = [self.dataset[idx] for idx in possibly_batched_index]
-[rank0]:             ~~~~~~~~~~~~^^^^^
-[rank0]:   File "/home/wenxuan/speculators/src/speculators/train/data.py", line 148, in __getitem__
-[rank0]:     data = self._get_raw_data(index)
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/home/wenxuan/speculators/src/speculators/train/data.py", line 325, in _get_raw_data
-[rank0]:     loaded_hs = self._maybe_generate_hs(index)
-[rank0]:                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/home/wenxuan/speculators/src/speculators/train/data.py", line 285, in _maybe_generate_hs
-[rank0]:     self._setup_client()
-[rank0]:   File "/home/wenxuan/speculators/src/speculators/train/data.py", line 269, in _setup_client
-[rank0]:     raise ValueError(
-[rank0]: ValueError: An explicit model name was passed (/home/wenxuan/Qwen3.5-122B-A10B) which doesn't match found model_id /home/wenxuan/Qwen3.5-9B.Please make sure --endpoint is set to the correct vllm instance.
+rker pid=291916) ERROR 06-22 09:14:24 [multiproc_executor.py:870]            ^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=291916) ERROR 06-22 09:14:24 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 611, in __init__
+(Worker pid=291916) ERROR 06-22 09:14:24 [multiproc_executor.py:870]     self.worker.init_device()
+(Worker pid=291916) ERROR 06-22 09:14:24 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/worker_base.py", line 325, in init_device
+(Worker pid=291916) ERROR 06-22 09:14:24 [multiproc_executor.py:870]     self.worker.init_device()  # type: ignore
+(Worker pid=291916) ERROR 06-22 09:14:24 [multiproc_executor.py:870]     ^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=291916) ERROR 06-22 09:14:24 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(Worker pid=291916) ERROR 06-22 09:14:24 [multiproc_executor.py:870]     return func(*args, **kwargs)
+(Worker pid=291916) ERROR 06-22 09:14:24 [multiproc_executor.py:870]            ^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=291916) ERROR 06-22 09:14:24 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu_worker.py", line 280, in init_device
+(Worker pid=291916) ERROR 06-22 09:14:24 [multiproc_executor.py:870]     init_worker_distributed_environment(
+(Worker pid=291916) ERROR 06-22 09:14:24 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu_worker.py", line 1140, in init_worker_distributed_environment
+(Worker pid=291916) ERROR 06-22 09:14:24 [multiproc_executor.py:870]     init_distributed_environment(
+(Worker pid=291916) ERROR 06-22 09:14:24 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/distributed/parallel_state.py", line 1444, in init_distributed_environment
+(Worker pid=291916) ERROR 06-22 09:14:24 [multiproc_executor.py:870]     torch.distributed.init_process_group(
+(Worker pid=291916) ERROR 06-22 09:14:24 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/c10d_logger.py", line 83, in wrapper
+(Worker pid=291916) ERROR 06-22 09:14:24 [multiproc_executor.py:870]     return func(*args, **kwargs)
+(Worker pid=291916) ERROR 06-22 09:14:24 [multiproc_executor.py:870]            ^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=291916) ERROR 06-22 09:14:24 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/c10d_logger.py", line 97, in wrapper
+(Worker pid=291916) ERROR 06-22 09:14:24 [multiproc_executor.py:870]     func_return = func(*args, **kwargs)
+(Worker pid=291916) ERROR 06-22 09:14:24 [multiproc_executor.py:870]                   ^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=291916) ERROR 06-22 09:14:24 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/distributed_c10d.py", line 1831, in init_process_group
+(Worker pid=291916) ERROR 06-22 09:14:24 [multiproc_executor.py:870]     store, rank, world_size = next(rendezvous_iterator)
+(Worker pid=291916) ERROR 06-22 09:14:24 [multiproc_executor.py:870]                               ^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=291916) ERROR 06-22 09:14:24 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/rendezvous.py", line 232, in _tcp_rendezvous_handler
+(Worker pid=291916) ERROR 06-22 09:14:24 [multiproc_executor.py:870]     store = _create_c10d_store(
+(Worker pid=291916) ERROR 06-22 09:14:24 [multiproc_executor.py:870]             ^^^^^^^^^^^^^^^^^^^
+(Worker pid=291916) ERROR 06-22 09:14:24 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/rendezvous.py", line 199, in _create_c10d_store
+(Worker pid=291916) ERROR 06-22 09:14:24 [multiproc_executor.py:870]     return TCPStore(
+(Worker pid=291916) ERROR 06-22 09:14:24 [multiproc_executor.py:870]            ^^^^^^^^^
+(Worker pid=291916) ERROR 06-22 09:14:24 [multiproc_executor.py:870] torch.distributed.DistNetworkError: The server socket has failed to listen on any local network address. port: 18010, useIpv6: false, code: -98, name: EADDRINUSE, message: address already in use
+(Worker pid=291924) INFO 06-22 09:14:24 [parallel_state.py:1422] world_size=1 rank=0 local_rank=2 distributed_init_method=tcp://127.0.0.1:18010 backend=nccl
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870] WorkerProc failed to start.
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870] Traceback (most recent call last):
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 837, in worker_main
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]     worker = WorkerProc(*args, **kwargs)
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]     return func(*args, **kwargs)
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]            ^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 611, in __init__
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]     self.worker.init_device()
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/worker_base.py", line 325, in init_device
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]     self.worker.init_device()  # type: ignore
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]     ^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]     return func(*args, **kwargs)
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]            ^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu_worker.py", line 280, in init_device
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]     init_worker_distributed_environment(
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu_worker.py", line 1140, in init_worker_distributed_environment
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]     init_distributed_environment(
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/distributed/parallel_state.py", line 1444, in init_distributed_environment
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]     torch.distributed.init_process_group(
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/c10d_logger.py", line 83, in wrapper
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]     return func(*args, **kwargs)
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]            ^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/c10d_logger.py", line 97, in wrapper
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]     func_return = func(*args, **kwargs)
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]                   ^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/distributed_c10d.py", line 1831, in init_process_group
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]     store, rank, world_size = next(rendezvous_iterator)
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]                               ^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/rendezvous.py", line 232, in _tcp_rendezvous_handler
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]     store = _create_c10d_store(
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]             ^^^^^^^^^^^^^^^^^^^
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/rendezvous.py", line 199, in _create_c10d_store
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]     return TCPStore(
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870]            ^^^^^^^^^
+(Worker pid=291924) ERROR 06-22 09:14:24 [multiproc_executor.py:870] torch.distributed.DistNetworkError: The server socket has failed to listen on any local network address. port: 18010, useIpv6: false, code: -98, name: EADDRINUSE, message: address already in use
+(Worker pid=291923) INFO 06-22 09:14:25 [topk_topp_sampler.py:45] Using FlashInfer for top-p & top-k sampling.
+(Worker pid=291923) WARNING 06-22 09:14:25 [__init__.py:204] min_p and logit_bias parameters won't work with speculative decoding.
+(EngineCore_DP3 pid=290301) ERROR 06-22 09:14:26 [core.py:1165] EngineCore failed to start.
+(EngineCore_DP3 pid=290301) ERROR 06-22 09:14:26 [core.py:1165] Traceback (most recent call last):
+(EngineCore_DP3 pid=290301) ERROR 06-22 09:14:26 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 1139, in run_engine_core
+(EngineCore_DP3 pid=290301) ERROR 06-22 09:14:26 [core.py:1165]     engine_core = EngineCoreProc(*args, engine_index=dp_rank, **kwargs)
+(EngineCore_DP3 pid=290301) ERROR 06-22 09:14:26 [core.py:1165]                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP3 pid=290301) ERROR 06-22 09:14:26 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore_DP3 pid=290301) ERROR 06-22 09:14:26 [core.py:1165]     return func(*args, **kwargs)
+(EngineCore_DP3 pid=290301) ERROR 06-22 09:14:26 [core.py:1165]            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP3 pid=290301) ERROR 06-22 09:14:26 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 905, in __init__
+(EngineCore_DP3 pid=290301) ERROR 06-22 09:14:26 [core.py:1165]     super().__init__(
+(EngineCore_DP3 pid=290301) ERROR 06-22 09:14:26 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 121, in __init__
+(EngineCore_DP3 pid=290301) ERROR 06-22 09:14:26 [core.py:1165]     self.model_executor = executor_class(vllm_config)
+(EngineCore_DP3 pid=290301) ERROR 06-22 09:14:26 [core.py:1165]                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP3 pid=290301) ERROR 06-22 09:14:26 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 107, in __init__
+(EngineCore_DP3 pid=290301) ERROR 06-22 09:14:26 [core.py:1165]     super().__init__(vllm_config)
+(EngineCore_DP3 pid=290301) ERROR 06-22 09:14:26 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore_DP3 pid=290301) ERROR 06-22 09:14:26 [core.py:1165]     return func(*args, **kwargs)
+(Eng/home/wenxuan/speculators/scripts/launch_vllm.py:119: UserWarning: Using custom target layer ids [32]. These must also be explicitly passed into the training script.
+  main()
+(ApiServer_3 pid=290305) [transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
+(ApiServer_2 pid=290304) [transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
+(ApiServer_1 pid=290303) [transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
+(ApiServer_0 pid=290302) [transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
+(ApiServer_2 pid=290304) [transformers] The `use_fast` parameter is deprecated and will be removed in a future version. Use `backend="torchvision"` instead of `use_fast=True`, or `backend="pil"` instead of `use_fast=False`.
+(ApiServer_3 pid=290305) [transformers] The `use_fast` parameter is deprecated and will be removed in a future version. Use `backend="torchvision"` instead of `use_fast=True`, or `backend="pil"` instead of `use_fast=False`.
+(ApiServer_1 pid=290303) [transformers] The `use_fast` parameter is deprecated and will be removed in a future version. Use `backend="torchvision"` instead of `use_fast=True`, or `backend="pil"` instead of `use_fast=False`.
+(ApiServer_0 pid=290302) [transformers] The `use_fast` parameter is deprecated and will be removed in a future version. Use `backend="torchvision"` instead of `use_fast=True`, or `backend="pil"` instead of `use_fast=False`.
+[transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
+[transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
+[transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
+[transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
+(EngineCore_DP3 pid=290301) Process EngineCore_DP3:
+(EngineCore_DP3 pid=290301) Traceback (most recent call last):
+(EngineCore_DP3 pid=290301)   File "/usr/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+(EngineCore_DP3 pid=290301)     self.run()
+(EngineCore_DP3 pid=290301)   File "/usr/lib/python3.12/multiprocessing/process.py", line 108, in run
+(EngineCore_DP3 pid=290301)     self._target(*self._args, **self._kwargs)
+(EngineCore_DP3 pid=290301)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 1169, in run_engine_core
+(EngineCore_DP3 pid=290301)     raise e
+(EngineCore_DP3 pid=290301)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 1139, in run_engine_core
+(EngineCore_DP3 pid=290301)     engine_core = EngineCoreProc(*args, engine_index=dp_rank, **kwargs)
+(EngineCore_DP3 pid=290301)                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP3 pid=290301)   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore_DP3 pid=290301)     return func(*args, **kwargs)
+(EngineCore_DP3 pid=290301)            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP3 pid=290301)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 905, in __init__
+(EngineCore_DP3 pid=290301)     super().__init__(
+(EngineCore_DP3 pid=290301)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 121, in __init__
+(EngineCore_DP3 pid=290301)     self.model_executor = executor_class(vllm_config)
+(EngineCore_DP3 pid=290301)                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP3 pid=290301)   File "/usr/local/lib/pythonineCore_DP3 pid=290301) ERROR 06-22 09:14:26 [core.py:1165]            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP3 pid=290301) ERROR 06-22 09:14:26 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/abstract.py", line 109, in __init__
+(EngineCore_DP3 pid=290301) ERROR 06-22 09:14:26 [core.py:1165]     self._init_executor()
+(EngineCore_DP3 pid=290301) ERROR 06-22 09:14:26 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 200, in _init_executor
+(EngineCore_DP3 pid=290301) ERROR 06-22 09:14:26 [core.py:1165]     self.workers = WorkerProc.wait_for_ready(unready_workers)
+(EngineCore_DP3 pid=290301) ERROR 06-22 09:14:26 [core.py:1165]                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP3 pid=290301) ERROR 06-22 09:14:26 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 747, in wait_for_ready
+(EngineCore_DP3 pid=290301) ERROR 06-22 09:14:26 [core.py:1165]     raise e from None
+(EngineCore_DP3 pid=290301) ERROR 06-22 09:14:26 [core.py:1165] Exception: WorkerProc initialization failed due to an exception in a background process. See stack trace for root cause.
+(EngineCore_DP1 pid=290299) ERROR 06-22 09:14:26 [core.py:1165] EngineCore failed to start.
+(EngineCore_DP1 pid=290299) ERROR 06-22 09:14:26 [core.py:1165] Traceback (most recent call last):
+(EngineCore_DP1 pid=290299) ERROR 06-22 09:14:26 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 1139, in run_engine_core
+(EngineCore_DP1 pid=290299) ERROR 06-22 09:14:26 [core.py:1165]     engine_core = EngineCoreProc(*args, engine_index=dp_rank, **kwargs)
+(EngineCore_DP1 pid=290299) ERROR 06-22 09:14:26 [core.py:1165]                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP1 pid=290299) ERROR 06-22 09:14:26 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore_DP1 pid=290299) ERROR 06-22 09:14:26 [core.py:1165]     return func(*args, **kwargs)
+(EngineCore_DP1 pid=290299) ERROR 06-22 09:14:26 [core.py:1165]            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP1 pid=290299) ERROR 06-22 09:14:26 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 905, in __init__
+(EngineCore_DP1 pid=290299) ERROR 06-22 09:14:26 [core.py:1165]     super().__init__(
+(EngineCore_DP1 pid=290299) ERROR 06-22 09:14:26 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 121, in __init__
+(EngineCore_DP1 pid=290299) ERROR 06-22 09:14:26 [core.py:1165]     self.model_executor = executor_class(vllm_config)
+(EngineCore_DP1 pid=290299) ERROR 06-22 09:14:26 [core.py:1165]                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP1 pid=290299) ERROR 06-22 09:14:26 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 107, in __init__
+(EngineCore_DP1 pid=290299) ERROR 06-22 09:14:26 [core.py:1165]     super().__init__(vllm_config)
+(EngineCore_DP1 pid=290299) ERROR 06-22 09:14:26 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore_DP1 pid=290299) ERROR 06-22 09:14:26 [core.py:1165]     return func(*args, **kwargs)
+(EngineCore_DP1 pid=290299) ERROR 06-22 09:14:26 [core.py:1165]            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP1 pid=290299) ERROR 06-22 09:14:26 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/abstract.py", line 109, in __init__
+(EngineCore_DP1 pid=290299) ERROR 06-22 09:14:26 [core.py:1165]     self._init_executor()
+(EngineCore_DP1 pid=290299) ERROR 06-22 09:14:26 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 200, in _init_executor
+(EngineCore_DP1 pid=290299) ERROR 06-22 09:14:26 [core.py:1165]     self.workers = WorkerProc.wait_for_ready(unready_workers)
+(EngineCore_DP1 pi3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 107, in __init__
+(EngineCore_DP3 pid=290301)     super().__init__(vllm_config)
+(EngineCore_DP3 pid=290301)   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore_DP3 pid=290301)     return func(*args, **kwargs)
+(EngineCore_DP3 pid=290301)            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP3 pid=290301)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/abstract.py", line 109, in __init__
+(EngineCore_DP3 pid=290301)     self._init_executor()
+(EngineCore_DP3 pid=290301)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 200, in _init_executor
+(EngineCore_DP3 pid=290301)     self.workers = WorkerProc.wait_for_ready(unready_workers)
+(EngineCore_DP3 pid=290301)                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP3 pid=290301)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 747, in wait_for_ready
+(EngineCore_DP3 pid=290301)     raise e from None
+(EngineCore_DP3 pid=290301) Exception: WorkerProc initialization failed due to an exception in a background process. See stack trace for root cause.
+(EngineCore_DP1 pid=290299) Process EngineCore_DP1:
+(EngineCore_DP1 pid=290299) Traceback (most recent call last):
+(EngineCore_DP1 pid=290299)   File "/usr/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+(EngineCore_DP1 pid=290299)     self.run()
+(EngineCore_DP1 pid=290299)   File "/usr/lib/python3.12/multiprocessing/process.py", line 108, in run
+(EngineCore_DP1 pid=290299)     self._target(*self._args, **self._kwargs)
+(EngineCore_DP1 pid=290299)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 1169, in run_engine_core
+(EngineCore_DP1 pid=290299)     raise e
+(EngineCore_DP1 pid=290299)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 1139, in run_engine_core
+(EngineCore_DP1 pid=290299)     engine_core = EngineCoreProc(*args, engine_index=dp_rank, **kwargs)
+(EngineCore_DP1 pid=290299)                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP1 pid=290299)   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore_DP1 pid=290299)     return func(*args, **kwargs)
+(EngineCore_DP1 pid=290299)            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP1 pid=290299)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 905, in __init__
+(EngineCore_DP1 pid=290299)     super().__init__(
+(EngineCore_DP1 pid=290299)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 121, in __init__
+(EngineCore_DP1 pid=290299)     self.model_executor = executor_class(vllm_config)
+(EngineCore_DP1 pid=290299)                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP1 pid=290299)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 107, in __init__
+(EngineCore_DP1 pid=290299)     super().__init__(vllm_config)
+(EngineCore_DP1 pid=290299)   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore_DP1 pid=290299)     return func(*args, **kwargs)
+(EngineCore_DP1 pid=290299)            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP1 pid=290299)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/abstract.py", line 109, in __init__
+(EngineCore_DP1 pid=290299)     self._init_executor()
+(EngineCore_DP1 pid=290299)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 200, in _init_executor
+(EngineCore_DP1 pid=290299)     self.workers = WorkerProc.wait_for_ready(unready_workers)
+(EngineCore_DP1 pid=290299)                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP1 pid=290299)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 747, in wait_for_ready
+(EngineCore_DP1 pid=290299)     raise e from None
+(EngineCore_DP1 pid=290299) Exception: WorkerProc initialization failed due to an exception in a background process. See stack trace for root cause.
+(EngineCore_DP2 pid=290300) Process EngineCore_DP2:
+(EngineCore_DP2 pid=290300) Traceback (most recent call last):
+(EngineCore_DP2 pid=290300)   File "/usr/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+(EngineCore_DP2 pid=290300)     self.run()
+(EngineCore_DP2 pid=290300)   File "/usr/lib/python3.12/multiprocessing/process.py", line 108, in run
+(EngineCore_DP2 pid=290300)     self._target(*self._args, **self._kwargs)
+(EngineCore_DP2 pid=290300)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 1169, in run_engine_core
+(EngineCore_DP2 pid=290300)     raise e
+(EngineCore_DP2 pid=290300)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 1139, in run_engine_core
+(EngineCore_DP2 pid=290300)     engine_core = EngineCoreProc(*args, engine_index=dp_rank, **kwargs)
+(EngineCore_DP2 pid=290300)                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP2 pid=290300)   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore_DP2 pid=290300)     return func(*args, **kwargs)
+(EngineCore_DP2 pid=290300)            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP2 pid=290300)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 905, in __init__
+(EngineCore_DP2 pid=290300)     super().__init__(
+(EngineCore_DP2 pid=290300)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 121, in __init__
+(EngineCore_DP2 pid=290300)     self.model_executor = executor_class(vllm_config)
+(EngineCore_DP2 pid=290300)                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP2 pid=290300)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 107, in __init__
+(EngineCore_DP2 pid=290300)     super().__init__(vllm_config)
+(EngineCore_DP2 pid=290300)   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore_DP2 pid=290300)     return func(*args, **kwargs)
+(EngineCore_DP2 pid=290300)            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP2 pid=290300)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/abstract.py", line 109, in __init__
+(EngineCore_DP2 pid=290300)     self._init_executor()
+(EngineCore_DP2 pid=290300)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 200, in _init_executor
+(EngineCore_DP2 pid=290300)     self.workers = WorkerProc.wait_for_ready(unready_workers)
+(EngineCore_DP2 pid=290300)                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP2 pid=290300)   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 747, in wait_for_ready
+(EngineCore_DP2 pid=290300)     raise e from None
+(EngineCore_DP2 pid=290300) Exception: WorkerProc initialization failed due to an exception in a background process. See stack trace for root cause.
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/cli/main.py", line 98, in <module>
+    main()
+  File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/cli/main.py", line 92, in main
+    args.dispatch_function(args)
+  File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/cli/serve.py", line 144, in cmd
+    run_multi_api_server(args)
+  File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/cli/serve.py", line 320, in run_multi_api_server
+    with launch_core_engines(
+         ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 144, in __exit__
+    next(self.gen)
+  File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/utils.py", line 1150, in launch_core_engines
+    wait_for_engine_startup(
+  File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/utils.py", line 1209, in wait_for_engine_startup
+    raise RuntimeError(
+Runtid=290299) ERROR 06-22 09:14:26 [core.py:1165]                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP1 pid=290299) ERROR 06-22 09:14:26 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 747, in wait_for_ready
+(EngineCore_DP1 pid=290299) ERROR 06-22 09:14:26 [core.py:1165]     raise e from None
+(EngineCore_DP1 pid=290299) ERROR 06-22 09:14:26 [core.py:1165] Exception: WorkerProc initialization failed due to an exception in a background process. See stack trace for root cause.
+(EngineCore_DP2 pid=290300) ERROR 06-22 09:14:26 [core.py:1165] EngineCore failed to start.
+(EngineCore_DP2 pid=290300) ERROR 06-22 09:14:26 [core.py:1165] Traceback (most recent call last):
+(EngineCore_DP2 pid=290300) ERROR 06-22 09:14:26 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 1139, in run_engine_core
+(EngineCore_DP2 pid=290300) ERROR 06-22 09:14:26 [core.py:1165]     engine_core = EngineCoreProc(*args, engine_index=dp_rank, **kwargs)
+(EngineCore_DP2 pid=290300) ERROR 06-22 09:14:26 [core.py:1165]                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP2 pid=290300) ERROR 06-22 09:14:26 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore_DP2 pid=290300) ERROR 06-22 09:14:26 [core.py:1165]     return func(*args, **kwargs)
+(EngineCore_DP2 pid=290300) ERROR 06-22 09:14:26 [core.py:1165]            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP2 pid=290300) ERROR 06-22 09:14:26 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 905, in __init__
+(EngineCore_DP2 pid=290300) ERROR 06-22 09:14:26 [core.py:1165]     super().__init__(
+(EngineCore_DP2 pid=290300) ERROR 06-22 09:14:26 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 121, in __init__
+(EngineCore_DP2 pid=290300) ERROR 06-22 09:14:26 [core.py:1165]     self.model_executor = executor_class(vllm_config)
+(EngineCore_DP2 pid=290300) ERROR 06-22 09:14:26 [core.py:1165]                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP2 pid=290300) ERROR 06-22 09:14:26 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 107, in __init__
+(EngineCore_DP2 pid=290300) ERROR 06-22 09:14:26 [core.py:1165]     super().__init__(vllm_config)
+(EngineCore_DP2 pid=290300) ERROR 06-22 09:14:26 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore_DP2 pid=290300) ERROR 06-22 09:14:26 [core.py:1165]     return func(*args, **kwargs)
+(EngineCore_DP2 pid=290300) ERROR 06-22 09:14:26 [core.py:1165]            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP2 pid=290300) ERROR 06-22 09:14:26 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/abstract.py", line 109, in __init__
+(EngineCore_DP2 pid=290300) ERROR 06-22 09:14:26 [core.py:1165]     self._init_executor()
+(EngineCore_DP2 pid=290300) ERROR 06-22 09:14:26 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 200, in _init_executor
+(EngineCore_DP2 pid=290300) ERROR 06-22 09:14:26 [core.py:1165]     self.workers = WorkerProc.wait_for_ready(unready_workers)
+(EngineCore_DP2 pid=290300) ERROR 06-22 09:14:26 [core.py:1165]                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP2 pid=290300) ERROR 06-22 09:14:26 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 747, in wait_for_ready
+(EngineCore_DP2 pid=290300) ERROR 06-22 09:14:26 [core.py:1165]     raise e from None
+(EngineCore_DP2 pid=290300) ERROR 06-22 09:14:26 [core.py:1165] Exception: WorkerProc initialization failed due to an exception in a background process. See stack trace for root cause.
+(Worker pid=291923) INFO 06-22 09:14:31 [gpu_model_runner.py:5037] Starting to load model /home/wenxuan/Qwen3.5-9B.meError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
+(Worker pid=291923) [transformers] The `use_fast` parameter is deprecated and will be removed in a future version. Use `backend="torchvision"` instead of `use_fast=True`, or `backend="pil"` instead of `use_fast=False`.
+Loading safetensors checkpoint shards:   0% Completed | 0/4 [00:00<?, ?it/s]
+Loading safetensors checkpoint shards:  25% Completed | 1/4 [00:00<00:02,  1.07it/s]
+Loading safetensors checkpoint shards:  50% Completed | 2/4 [00:02<00:02,  1.05s/it]
+Loading safetensors checkpoint shards:  75% Completed | 3/4 [00:03<00:01,  1.06s/it]
+Loading safetensors checkpoint shards: 100% Completed | 4/4 [00:03<00:00,  1.03it/s]
+Loading safetensors checkpoint shards: 100% Completed | 4/4 [00:03<00:00,  1.01it/s]
+(Worker pid=291923) 
+/usr/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+/usr/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked shared_memory objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+..
+(Worker pid=291923) INFO 06-22 09:14:31 [cuda.py:433] Using backend AttentionBackendEnum.FLASH_ATTN for vit attention
+(Worker pid=291923) INFO 06-22 09:14:31 [mm_encoder_attention.py:372] Using AttentionBackendEnum.FLASH_ATTN for MMEncoderAttention.
+(Worker pid=291923) INFO 06-22 09:14:31 [qwen_gdn_linear_attn.py:228] Using Triton/FLA GDN prefill kernel (requested=auto, head_k_dim=None).
+(Worker pid=291923) INFO 06-22 09:14:31 [cuda.py:378] Using FLASH_ATTN attention backend out of potential backends: ['FLASH_ATTN', 'FLASHINFER', 'TRITON_ATTN', 'FLEX_ATTENTION'].
+(Worker pid=291923) INFO 06-22 09:14:31 [flash_attn.py:636] Using FlashAttention version 2
+(Worker pid=291923) INFO 06-22 09:14:31 [weight_utils.py:922] Filesystem type for checkpoints: XFS. Checkpoint size: 17.98 GiB. Available RAM: 972.10 GiB.
+(Worker pid=291923) INFO 06-22 09:14:31 [weight_utils.py:945] Auto-prefetch is disabled because the filesystem (XFS) is not a recognized network FS (NFS/Lustre). If you want to force prefetching, start vLLM with --safetensors-load-strategy=prefetch.
+(Worker pid=291923) INFO 06-22 09:14:35 [default_loader.py:397] Loading weights took 4.13 seconds
+(Worker pid=291923) INFO 06-22 09:14:35 [gpu_model_runner.py:5061] Loading drafter model...
+(Worker pid=291923) INFO 06-22 09:14:35 [default_loader.py:397] Loading weights took 2073405.52 seconds
+(Worker pid=291923) INFO 06-22 09:14:35 [gpu_model_runner.py:5217] Using auxiliary layers from speculative config: (32,)
+(Worker pid=291923) INFO 06-22 09:14:36 [gpu_model_runner.py:5132] Model loading took 17.66 GiB memory and 4.370032 seconds
+(Worker pid=291923) INFO 06-22 09:14:36 [interface.py:649] Setting attention block size to 528 tokens to ensure that attention page size is >= mamba page size.
+(Worker pid=291923) ERROR 06-22 09:14:36 [multiproc_executor.py:870] WorkerProc failed to start.
+(Worker pid=291923) ERROR 06-22 09:14:36 [multiproc_executor.py:870] Traceback (most recent call last):
+(Worker pid=291923) ERROR 06-22 09:14:36 [multiproc_executor.py:870]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/multiproc_executor.py", line 845, in worker_main
+(Worker pid=291923) ERROR 06-22 09:14:36 [multiproc_executor.py:870]     ready_writer.send(
+(Worker pid=291923) ERROR 06-22 09:14:36 [multiproc_executor.py:870]   File "/usr/lib/python3.12/multiprocessing/connection.py", line 206, in send
+(Worker pid=291923) ERROR 06-22 09:14:36 [multiproc_executor.py:870]     self._send_bytes(_ForkingPickler.dumps(obj))
+(Worker pid=291923) ERROR 06-22 09:14:36 [multiproc_executor.py:870]   File "/usr/lib/python3.12/multiprocessing/connection.py", line 427, in _send_bytes
+(Worker pid=291923) ERROR 06-22 09:14:36 [multiproc_executor.py:870]     self._send(header + buf)
+(Worker pid=291923) ERROR 06-22 09:14:36 [multiproc_executor.py:870]   File "/usr/lib/python3.12/multiprocessing/connection.py", line 384, in _send
+(Worker pid=291923) ERROR 06-22 09:14:36 [multiproc_executor.py:870]     n = write(self._handle, buf)
+(Worker pid=291923) ERROR 06-22 09:14:36 [multiproc_executor.py:870]         ^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker pid=291923) ERROR 06-22 09:14:36 [multiproc_executor.py:870] BrokenPipeError: [Errno 32] Broken pipe
+(Worker pid=291923) INFO 06-22 09:14:36 [multiproc_executor.py:775] Parent process exited, terminating worker queues
