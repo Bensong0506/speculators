@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>投机解码端到端加速 — 客户汇报 (Qwen3.5 多模态 9B / 122B)</title>
+<style>
+:root{
+  --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;height:100%;}
+body{background:#1b1b1b;font-family:var(--font-sans);color:#2B2B2B;overflow:hidden;}
+.stage{position:fixed;inset:0;display:flex;flex-direction:column;}
+.deckwrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.hw-deck{width:1280px;height:720px;transform-origin:center center;}
+.hw-vp{width:1280px;height:720px;overflow:hidden;border-radius:18px;background:#fff;}
+.hw-track{display:flex;height:720px;transition:transform .45s ease;}
+.hw-slide{flex:0 0 1280px;width:1280px;height:720px;background:#fff;padding:0 64px 50px;color:#2B2B2B;display:flex;flex-direction:column;overflow:hidden;}
+.hw-accent{height:10px;background:#C7000B;margin:0 -64px 38px;}
+.hw-cover{justify-content:center;}
+.hw-kicker{color:#C7000B;font-size:21px;letter-spacing:.14em;margin:0 0 10px;}
+.hw-h{font-size:46px;font-weight:500;margin:0 0 22px;color:#1F1F1F;line-height:1.18;}
+.hw-chip{font-size:22px;color:#9A0008;background:#FBEAEA;border-radius:30px;padding:11px 26px;}
+.hw-chip-d{color:#fff;background:#C7000B;}
+.hw-seclab{font-size:21px;color:#8A8A8A;margin:22px 0 9px;display:flex;align-items:center;gap:9px;}
+.hw-up{color:#C7000B;}
+.hw-dn{color:#6B6B6B;}
+.hw-tbl{width:100%;border-collapse:collapse;table-layout:fixed;font-size:23px;}
+.hw-tbl th{background:#C7000B;color:#fff;font-weight:500;text-align:left;padding:13px 18px;}
+.hw-tbl th.wc{background:#9A0008;}
+.hw-tbl td{padding:12px 18px;border-bottom:1px solid #EDEDED;}
+.hw-tbl td.wc{background:#FBEAEA;color:#9A0008;font-weight:500;}
+.hw-tbl tr.best td{background:#FBEAEA;color:#9A0008;font-weight:500;}
+.hw-tbl tr.reg td{background:#F4F4F4;color:#6E6E6E;}
+.hw-mc{background:#FAF6F6;border-radius:14px;padding:24px 28px;}
+.hw-mc-l{font-size:21px;color:#8A7A7A;margin-bottom:8px;}
+.hw-mc-v{font-size:46px;font-weight:500;color:#C7000B;line-height:1;}
+.hw-mc-u{font-size:19px;color:#9B9B9B;margin-top:7px;}
+.hw-note{font-size:22px;color:#9A0008;background:#FBEAEA;border-radius:14px;padding:15px 22px;margin-top:22px;line-height:1.5;}
+.hw-sub2{font-size:21px;color:#777;margin:0 0 18px;line-height:1.55;}
+.cmp{border:1px solid #E6E6E6;border-radius:16px;padding:22px 26px;display:flex;flex-direction:column;}
+.cmp-h{font-size:28px;font-weight:500;color:#C7000B;margin-bottom:4px;}
+.cmp-t{font-size:20px;color:#888;margin-bottom:18px;}
+.cmp-row{display:flex;gap:14px;margin-bottom:14px;}
+.cmp-k{flex:0 0 66px;font-size:19px;color:#9A0008;}
+.cmp-v{font-size:20px;color:#3A3A3A;line-height:1.45;}
+.cmp-tag{margin-top:auto;font-size:21px;font-weight:500;color:#fff;background:#C7000B;border-radius:10px;padding:10px 14px;text-align:center;}
+.hw-foot{font-size:18px;color:#B0AAAA;margin-top:auto;padding-top:18px;}
+b{font-weight:500;}
+.hw-nav{height:74px;display:flex;align-items:center;justify-content:center;gap:16px;background:#1b1b1b;}
+.hw-btn{width:46px;height:46px;border-radius:50%;border:none;background:#C7000B;color:#fff;font-size:19px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.hw-btn:disabled{background:#5a4444;cursor:default;}
+.hw-dots{display:flex;gap:9px;align-items:center;}
+.hw-dot{width:11px;height:11px;border-radius:50%;background:#5b5b5b;cursor:pointer;transition:all .2s;}
+.hw-dot.on{background:#C7000B;width:30px;border-radius:6px;}
+.hw-count{font-size:18px;color:#9a9a9a;margin-left:8px;}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="deckwrap">
+    <div class="hw-deck" id="hwDeck">
+      <div class="hw-vp">
+        <div class="hw-track">
+
+          <section class="hw-slide hw-cover">
+            <div class="hw-accent"></div>
+            <p class="hw-kicker">客户汇报 · 2026-06</p>
+            <h1 style="font-size:62px;font-weight:500;color:#1F1F1F;margin:0 0 20px;line-height:1.15;">投机解码端到端加速</h1>
+            <p style="font-size:29px;color:#6B6B6B;margin:0 0 38px;">Qwen3.5 多模态 9B / 122B · 完整改进历程与成果</p>
+            <div style="display:flex;gap:16px;flex-wrap:wrap;">
+              <span class="hw-chip">路线一 · DFlash draft</span>
+              <span class="hw-chip">路线二 · MTP 头</span>
+              <span class="hw-chip">122B 大模型验证</span>
+              <span class="hw-chip hw-chip-d">不改变输出,纯提速</span>
+            </div>
+          </section>
+
+          <section class="hw-slide">
+            <div class="hw-accent"></div>
+            <p class="hw-kicker">起点与原理</p>
+            <h2 class="hw-h">基线、原版方案与初始难题</h2>
+            <p style="font-size:25px;color:#555;margin:0 0 26px;line-height:1.6;">原理:小模型先猜 k 个 token,大模型一次并行校验、接受正确前缀 —— 输出与原模型完全一致,只换取速度。</p>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
+              <div class="hw-mc"><div class="hw-mc-l">无投机解码</div><div class="hw-mc-v">30.1</div><div class="hw-mc-u">tok/s · 1.0×</div></div>
+              <div class="hw-mc"><div class="hw-mc-l">原版 DFlash draft</div><div class="hw-mc-v">61.4</div><div class="hw-mc-u">tok/s · 2.0×</div></div>
+              <div class="hw-mc"><div class="hw-mc-l">原生 MTP 头</div><div class="hw-mc-v">66.4</div><div class="hw-mc-u">tok/s · 2.2×</div></div>
+            </div>
+            <div class="hw-note">初始难题:DFlash draft 直接拿原始数据训练,反而<b>输给原版(0.83×)</b> —— 必须先解决"训练数据"问题。详见下页。</div>
+            <div class="hw-foot">Qwen3.5-9B · @spec7 · n=128 · 域内 ALLaVA / 域外 MMStar</div>
+          </section>
+
+          <section class="hw-slide">
+            <div class="hw-accent"></div>
+            <p class="hw-kicker">两条路线</p>
+            <h2 class="hw-h">MTP 与 DFlash 是什么,差在哪</h2>
+            <p class="hw-sub2">两者都是投机解码的"草稿模型"—— 小模型先猜、verifier 一次校验、只接受正确前缀(不改变输出)。区别在于<b>草稿是怎么生成的</b>。</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:4px;">
+              <div class="cmp">
+                <div class="cmp-h">MTP 头</div>
+                <div class="cmp-t">模型自带的预测头(原生能力)</div>
+                <div class="cmp-row"><span class="cmp-k">怎么猜</span><span class="cmp-v">自回归:一个一个往后猜,<br>每个都看着前一个</span></div>
+                <div class="cmp-row"><span class="cmp-k">结果</span><span class="cmp-v">猜得准(接受率高),<br>但草稿慢(要跑 k 次)</span></div>
+                <div class="cmp-tag">定位:接受率天花板</div>
+              </div>
+              <div class="cmp">
+                <div class="cmp-h">DFlash draft</div>
+                <div class="cmp-t">外挂的轻量草稿模块</div>
+                <div class="cmp-row"><span class="cmp-k">怎么猜</span><span class="cmp-v">并行:一次把 k 个<br>一起猜出来</span></div>
+                <div class="cmp-row"><span class="cmp-k">结果</span><span class="cmp-v">猜得略糙(接受率低),<br>但草稿快(只跑 1 次)</span></div>
+                <div class="cmp-tag">定位:吞吐天花板</div>
+              </div>
+            </div>
+            <div class="hw-note">同一条"速度 ↔ 质量"前沿上的两个设计点:MTP 用更慢的草稿换更高接受率,DFlash 用更便宜的草稿换更高吞吐。</div>
+            <div class="hw-foot">draft = 草稿模型 / 投机草稿;k = 每轮猜测的 token 数</div>
+          </section>
+
+          <section class="hw-slide">
+            <div class="hw-accent"></div>
+            <p class="hw-kicker">路线一 · DFlash</p>
+            <h2 class="hw-h">改进历程:从输给原版到反超 37%</h2>
+            <table class="hw-tbl">
+              <colgroup><col style="width:15%"><col style="width:43%"><col style="width:16%"><col style="width:13%"><col style="width:13%"></colgroup>
+              <thead><tr><th>步骤</th><th>关键改动</th><th>接受长度</th><th>vs 原版</th><th>结论</th></tr></thead>
+              <tbody>
+                <tr><td>原版</td><td>开源 draft(要超越的基准)</td><td>1.945</td><td>1.00×</td><td>基准</td></tr>
+                <tr class="reg"><td>蒸馏前</td><td>原始数据 + KL 损失</td><td>1.615</td><td>0.83×</td><td>输</td></tr>
+                <tr><td>① 数据</td><td>改用蒸馏数据 + CE 损失</td><td>1.993</td><td>1.03×</td><td>反超</td></tr>
+                <tr><td>② 精度</td><td>bf16 → fp32 优化精度</td><td>2.369</td><td>1.22×</td><td>扩大</td></tr>
+                <tr class="best"><td>③ 数据量</td><td>蒸馏数据 10k → 100k</td><td>2.666</td><td>1.37×</td><td>最终</td></tr>
+              </tbody>
+            </table>
+            <div class="hw-note">关键转折是"蒸馏前 → ①":draft 必须学 verifier <b>自己的答案</b>(蒸馏数据),用原始 GT 答案会学错分布、打不过原版。</div>
+            <div class="hw-foot">域内 ALLaVA 接受长度(mean accept/draft)· @spec7 · n=128</div>
+          </section>
+
+          <section class="hw-slide">
+            <div class="hw-accent"></div>
+            <p class="hw-kicker">路线一 · DFlash</p>
+            <h2 class="hw-h">最终成绩:域内域外双提升</h2>
+            <div class="hw-seclab"><span class="hw-up" aria-hidden="true">↗</span>域内 ALLaVA</div>
+            <table class="hw-tbl">
+              <colgroup><col style="width:30%"><col style="width:22%"><col style="width:24%"><col style="width:24%"></colgroup>
+              <thead><tr><th>方案</th><th>tok/s</th><th>接受长度</th><th>变化</th></tr></thead>
+              <tbody>
+                <tr><td>原版 draft</td><td>61.4</td><td>1.945</td><td>—</td></tr>
+                <tr class="best"><td>我们的方案</td><td>73.8</td><td>2.666</td><td>速度 +20% · 接受 +37%</td></tr>
+              </tbody>
+            </table>
+            <div class="hw-seclab"><span class="hw-up" aria-hidden="true">↗</span>域外 MMStar(未训练,泛化检查)</div>
+            <table class="hw-tbl">
+              <colgroup><col style="width:30%"><col style="width:22%"><col style="width:24%"><col style="width:24%"></colgroup>
+              <thead><tr><th>方案</th><th>tok/s</th><th>接受长度</th><th>变化</th></tr></thead>
+              <tbody>
+                <tr><td>原版 draft</td><td>67.9</td><td>2.102</td><td>—</td></tr>
+                <tr class="best"><td>我们的方案</td><td>76.1</td><td>2.416</td><td>速度 +12% · 接受 +15%</td></tr>
+              </tbody>
+            </table>
+            <div class="hw-note">73.8 tok/s = 无投机的 2.45×;域内域外同步提升、泛化未退化 —— 当前最快端到端方案。</div>
+            <div class="hw-foot">@spec7 · n=128</div>
+          </section>
+
+          <section class="hw-slide">
+            <div class="hw-accent"></div>
+            <p class="hw-kicker">路线二 · MTP</p>
+            <h2 class="hw-h">微调:域内强,域外回退(待补)</h2>
+            <p class="hw-sub2">同样基于蒸馏数据;MTP 头用 bf16 微调(fp32 会破坏其 lm_head)。</p>
+            <div class="hw-seclab"><span class="hw-up" aria-hidden="true">↗</span>域内 ALLaVA</div>
+            <table class="hw-tbl">
+              <colgroup><col style="width:30%"><col style="width:22%"><col style="width:24%"><col style="width:24%"></colgroup>
+              <thead><tr><th>方案</th><th>tok/s</th><th>接受长度</th><th>变化</th></tr></thead>
+              <tbody>
+                <tr><td>原生 MTP 头</td><td>66.4</td><td>2.916</td><td>—</td></tr>
+                <tr class="best"><td>微调后</td><td>70.4</td><td>3.142</td><td>速度 +6.1% · 接受 +7.7%</td></tr>
+              </tbody>
+            </table>
+            <div class="hw-seclab"><span class="hw-dn" aria-hidden="true">↘</span>域外 MMStar —— 微调后回退(如实标注)</div>
+            <table class="hw-tbl">
+              <colgroup><col style="width:30%"><col style="width:22%"><col style="width:24%"><col style="width:24%"></colgroup>
+              <thead><tr><th>方案</th><th>tok/s</th><th>接受长度</th><th>变化</th></tr></thead>
+              <tbody>
+                <tr><td>原生 MTP 头</td><td>69.8</td><td>2.822</td><td>—</td></tr>
+                <tr class="reg"><td>微调后</td><td>65.9</td><td>2.694</td><td>速度 −5.6% · 接受 −4.6% ↓</td></tr>
+              </tbody>
+            </table>
+            <div class="hw-note">微调把 MTP 特化到域内 → 域内涨、域外退。<b>已用零成本权重插值把域外补回 —— 见下页。</b></div>
+            <div class="hw-foot">@spec7 · n=128</div>
+          </section>
+
+          <section class="hw-slide">
+            <div class="hw-accent"></div>
+            <p class="hw-kicker">路线二 · 权重插值</p>
+            <h2 class="hw-h">零成本补回域外:MTP 实现双正</h2>
+            <p class="hw-sub2">不重训、不加数据 —— 仅把微调头与原生头按 0.5 融合权重(WiSE-FT)。</p>
+            <table class="hw-tbl">
+              <colgroup><col style="width:28%"><col style="width:22%"><col style="width:22%"><col style="width:28%"></colgroup>
+              <thead><tr><th>接受长度</th><th>原生 MTP</th><th>纯微调</th><th class="wc">权重插值</th></tr></thead>
+              <tbody>
+                <tr><td>域内 ALLaVA</td><td>2.916</td><td>3.142</td><td class="wc">3.147（+7.9%）</td></tr>
+                <tr><td>域外 MMStar</td><td>2.822</td><td style="color:#9E9E9E;">2.694 ↓ 退</td><td class="wc">2.861（+1.4%）↑</td></tr>
+              </tbody>
+            </table>
+            <div class="hw-note">域外从微调的 −4.6%(回退)<b>反超到 +1.4%</b>,同时域内 +7.9% 全保住 —— MTP 现在<b>两域皆高于原生</b>,且零成本、无需重训。</div>
+            <p style="font-size:19px;color:#999;margin-top:14px;line-height:1.5;">后续(可选):若要更大的域外提升,再引入多样化蒸馏数据。</p>
+            <div class="hw-foot">soup α=0.5 · @spec7 · n=128 · 同 run tok/s 亦小幅正向</div>
+          </section>
+
+          <section class="hw-slide">
+            <div class="hw-accent"></div>
+            <p class="hw-kicker">路线二 · MTP 122B</p>
+            <h2 class="hw-h">122B 实验:域内增益复制,权重插值修复域外</h2>
+            <p class="hw-sub2">Qwen3.5-122B-A10B(MoE,约 10B active)用自身蒸馏 ALLaVA 50k,训练 verifier 原生 MTP 头;serve 仍为 spec=7。</p>
+            <table class="hw-tbl">
+              <colgroup><col style="width:26%"><col style="width:23%"><col style="width:23%"><col style="width:28%"></colgroup>
+              <thead><tr><th>方案</th><th>ALLaVA 域内</th><th>MMStar 域外</th><th>结论</th></tr></thead>
+              <tbody>
+                <tr><td>原生 MTP</td><td>3.008 / 34.25 tok/s</td><td>2.930 / 33.41 tok/s</td><td>基线</td></tr>
+                <tr><td>纯微调 β=0.6</td><td><b>+11.5%</b> 接受</td><td>−2.4% 接受</td><td>域内最强,域外轻微回退</td></tr>
+                <tr class="best"><td>权重插值 α=0.5</td><td>3.314（<b>+10.2%</b>）</td><td>2.997（<b>+2.3%</b>）</td><td>通用场景双正</td></tr>
+              </tbody>
+            </table>
+            <div class="hw-note">结论:9B 上验证的 WiSE-FT 权重插值在 122B 上同样成立 —— 保留大部分域内收益,并把域外从轻微回退修到正收益。122B MTP 对无投机 baseline 最高约 <b>2.9×</b>。</div>
+            <div class="hw-foot">122B soup run:native ALLaVA 3.008 / MMStar 2.930;纯微调百分比来自 β=0.6 A/B run,按同轮 native 计算。</div>
+          </section>
+
+          <section class="hw-slide">
+            <div class="hw-accent"></div>
+            <p class="hw-kicker">结论</p>
+            <h2 class="hw-h">MTP 与 DFlash 均已验证,122B 规模化闭环</h2>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+              <div style="border:1px solid #E6E6E6;border-radius:18px;padding:28px;">
+                <div style="font-size:26px;font-weight:500;color:#C7000B;margin-bottom:12px;">DFlash · 主打吞吐</div>
+                <div style="font-size:48px;font-weight:500;color:#1F1F1F;">73.8<span style="font-size:22px;color:#888;"> tok/s</span></div>
+                <div style="font-size:21px;color:#666;margin-top:12px;line-height:1.5;">9B 端到端最快(2.45×),<span style="color:#C7000B;">域内域外双提升</span>;122B 上训练后同样超过原始 DFlash。</div>
+              </div>
+              <div style="border:1px solid #E6E6E6;border-radius:18px;padding:28px;">
+                <div style="font-size:26px;font-weight:500;color:#C7000B;margin-bottom:12px;">MTP · 主打接受率</div>
+                <div style="font-size:48px;font-weight:500;color:#1F1F1F;">+10.2%<span style="font-size:22px;color:#888;"> 122B 域内</span></div>
+                <div style="font-size:21px;color:#666;margin-top:12px;line-height:1.5;">9B 与 122B 均完成权重插值验证;122B 域外 <span style="color:#C7000B;">+2.3%</span>,通用场景双正。</div>
+              </div>
+            </div>
+            <div style="margin-top:26px;font-size:24px;color:#444;line-height:1.7;">
+              <span style="color:#C7000B;">下一步</span> — 当前版本只汇报 MTP 与 DFlash;后续进入 D-Cut 阶段,做 DFlash 校验深度动态剪枝与高并发部署优化,结果另行展开。
+            </div>
+            <div class="hw-foot">口径:Qwen3.5 多模态 9B / 122B · 投机步数 7 · 128 条样本 · 域内 ALLaVA / 域外 MMStar</div>
+          </section>
+
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="hw-nav">
+    <button class="hw-btn hw-prev" aria-label="上一页">&#10094;</button>
+    <div class="hw-dots"></div>
+    <button class="hw-btn hw-next" aria-label="下一页">&#10095;</button>
+    <span class="hw-count"></span>
+  </div>
+</div>
+<script>
+(function(){
+  var deck=document.getElementById('hwDeck');
+  var wrap=document.querySelector('.deckwrap');
+  var track=deck.querySelector('.hw-track');
+  var slides=deck.querySelectorAll('.hw-slide');
+  var prev=document.querySelector('.hw-prev');
+  var next=document.querySelector('.hw-next');
+  var dotsWrap=document.querySelector('.hw-dots');
+  var counter=document.querySelector('.hw-count');
+  var i=0,n=slides.length,dots=[];
+  for(var k=0;k<n;k++){(function(j){var d=document.createElement('span');d.className='hw-dot'+(j===0?' on':'');d.onclick=function(){go(j);};dotsWrap.appendChild(d);dots.push(d);})(k);}
+  function go(x){i=Math.max(0,Math.min(n-1,x));track.style.transform='translateX(-'+(i*1280)+'px)';for(var k=0;k<n;k++){dots[k].className='hw-dot'+(k===i?' on':'');}prev.disabled=(i===0);next.disabled=(i===n-1);counter.textContent=(i+1)+' / '+n;}
+  function fit(){var s=Math.min(wrap.clientWidth/1280,wrap.clientHeight/720);deck.style.transform='scale('+s+')';}
+  prev.onclick=function(){go(i-1);};
+  next.onclick=function(){go(i+1);};
+  document.addEventListener('keydown',function(e){if(e.key==='ArrowRight'||e.key===' '){go(i+1);}else if(e.key==='ArrowLeft'){go(i-1);}else if(e.key==='Home'){go(0);}else if(e.key==='End'){go(n-1);}});
+  window.addEventListener('resize',fit);
+  fit();go(0);
+})();
+</script>
+</body>
+</html>
