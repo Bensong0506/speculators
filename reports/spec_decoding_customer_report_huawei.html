@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>投机解码端到端加速 — 客户汇报 (Qwen3.5 多模态 9B / 122B)</title>
+<title>投机解码端到端加速 (Qwen3.5 多模态 9B / 122B)</title>
 <style>
 :root{
   --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;
@@ -36,6 +36,14 @@ body{background:#1b1b1b;font-family:var(--font-sans);color:#2B2B2B;overflow:hidd
 .hw-tbl.compact{font-size:20px;}
 .hw-tbl.compact th{padding:11px 14px;}
 .hw-tbl.compact td{padding:10px 14px;}
+.hw-slide.dense .hw-h{font-size:42px;margin-bottom:16px;}
+.hw-slide.dense .hw-sub2{font-size:19px;line-height:1.45;margin-bottom:12px;}
+.hw-slide.dense .hw-note{font-size:19px;line-height:1.42;padding:12px 18px;margin-top:14px;}
+.hw-slide.dense .hw-foot{padding-top:10px;}
+.hw-slide.dense .hw-tbl{font-size:21px;}
+.hw-slide.dense .hw-tbl.compact{font-size:19px;}
+.hw-slide.dense .hw-tbl.compact th{padding:9px 12px;}
+.hw-slide.dense .hw-tbl.compact td{padding:8px 12px;}
 .hw-mc{background:#FAF6F6;border-radius:14px;padding:24px 28px;}
 .hw-mc-l{font-size:21px;color:#8A7A7A;margin-bottom:8px;}
 .hw-mc-v{font-size:46px;font-weight:500;color:#C7000B;line-height:1;}
@@ -69,7 +77,7 @@ b{font-weight:500;}
 
           <section class="hw-slide hw-cover">
             <div class="hw-accent"></div>
-            <p class="hw-kicker">客户汇报 · 2026-06</p>
+            <p class="hw-kicker">2026-06</p>
             <h1 style="font-size:62px;font-weight:500;color:#1F1F1F;margin:0 0 20px;line-height:1.15;">投机解码端到端加速</h1>
             <p style="font-size:29px;color:#6B6B6B;margin:0 0 38px;">Qwen3.5 多模态 9B / 122B · 完整改进历程与成果</p>
             <div style="display:flex;gap:16px;flex-wrap:wrap;">
@@ -118,44 +126,46 @@ b{font-weight:500;}
             <div class="hw-foot">draft = 草稿模型 / 投机草稿;k = 每轮猜测的 token 数</div>
           </section>
 
-          <section class="hw-slide">
+          <section class="hw-slide dense">
             <div class="hw-accent"></div>
             <p class="hw-kicker">路线一 · DFlash</p>
             <h2 class="hw-h">改进历程:从输给原版到反超 37%</h2>
             <table class="hw-tbl compact">
-              <colgroup><col style="width:13%"><col style="width:37%"><col style="width:18%"><col style="width:20%"><col style="width:12%"></colgroup>
+              <colgroup><col style="width:13%"><col style="width:35%"><col style="width:17%"><col style="width:22%"><col style="width:13%"></colgroup>
               <thead><tr><th>步骤</th><th>关键改动</th><th>QPS(输出 tok/s)</th><th>接受率指标(mean accept/draft)</th><th>变化/结论</th></tr></thead>
               <tbody>
                 <tr><td>原版</td><td>开源 draft(要超越的基准)</td><td>61.4</td><td>1.945</td><td>基准</td></tr>
                 <tr class="reg"><td>蒸馏前</td><td>原始数据 + KL 损失</td><td>—</td><td>1.615</td><td>接受率 0.83×</td></tr>
-                <tr><td>① 数据</td><td>改用蒸馏数据 + CE 损失</td><td>—</td><td>1.993</td><td>接受率 1.03×</td></tr>
-                <tr><td>② 精度</td><td>bf16 → fp32 优化精度</td><td>—</td><td>2.369</td><td>接受率 1.22×</td></tr>
+                <tr><td>① 数据/损失</td><td>蒸馏数据 + CE 损失</td><td>—</td><td>1.993</td><td>首次反超 · +23%</td></tr>
+                <tr><td>② 优化</td><td>fp32 master + LR 3e-5</td><td>—</td><td>2.369</td><td>小更新不再被舍入</td></tr>
                 <tr class="best"><td>③ 数据量</td><td>蒸馏数据 10k → 100k</td><td>73.8</td><td>2.666</td><td>QPS +20% · 接受率 +37%</td></tr>
               </tbody>
             </table>
-            <div class="hw-note">关键转折是"蒸馏前 → ①":draft 必须学 verifier <b>自己的答案</b>(蒸馏数据),用原始 GT 答案会学错分布、打不过原版。</div>
+            <div class="hw-note">最大方向性跃迁是"蒸馏前 → ①":draft 必须学 verifier <b>自己的答案</b>,且 CE 更贴近 temp=0 的 top-1 接受。② 的 fp32+LR 是修优化瓶颈:纯 bf16 小更新会被舍入,因此 first-position 长期卡住。</div>
             <div class="hw-foot">域内 ALLaVA 接受率指标(mean accept/draft)· @spec7 · n=128</div>
           </section>
 
-          <section class="hw-slide">
+          <section class="hw-slide dense">
             <div class="hw-accent"></div>
-            <p class="hw-kicker">路线一 · DFlash</p>
-            <h2 class="hw-h">最终成绩:域内域外双提升</h2>
-            <table class="hw-tbl">
-              <colgroup><col style="width:18%"><col style="width:24%"><col style="width:20%"><col style="width:22%"><col style="width:16%"></colgroup>
+            <p class="hw-kicker">路线一 · DFlash 9B</p>
+            <h2 class="hw-h">9B 场景:域内域外双提升,吞吐超过 MTP</h2>
+            <table class="hw-tbl compact">
+              <colgroup><col style="width:18%"><col style="width:24%"><col style="width:19%"><col style="width:23%"><col style="width:16%"></colgroup>
               <thead><tr><th>数据集</th><th>方案</th><th>QPS(输出 tok/s)</th><th>接受率指标(mean accept/draft)</th><th>变化</th></tr></thead>
               <tbody>
                 <tr><td>ALLaVA 域内</td><td>原版 DFlash</td><td>61.4</td><td>1.945</td><td>基线</td></tr>
                 <tr class="best"><td>ALLaVA 域内</td><td>训练后 DFlash</td><td>73.8</td><td>2.666</td><td>QPS +20% · 接受率 +37%</td></tr>
+                <tr><td>ALLaVA 域内</td><td>MTP 参考</td><td>65.6</td><td>2.916</td><td>接受率上限</td></tr>
                 <tr><td>MMStar 域外</td><td>原版 DFlash</td><td>67.9</td><td>2.102</td><td>基线</td></tr>
                 <tr class="best"><td>MMStar 域外</td><td>训练后 DFlash</td><td>76.1</td><td>2.416</td><td>QPS +12% · 接受率 +15%</td></tr>
+                <tr><td>MMStar 域外</td><td>MTP 参考</td><td>72.6</td><td>2.822</td><td>接受率上限</td></tr>
               </tbody>
             </table>
-            <div class="hw-note">73.8 tok/s = 无投机的 2.45×;域内域外同步提升、泛化未退化 —— 当前最快端到端方案。</div>
+            <div class="hw-note">9B 下 trained DFlash 是端到端 QPS 最快方案;MTP 参考接受率更高,但 draft 更贵,所以墙钟吞吐仍低于 DFlash。</div>
             <div class="hw-foot">@spec7 · n=128</div>
           </section>
 
-          <section class="hw-slide">
+          <section class="hw-slide dense">
             <div class="hw-accent"></div>
             <p class="hw-kicker">路线一 · DFlash 122B</p>
             <h2 class="hw-h">122B 实验:训练后 DFlash 两域均超过原始</h2>
@@ -176,7 +186,7 @@ b{font-weight:500;}
             <div class="hw-foot">@spec7 · n=128 · ALLaVA 域内 / MMStar 域外</div>
           </section>
 
-          <section class="hw-slide">
+          <section class="hw-slide dense">
             <div class="hw-accent"></div>
             <p class="hw-kicker">路线二 · MTP</p>
             <h2 class="hw-h">微调:域内强,域外回退</h2>
@@ -195,7 +205,7 @@ b{font-weight:500;}
             <div class="hw-foot">@spec7 · n=128</div>
           </section>
 
-          <section class="hw-slide">
+          <section class="hw-slide dense">
             <div class="hw-accent"></div>
             <p class="hw-kicker">路线二 · 权重插值</p>
             <h2 class="hw-h">零成本补回域外:MTP 实现双正</h2>
@@ -217,7 +227,7 @@ b{font-weight:500;}
             <div class="hw-foot">soup α=0.5 · @spec7 · n=128 · 权重插值 QPS 未单独记录,本页主看接受率指标</div>
           </section>
 
-          <section class="hw-slide">
+          <section class="hw-slide dense">
             <div class="hw-accent"></div>
             <p class="hw-kicker">路线二 · MTP 122B</p>
             <h2 class="hw-h">122B 实验:域内增益复制,权重插值修复域外</h2>
@@ -238,7 +248,7 @@ b{font-weight:500;}
             <div class="hw-foot">122B soup run:native ALLaVA 3.008 / MMStar 2.930;纯微调百分比来自 β=0.6 A/B run,按同轮 native 计算。</div>
           </section>
 
-          <section class="hw-slide">
+          <section class="hw-slide dense">
             <div class="hw-accent"></div>
             <p class="hw-kicker">结论</p>
             <h2 class="hw-h">MTP 与 DFlash 均已验证,122B 规模化闭环</h2>
@@ -247,13 +257,13 @@ b{font-weight:500;}
               <thead><tr><th>模型</th><th>方案</th><th>ALLaVA QPS<br>(输出 tok/s)</th><th>ALLaVA 接受率指标<br>(mean accept/draft)</th><th>MMStar QPS<br>(输出 tok/s)</th><th>MMStar 接受率指标<br>(mean accept/draft)</th></tr></thead>
               <tbody>
                 <tr class="best"><td>9B</td><td>DFlash 训练后</td><td>73.8</td><td>2.666</td><td>76.1</td><td>2.416</td></tr>
-                <tr><td>9B</td><td>MTP 权重插值</td><td>—</td><td>3.147</td><td>—</td><td>2.861</td></tr>
+                <tr><td>9B</td><td>MTP 原生头</td><td>65.6</td><td>2.916</td><td>72.6</td><td>2.822</td></tr>
                 <tr><td>122B</td><td>DFlash 训练后</td><td>30.92</td><td>2.283</td><td>30.42</td><td>2.133</td></tr>
                 <tr class="best"><td>122B</td><td>MTP 权重插值</td><td>35.81</td><td>3.314</td><td>33.80</td><td>2.997</td></tr>
               </tbody>
             </table>
-            <div class="hw-note" style="margin-top:16px;">结论:DFlash 是 9B 当前最快端到端方案;MTP 权重插值在 9B / 122B 都把接受率指标做到双域正收益。QPS = 输出 tok/s;接受率指标 = mean accept/draft。</div>
-            <div style="margin-top:16px;font-size:20px;color:#444;line-height:1.58;">
+            <div class="hw-note" style="margin-top:16px;">结论:DFlash 开源 draft 原本缺少多模态数据,自蒸馏后补齐分布,所以提升显著;MTP 原生头已有多模态训练,起点更高、可挖增量更小。QPS = 输出 tok/s;接受率指标 = mean accept/draft。</div>
+            <div style="margin-top:14px;font-size:19px;color:#444;line-height:1.48;">
               <span style="color:#C7000B;">下一步 · D-Cut</span> — 高并发场景下,draft 已足够便宜,投机推理瓶颈会转向 verifier 校验;因此需要减少每轮 verify token 数。D-Cut 对 DFlash 校验深度做动态剪枝,例如 spec=7 若平均只校验 4 个 token,verify token 约减少 <b>43%</b>。当前 GPU 路径已跑通,下一步迁移至 NPU。
             </div>
             <div class="hw-foot">口径:Qwen3.5 多模态 9B / 122B · 投机步数 7 · 128 条样本 · 域内 ALLaVA / 域外 MMStar</div>
