@@ -115,6 +115,15 @@ export WANDB_BASE_URL="${WANDB_BASE_URL:-http://10.155.156.175:38080}"
 export WANDB_PROJECT="${WANDB_PROJECT:-speculators}"
 export RUN_NAME
 export LOG_TO_FILE=0
+export CLEAN_STALE_PROCS="${CLEAN_STALE_PROCS:-1}"
+
+if [ "$CLEAN_STALE_PROCS" = "1" ]; then
+    echo "Cleaning stale vLLM/train processes before launching 9B MTP run..."
+    pkill -f '[v]llm.*serve' || true
+    pkill -f '[t]orchrun.*scripts/train.py' || true
+    pkill -f '[s]cripts/train.py' || true
+    sleep 2
+fi
 
 echo "Starting detached MTP training on Qwen-distilled ALLaVA:"
 echo "  run_name:    $RUN_NAME"
@@ -128,6 +137,7 @@ echo "  self_force:  train=$MTP_SELF_FORCING_P   val=$MTP_VAL_SELF_FORCING_P"
 echo "  epochs:      $EPOCHS   lr=$LR   max_samples=$MAX_SAMPLES"
 echo "  validate_initial: $VALIDATE_INITIAL"
 echo "  vllm_port:   $VLLM_PORT"
+echo "  cleanup:     $CLEAN_STALE_PROCS"
 echo "  log:         $NOHUP_LOG_PATH"
 
 nohup bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh \

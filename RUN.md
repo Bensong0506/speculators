@@ -433,9 +433,6 @@ step1+ 按概率喂上一 MTP step 的 argmax token,target 仍是 gold。
 
 Smoke 先确认新 unroll 跑通:
 ```bash
-pkill -f vllm || true
-pkill -f 'torchrun.*scripts/train.py' || true
-pkill -f 'scripts/train.py' || true
 RUN_NAME=mtp9b_smoke_s5_sf10_$(date +%m%d_%H%M)
 MODEL=/home/wenxuan/Qwen3.5-9B \
 DISTILLED_ALLAVA_JSONL=$PWD/data/allava/allava_qwen35_distill_10k.jsonl \
@@ -467,6 +464,10 @@ NUM_SPECULATIVE_STEPS=5 STEP_WEIGHT_BETA=1.0 \
 DP=4 在 `18009/18010/...` 开多端口后撞上残留 122B/smoke 服务;同时默认保留
 启动后的 `initial_val`(`VALIDATE_INITIAL=1`),先确认 step0 指标再进入训练。
 想加速 hidden-state generation 时再显式设 `VLLM_DP=4 VLLM_GPUS=0,1,2,3`。
+如果同一张 trainer GPU 上同时出现两个 Python/CUDA 进程并 OOM,通常是上一次
+失败 run 残留;9B launcher 默认 `CLEAN_STALE_PROCS=1` 会在启动前清理 vLLM /
+`torchrun scripts/train.py` / `scripts/train.py`。机器上有别的实验要保留时,
+显式加 `CLEAN_STALE_PROCS=0`。
 
 若当前 shell 里曾经 `export MODEL=/home/wenxuan/Qwen3.5-122B-A10B` 或
 `export DISTILLED_ALLAVA_JSONL=...122B...`,上面命令里的显式赋值会覆盖它们。不要
