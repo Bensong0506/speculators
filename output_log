@@ -1,119 +1,65 @@
-  "spec_mean_accepted_tokens_per_draft": 2.2834629962098543
-}
-Stopping vLLM server pid=188447
-# ALLaVA Val Four-Way Benchmark
+################ 原生 MTP vs 训好的 MTP best ################
 
-| rank | method | tok/s | mean accept/draft | token accept | first-pos accept | completed |
-|---:|---|---:|---:|---:|---:|---:|
-| 1 | mtp | 34.375 | 3.209 | 0.458 | 0.865 | 128/128 |
-| 2 | trained_dflash | 30.918 | 2.283 | 0.326 | 0.745 | 128/128 |
-| 3 | dflash_original | 26.645 | 1.753 | 0.250 | 0.691 | 128/128 |
-| 4 | baseline | 11.756 | n/a | n/a | n/a | 128/128 |
+=== allava ===
+metric                                        native   trained    ratio
+spec_mean_accepted_tokens_per_draft            3.066     3.419    1.115
+spec_token_acceptance_rate                     0.438     0.488    1.115
+spec_first_position_acceptance_rate            0.848     0.866    1.020
+output_tok_per_sec                            33.928    37.547    1.107
+completed                                        128       128    1.000
+num_requested                                    128       128    1.000
 
-## Key Ratios
+=== mmstar ===
+metric                                        native   trained    ratio
+spec_mean_accepted_tokens_per_draft              n/a       n/a      n/a
+spec_token_acceptance_rate                       n/a       n/a      n/a
+spec_first_position_acceptance_rate              n/a       n/a      n/a
+output_tok_per_sec                             0.000     0.000      n/a
+completed                                          0         0      n/a
+num_requested                                    128       128    1.000
 
-- trained/original DFlash tok/s: `1.160`
-- trained/MTP tok/s: `0.899`
-- trained/baseline tok/s: `2.630`
-- original DFlash/baseline tok/s: `2.266`
-- MTP/baseline tok/s: `2.924`
+[sanity] trained ≈ native => stitch 的头没被加载,换 MTP_METHOD=mtp 重跑
+[INFO] 结果/日志: /data/wenxuan/speculators/mtp_accept/results/arm_a/
+[INFO] ARM=a 完成 -> /data/wenxuan/speculators/mtp_accept/results/arm_a
+       两台都跑完:比 A vs B 的 *_trained_summary.json(mean-accept / 中后位 per-position);各自 vs native 已在本机表里。
 
-## Verdict
 
-Trained DFlash improves acceptance over original DFlash but is not the fastest config.
-
-summary_jsonl=/data/wenxuan/speculators/output/three_way_both/20260617_025446/allava/allava_val_four_way_summary.jsonl
-summary_csv=/data/wenxuan/speculators/output/three_way_both/20260617_025446/allava/allava_val_four_way_summary.csv
-summary_md=/data/wenxuan/speculators/output/three_way_both/20260617_025446/allava/allava_val_summary.md
-
-Artifacts:
-  /data/wenxuan/speculators/output/three_way_both/20260617_025446/allava
-
-============================================================
-=== Combined cross-dataset summary ===
-============================================================
-# Three-way comparison — MMStar (OOD) + ALLaVA (in-domain)
-
-draft: `/data/wenxuan/speculators/output/dflash_122b_mm_distilled/dflash_122b_allava_distilled_20260616_061245/checkpoints/checkpoint_best`
-
-| dataset | method | tok/s | mean accept/draft | token accept | first-pos | completed |
-|---|---|---:|---:|---:|---:|---:|
-| MMStar (OOD) | mtp | 33.590 | 3.238 | 0.463 | 0.847 | 128/128 |
-| MMStar (OOD) | trained_dflash | 30.415 | 2.133 | 0.305 | 0.750 | 128/128 |
-| MMStar (OOD) | dflash_original | 28.513 | 1.967 | 0.281 | 0.710 | 128/128 |
-| ALLaVA val (in-domain) | mtp | 34.375 | 3.209 | 0.458 | 0.865 | 128/128 |
-| ALLaVA val (in-domain) | trained_dflash | 30.918 | 2.283 | 0.326 | 0.745 | 128/128 |
-| ALLaVA val (in-domain) | dflash_original | 26.645 | 1.753 | 0.250 | 0.691 | 128/128 |
-
-## Trained DFlash vs ... (per dataset)
-
-**MMStar (OOD)**
-- vs original: mean-accept `1.084`, first-pos `1.056`, tok/s `1.067`
-- vs MTP: mean-accept `0.659`, first-pos `0.886`, tok/s `0.906`
-
-**ALLaVA val (in-domain)**
-- vs original: mean-accept `1.302`, first-pos `1.078`, tok/s `1.160`
-- vs MTP: mean-accept `0.711`, first-pos `0.862`, tok/s `0.899`
-
-  (also copied combined summary -> /data/wenxuan/speculators/output_log_debug for report-back)
-
-Artifacts:
-  combined: /data/wenxuan/speculators/output/three_way_both/20260617_025446/combined_summary.md
-  mmstar:   /data/wenxuan/speculators/output/three_way_both/20260617_025446/mmstar/mmstar_three_way_summary.md
-  allava:   /data/wenxuan/speculators/output/three_way_both/20260617_025446/allava/allava_val_summary.md    
-
- "vllm:spec_decode_num_accepted_tokens_created{engine=\"0\",model_name=\"/home/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"/home/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\",position=\"0\"}": 7222.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"/home/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\",position=\"1\"}": 5490.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"/home/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\",position=\"2\"}": 3941.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"/home/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\",position=\"3\"}": 2783.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"/home/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\",position=\"4\"}": 2086.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"/home/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\",position=\"5\"}": 1522.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"/home/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\",position=\"6\"}": 1107.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"/home/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\",position=\"0\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"/home/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\",position=\"1\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"/home/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\",position=\"2\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"/home/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\",position=\"3\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"/home/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\",position=\"4\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"/home/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\",position=\"5\"}": 0.0,
-    "vllm:spec_decode_num_accepted_tokens_per_pos_created{engine=\"0\",model_name=\"/home/wenxuan/speculators/mtp_accept/stitched/checkpoint_best-stitched\",position=\"6\"}": 0.0
-  },
-  "spec_draft_steps_total": 8738.0,
-  "spec_draft_tokens_total": 61166.0,
-  "spec_accepted_tokens_total": 24151.0,
+  "spec_draft_steps_total": 0.0,
+  "spec_draft_tokens_total": 0.0,
+  "spec_accepted_tokens_total": 0.0,
   "spec_accepted_tokens_by_position": {
-    "0": 7222.0,
-    "1": 5490.0,
-    "2": 3941.0,
-    "3": 2783.0,
-    "4": 2086.0,
-    "5": 1522.0,
-    "6": 1107.0
+    "0": 0.0,
+    "1": 0.0,
+    "2": 0.0,
+    "3": 0.0,
+    "4": 0.0,
+    "5": 0.0,
+    "6": 0.0
   },
-  "spec_token_acceptance_rate": 0.3948435405290521,
-  "spec_first_position_acceptance_rate": 0.8265049210345616,
-  "spec_mean_accepted_tokens_per_draft": 2.7639047837033646
+  "spec_token_acceptance_rate": null,
+  "spec_first_position_acceptance_rate": null,
+  "spec_mean_accepted_tokens_per_draft": null
 }
 
 ################ 原生 MTP vs 训好的 MTP best ################
 
 === allava ===
 metric                                        native   trained    ratio
-spec_mean_accepted_tokens_per_draft            3.066     3.376    1.101
-spec_token_acceptance_rate                     0.438     0.482    1.101
-spec_first_position_acceptance_rate            0.848     0.873    1.029
-output_tok_per_sec                            33.337    36.630    1.099
+spec_mean_accepted_tokens_per_draft            3.066     3.419    1.115
+spec_token_acceptance_rate                     0.438     0.488    1.115
+spec_first_position_acceptance_rate            0.848     0.866    1.020
+output_tok_per_sec                            33.928    37.547    1.107
 completed                                        128       128    1.000
 num_requested                                    128       128    1.000
 
 === mmstar ===
 metric                                        native   trained    ratio
-spec_mean_accepted_tokens_per_draft            2.930     2.764    0.943
-spec_token_acceptance_rate                     0.419     0.395    0.943
-spec_first_position_acceptance_rate            0.831     0.827    0.995
-output_tok_per_sec                            33.348    31.775    0.953
-completed                                        128       128    1.000
+spec_mean_accepted_tokens_per_draft              n/a       n/a      n/a
+spec_token_acceptance_rate                       n/a       n/a      n/a
+spec_first_position_acceptance_rate              n/a       n/a      n/a
+output_tok_per_sec                             0.000     0.000      n/a
+completed                                          0         0      n/a
 num_requested                                    128       128    1.000
 
 [sanity] trained ≈ native => stitch 的头没被加载,换 MTP_METHOD=mtp 重跑
-[INFO] 结果/日志: /home/wenxuan/speculators/mtp_accept/results/20260617_024459/    
+[INFO] 结果/日志: /data/wenxuan/speculators/mtp_accept/results/arm_a/
