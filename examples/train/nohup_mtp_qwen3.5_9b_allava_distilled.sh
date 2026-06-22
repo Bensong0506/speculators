@@ -37,6 +37,17 @@ if [ ! -s "$DISTILLED_ALLAVA_JSONL" ]; then
     echo "[fatal] Distilled ALLaVA jsonl not found: $DISTILLED_ALLAVA_JSONL"
     exit 1
 fi
+if [ "${ALLOW_NON_9B_MODEL:-0}" != "1" ] && [[ ! "$MODEL" =~ (9[Bb]|9b) ]]; then
+    echo "[fatal] This is the 9B MTP launcher, but MODEL=$MODEL"
+    echo "        Use MODEL=/home/wenxuan/Qwen3.5-9B or set ALLOW_NON_9B_MODEL=1 intentionally."
+    echo "        For 122B, use examples/train/nohup_mtp_122b_allava_distilled.sh."
+    exit 1
+fi
+if [ "${ALLOW_NON_9B_DATA:-0}" != "1" ] && [[ "$DISTILLED_ALLAVA_JSONL" =~ 122[Bb] ]]; then
+    echo "[fatal] This is the 9B MTP launcher, but DISTILLED_ALLAVA_JSONL=$DISTILLED_ALLAVA_JSONL"
+    echo "        Use the 9B-distilled ALLaVA jsonl, or set ALLOW_NON_9B_DATA=1 intentionally."
+    exit 1
+fi
 
 # --- MTP-specific ---
 export SPECULATOR_TYPE=mtp

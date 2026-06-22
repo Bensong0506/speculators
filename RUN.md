@@ -433,6 +433,9 @@ step1+ 按概率喂上一 MTP step 的 argmax token,target 仍是 gold。
 
 Smoke 先确认新 unroll 跑通:
 ```bash
+MODEL=/home/wenxuan/Qwen3.5-9B \
+DISTILLED_ALLAVA_JSONL=$PWD/data/allava/allava_qwen35_distill_10k.jsonl \
+ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V \
 MAX_SAMPLES=50 EPOCHS=1 NUM_SPECULATIVE_STEPS=5 STEP_WEIGHT_BETA=1.0 \
   MTP_SELF_FORCING_P=1.0 MTP_VAL_SELF_FORCING_P=1.0 \
   RUN_NAME=mtp9b_smoke_s5_sf10 \
@@ -442,11 +445,19 @@ tail -f run_logs/mtp9b_smoke_s5_sf10.nohup.log
 
 Overnight 主跑建议先用 scheduled self-forcing,别一上来全 1:
 ```bash
+MODEL=/home/wenxuan/Qwen3.5-9B \
+DISTILLED_ALLAVA_JSONL=$PWD/data/allava/allava_qwen35_distill_100k.jsonl \
+ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V \
 NUM_SPECULATIVE_STEPS=5 STEP_WEIGHT_BETA=1.0 \
   MTP_SELF_FORCING_P=0.5 MTP_VAL_SELF_FORCING_P=0.5 \
   RUN_NAME=mtp9b_100k_s5_b10_sf05 \
   bash examples/train/nohup_mtp_qwen3.5_9b_allava_distilled_100k.sh
 ```
+
+若当前 shell 里曾经 `export MODEL=/home/wenxuan/Qwen3.5-122B-A10B` 或
+`export DISTILLED_ALLAVA_JSONL=...122B...`,上面命令里的显式赋值会覆盖它们。不要
+用 9B launcher 跑 122B;122B 要走 `examples/train/nohup_mtp_122b_allava_distilled.sh`
+并配置 `VLLM_TP=4`。
 
 如果 val 抖得厉害,下一轮只改 `MTP_SELF_FORCING_P=0.25`。最终仍用
 `examples/evaluate/test_mtp_allava_orig_vs_trained.sh` 看真实 mean accept 和
