@@ -51,3 +51,20 @@ bash examples/evaluate/test_three_way_mmstar_allava.sh
 - 图片必须在 `--allowed-local-media-path`(`ALLAVA_IMAGE_ROOT` / MMStar images)下,否则 404、接受率全 0。
 - 路径前缀 `/home` vs `/data` 按机器调;不通 HF 没事,全吃本地。
 - 8 卡换 `TP=8 GPUS=0,1,2,3,4,5,6,7`。
+
+## A/B 双机评测(eval_mtp_ab.sh)
+
+A/B 训完后,**两台机器各评一臂**(serve native + 本臂 trained,出 per-position 接受率;ALLaVA + MMStar):
+```bash
+git checkout test_result122B && git pull
+# 机器1(A · beta=0.6)
+ARM=a CKPT=$PWD/output/mtp_122b_mm_distilled/mtp122b_50k_s5_b06/checkpoints/checkpoint_best \
+  bash mtp_accept/eval_mtp_ab.sh
+# 机器2(B · beta=1.0)
+ARM=b CKPT=$PWD/output/mtp_122b_mm_distilled/mtp122b_50k_s5_b10/checkpoints/checkpoint_best \
+  bash mtp_accept/eval_mtp_ab.sh
+```
+- 默认 `NUM_SPEC_TOKENS=7` / `TP=4` / `GPUS=0,1,2,3` / 50k 数据集;`CKPT` 填你实际 RUN_NAME 的 checkpoint_best。
+- 结果在 `mtp_accept/results/arm_{a,b}/`;summary 带 `arm_` 前缀进 `output_log_debug`(两台不撞名)。
+- 两台跑完:比 **A vs B 的 `*_trained_summary.json`**(B 等权的中后位 per-position 是否更高、mean-accept A vs B);各自 vs native 已在本机表里。
+- 训的是 steps=5,想看"匹配训练深度"的读数可加 `NUM_SPEC_TOKENS=5`。
