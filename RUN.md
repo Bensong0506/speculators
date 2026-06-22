@@ -441,7 +441,7 @@ MODEL=/home/wenxuan/Qwen3.5-9B \
 DISTILLED_ALLAVA_JSONL=$PWD/data/allava/allava_qwen35_distill_10k.jsonl \
 ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V \
 VLLM_GPUS=0 VLLM_TP=1 VLLM_DP=1 VLLM_PORT=18009 \
-TRAIN_GPUS=4,5,6,7 NUM_TRAIN_GPUS=4 VALIDATE_INITIAL=0 \
+TRAIN_GPUS=4,5,6,7 NUM_TRAIN_GPUS=4 VALIDATE_INITIAL=1 \
 MAX_SAMPLES=50 EPOCHS=1 NUM_SPECULATIVE_STEPS=5 STEP_WEIGHT_BETA=1.0 \
   MTP_SELF_FORCING_P=1.0 MTP_VAL_SELF_FORCING_P=1.0 \
   RUN_NAME=$RUN_NAME \
@@ -456,17 +456,17 @@ MODEL=/home/wenxuan/Qwen3.5-9B \
 DISTILLED_ALLAVA_JSONL=$PWD/data/allava/allava_qwen35_distill_100k.jsonl \
 ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V \
 VLLM_GPUS=0 VLLM_TP=1 VLLM_DP=1 VLLM_PORT=18009 \
-TRAIN_GPUS=4,5,6,7 NUM_TRAIN_GPUS=4 VALIDATE_INITIAL=0 \
+TRAIN_GPUS=4,5,6,7 NUM_TRAIN_GPUS=4 VALIDATE_INITIAL=1 \
 NUM_SPECULATIVE_STEPS=5 STEP_WEIGHT_BETA=1.0 \
   MTP_SELF_FORCING_P=0.5 MTP_VAL_SELF_FORCING_P=0.5 \
   RUN_NAME=$RUN_NAME \
   bash examples/train/nohup_mtp_qwen3.5_9b_allava_distilled_100k.sh
 ```
 
-9B launcher 默认只起单个 vLLM worker(`VLLM_DP=1`)并跳过启动前 initial val
-(`VALIDATE_INITIAL=0`),避免 base launcher 的 DP=4 在 `18009/18010/...` 开多
-端口后撞上残留 122B/smoke 服务。想加速 hidden-state generation 时再显式设
-`VLLM_DP=4 VLLM_GPUS=0,1,2,3`。
+9B launcher 默认只起单个 vLLM worker(`VLLM_DP=1`),避免 base launcher 的
+DP=4 在 `18009/18010/...` 开多端口后撞上残留 122B/smoke 服务;同时默认保留
+启动后的 `initial_val`(`VALIDATE_INITIAL=1`),先确认 step0 指标再进入训练。
+想加速 hidden-state generation 时再显式设 `VLLM_DP=4 VLLM_GPUS=0,1,2,3`。
 
 若当前 shell 里曾经 `export MODEL=/home/wenxuan/Qwen3.5-122B-A10B` 或
 `export DISTILLED_ALLAVA_JSONL=...122B...`,上面命令里的显式赋值会覆盖它们。不要

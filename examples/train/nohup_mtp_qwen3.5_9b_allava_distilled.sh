@@ -10,7 +10,7 @@
 #   bash examples/train/nohup_mtp_qwen3.5_9b_allava_distilled.sh
 #
 # SMOKE TEST FIRST (one short run validates the cross-fork MTP integration):
-#   MAX_SAMPLES=50 EPOCHS=1 VALIDATE_INITIAL=0 \
+#   MAX_SAMPLES=50 EPOCHS=1 VALIDATE_INITIAL=1 \
 #     bash examples/train/nohup_mtp_qwen3.5_9b_allava_distilled.sh
 #   tail -f run_logs/mtp_*.nohup.log
 # The most likely failure point is the gen<->model hidden-states width: MTP wants
@@ -107,7 +107,7 @@ export HIDDEN_STATES_DTYPE="${HIDDEN_STATES_DTYPE:-bfloat16}"
 export SEQ_LENGTH="${SEQ_LENGTH:-4096}"
 export PREPROCESS_SEQ_LENGTH="${PREPROCESS_SEQ_LENGTH:-3584}"
 export NO_RESUME_FROM_CHECKPOINT="${NO_RESUME_FROM_CHECKPOINT:-1}"
-export VALIDATE_INITIAL="${VALIDATE_INITIAL:-0}"
+export VALIDATE_INITIAL="${VALIDATE_INITIAL:-1}"
 export VLLM_PORT="${VLLM_PORT:-18009}"  # avoid stale/default :8000 servers during smoke
 
 export LOGGER="${LOGGER:-wandb}"
