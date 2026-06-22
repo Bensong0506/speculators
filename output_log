@@ -3,6 +3,49 @@
 
 === allava ===
 metric                                        native   trained    ratio
+spec_mean_accepted_tokens_per_draft            3.008     3.314    1.102
+spec_token_acceptance_rate                     0.430     0.473    1.102
+spec_first_position_acceptance_rate            0.848     0.864    1.019
+output_tok_per_sec                            34.248    35.806    1.045
+completed                                        128       128    1.000
+num_requested                                    128       128    1.000
+
+=== mmstar ===
+metric                                        native   trained    ratio
+spec_mean_accepted_tokens_per_draft            2.930     2.997    1.023
+spec_token_acceptance_rate                     0.419     0.428    1.023
+spec_first_position_acceptance_rate            0.831     0.839    1.010
+output_tok_per_sec                            33.405    33.798    1.012
+completed                                        128       128    1.000
+num_requested                                    128       128    1.000
+
+[sanity] trained ≈ native => stitch 的头没被加载,换 MTP_METHOD=mtp 重跑
+[INFO] 结果/日志: /data/wenxuan/speculators/mtp_accept/results/soup_sweep/20260622_075052/soup_a05/
+
+=== 汇总 soup sweep ===
+# MTP 权重汤(WiSE-FT)alpha sweep — 122B(in-domain ALLaVA vs OOD MMStar)
+
+ckpt: `/data/wenxuan/speculators/output/mtp_122b_mm_distilled/mtp122b_50k_s7_b06/checkpoints/checkpoint_best`  
+blend: `alpha*finetuned + (1-alpha)*native`  (alpha=1.0=纯微调, 0.0=原生)
+
+| alpha | in mean-acc | in first-pos | in tok/s | OOD mean-acc | OOD first-pos | OOD tok/s |
+|---|---:|---:|---:|---:|---:|---:|
+| native | 3.008 | 0.848 | 34.248 | 2.930 | 0.831 | 33.405 |
+| 0.5 | 3.314 | 0.864 | 35.806 | 2.997 | 0.839 | 33.798 |
+
+## 结论
+
+**alpha=0.5**:域内保住(mean-acc 3.314 > 原生 3.008)且域外拉回 2.997(≥ 原生 2.930)→ 全面型头,零重训。
+
+[written] /data/wenxuan/speculators/mtp_accept/results/soup_sweep/20260622_075052/soup_sweep_summary.md
+
+产物:
+  汇总:   /data/wenxuan/speculators/mtp_accept/results/soup_sweep/20260622_075052/soup_sweep_summary.md
+  每 alpha:/data/wenxuan/speculators/mtp_accept/results/soup_sweep/20260622_075052/soup_a<XX>/{allava,mmstar}_{native,trained}_summary.json
+################ 原生 MTP vs 训好的 MTP best ################
+
+=== allava ===
+metric                                        native   trained    ratio
 spec_mean_accepted_tokens_per_draft            3.066     3.376    1.101
 spec_token_acceptance_rate                     0.438     0.482    1.101
 spec_first_position_acceptance_rate            0.848     0.873    1.029
