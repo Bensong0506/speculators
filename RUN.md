@@ -433,6 +433,7 @@ step1+ 按概率喂上一 MTP step 的 argmax token,target 仍是 gold。
 
 Smoke 先确认新 unroll 跑通:
 ```bash
+pkill -f vllm || true
 MODEL=/home/wenxuan/Qwen3.5-9B \
 DISTILLED_ALLAVA_JSONL=$PWD/data/allava/allava_qwen35_distill_10k.jsonl \
 ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V \
