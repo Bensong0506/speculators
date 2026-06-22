@@ -28,6 +28,8 @@ export EPOCHS="${EPOCHS:-10}"
 export CHECKPOINT_FREQ="${CHECKPOINT_FREQ:-1}"
 export NUM_SPECULATIVE_STEPS="${NUM_SPECULATIVE_STEPS:-3}"
 export STEP_WEIGHT_BETA="${STEP_WEIGHT_BETA:-0.6}"
+export MTP_SELF_FORCING_P="${MTP_SELF_FORCING_P:-0.0}"
+export MTP_VAL_SELF_FORCING_P="${MTP_VAL_SELF_FORCING_P:-$MTP_SELF_FORCING_P}"
 export RUN_NAME="${RUN_NAME:-mtp_bf16_lr3e5_100k_$(date +%m%d_%H%M)}"
 
 if [ ! -s "$DISTILLED_ALLAVA_JSONL" ]; then
@@ -41,6 +43,7 @@ echo "  jsonl:    $DISTILLED_ALLAVA_JSONL"
 echo "  samples:  $MAX_SAMPLES"
 echo "  epochs:   $EPOCHS   (checkpoint_freq=$CHECKPOINT_FREQ)"
 echo "  lr:       $LR    dtype: $HIDDEN_STATES_DTYPE"
+echo "  self_force: train=$MTP_SELF_FORCING_P   val=$MTP_VAL_SELF_FORCING_P"
 echo "  run_name: $RUN_NAME"
 
 exec bash "$SCRIPT_DIR/nohup_mtp_qwen3.5_9b_allava_distilled.sh"

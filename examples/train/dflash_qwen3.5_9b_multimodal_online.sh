@@ -130,6 +130,8 @@ fi
 SPECULATOR_TYPE="${SPECULATOR_TYPE:-dflash}"
 NUM_SPECULATIVE_STEPS="${NUM_SPECULATIVE_STEPS:-3}"   # MTP prediction steps
 STEP_WEIGHT_BETA="${STEP_WEIGHT_BETA:-0.6}"           # MTP FastMTP step-weight decay
+MTP_SELF_FORCING_P="${MTP_SELF_FORCING_P:-0.0}"       # MTP scheduled self-forcing
+MTP_VAL_SELF_FORCING_P="${MTP_VAL_SELF_FORCING_P:-$MTP_SELF_FORCING_P}"
 # Empty = use the warm-start checkpoint block size; from scratch falls back to 8.
 BLOCK_SIZE="${BLOCK_SIZE:-}"
 MAX_ANCHORS="${MAX_ANCHORS:-512}"  # max anchor positions sampled per step (memory knob)
@@ -260,7 +262,12 @@ DRAFTARCH_FLAG=(); [ -n "${DRAFT_ARCH:-}" ]    && DRAFTARCH_FLAG=(--draft-arch "
 MASK_FLAG=();      [ -n "${MASK_TOKEN_ID:-}" ] && MASK_FLAG=(--mask-token-id "$MASK_TOKEN_ID")
 SPEC_FLAG=()
 if [ "$SPECULATOR_TYPE" = "mtp" ]; then
-    SPEC_FLAG=(--num-speculative-steps "$NUM_SPECULATIVE_STEPS" --step-weight-beta "$STEP_WEIGHT_BETA")
+    SPEC_FLAG=(
+        --num-speculative-steps "$NUM_SPECULATIVE_STEPS"
+        --step-weight-beta "$STEP_WEIGHT_BETA"
+        --mtp-self-forcing-p "$MTP_SELF_FORCING_P"
+        --mtp-val-self-forcing-p "$MTP_VAL_SELF_FORCING_P"
+    )
 fi
 NO_RESUME_FLAG=()
 if [ "$NO_RESUME_FROM_CHECKPOINT" = "1" ]; then
@@ -326,6 +333,10 @@ echo "    force_eager_training: $FORCE_EAGER"
 echo "    dflash_compile_training: $DFLASH_COMPILE"
 echo "    validate_initial: $VALIDATE_INITIAL"
 echo "    target_layer_ids: $TARGET_LAYER_IDS"
+if [ "$SPECULATOR_TYPE" = "mtp" ]; then
+    echo "    mtp_self_forcing_p: $MTP_SELF_FORCING_P"
+    echo "    mtp_val_self_forcing_p: $MTP_VAL_SELF_FORCING_P"
+fi
 
 # Step 0 (optional): build a `conversations` jsonl from the chosen data source.
 # Idempotent: skips conversion only when the source/image-root fingerprint matches.

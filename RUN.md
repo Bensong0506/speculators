@@ -425,6 +425,35 @@ tail -f run_logs/mtp_122b_*.nohup.log
 
 ---
 
+## MTP 9B self-forcing overnight
+
+目标:先在 9B 上验证 teacher-forcing -> self-forcing 是否抬中后位接受率。代码默认
+`MTP_SELF_FORCING_P=0.0`,完全保持旧行为;打开后 step0 仍喂 gold token,
+step1+ 按概率喂上一 MTP step 的 argmax token,target 仍是 gold。
+
+Smoke 先确认新 unroll 跑通:
+```bash
+MAX_SAMPLES=50 EPOCHS=1 NUM_SPECULATIVE_STEPS=5 STEP_WEIGHT_BETA=1.0 \
+  MTP_SELF_FORCING_P=1.0 MTP_VAL_SELF_FORCING_P=1.0 \
+  RUN_NAME=mtp9b_smoke_s5_sf10 \
+  bash examples/train/nohup_mtp_qwen3.5_9b_allava_distilled.sh
+tail -f run_logs/mtp9b_smoke_s5_sf10.nohup.log
+```
+
+Overnight 主跑建议先用 scheduled self-forcing,别一上来全 1:
+```bash
+NUM_SPECULATIVE_STEPS=5 STEP_WEIGHT_BETA=1.0 \
+  MTP_SELF_FORCING_P=0.5 MTP_VAL_SELF_FORCING_P=0.5 \
+  RUN_NAME=mtp9b_100k_s5_b10_sf05 \
+  bash examples/train/nohup_mtp_qwen3.5_9b_allava_distilled_100k.sh
+```
+
+如果 val 抖得厉害,下一轮只改 `MTP_SELF_FORCING_P=0.25`。最终仍用
+`examples/evaluate/test_mtp_allava_orig_vs_trained.sh` 看真实 mean accept 和
+per-position accept;关键看 pos 3-5 有没有涨,而不是只看 teacher-forced loss。
+
+---
+
 ## MTP 50k 接受率 A/B（122B · steps=5 / seq=4096 · beta 0.6 vs 1.0）
 
 目标:提升 MTP 接受率(尤其中后位)。两台机器并行,**唯一变量 = `STEP_WEIGHT_BETA`**。

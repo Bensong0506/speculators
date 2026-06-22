@@ -99,6 +99,63 @@ class TestStepWeights:
         assert metrics["loss_step_2"] == 0.0
 
 
+# ===== Self-forcing =====
+
+
+class TestSelfForcing:
+    def test_zero_probability_matches_default(self, mtp_model, seed):
+        hidden_size = mtp_model.config.hidden_size
+        vocab_size = mtp_model.config.vocab_size
+        input_ids = torch.randint(0, vocab_size, (BATCH, SEQ_LEN))
+        hidden_states = torch.randn(BATCH, SEQ_LEN, hidden_size)
+
+        with torch.no_grad():
+            default_logits, default_loss, _ = mtp_model(
+                input_ids=input_ids,
+                hidden_states=hidden_states,
+            )
+            forced_logits, forced_loss, _ = mtp_model(
+                input_ids=input_ids,
+                hidden_states=hidden_states,
+                self_forcing_p=0.0,
+            )
+
+        assert len(default_logits) == len(forced_logits)
+        for default_step_logits, forced_step_logits in zip(
+            default_logits, forced_logits, strict=True
+        ):
+            torch.testing.assert_close(default_step_logits, forced_step_logits)
+        torch.testing.assert_close(default_loss, forced_loss)
+
+    def test_probability_one_feeds_previous_argmax(self, mtp_model, seed):
+        hidden_size = mtp_model.config.hidden_size
+        vocab_size = mtp_model.config.vocab_size
+        input_ids = torch.randint(0, vocab_size, (BATCH, SEQ_LEN))
+        hidden_states = torch.randn(BATCH, SEQ_LEN, hidden_size)
+        captured_tokens = []
+
+        def capture_embed_input(_module, args):
+            captured_tokens.append(args[0].detach().clone())
+
+        handle = mtp_model.embed_tokens.register_forward_pre_hook(capture_embed_input)
+        try:
+            with torch.no_grad():
+                logits_list, _, _ = mtp_model(
+                    input_ids=input_ids,
+                    hidden_states=hidden_states,
+                    self_forcing_p=1.0,
+                )
+        finally:
+            handle.remove()
+
+        effective_steps = len(logits_list)
+        valid_len = SEQ_LEN - effective_steps - 1
+        assert torch.equal(captured_tokens[0], input_ids[:, 1 : 1 + valid_len])
+        for step in range(1, effective_steps):
+            expected_tokens = logits_list[step - 1].argmax(dim=-1)
+            assert torch.equal(captured_tokens[step], expected_tokens)
+
+
 # ===== Short sequence truncation =====
 
 

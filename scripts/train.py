@@ -738,6 +738,25 @@ def parse_args():
         help="FastMTP step-weight decay beta (default: 0.6). Only used with MTP.",
     )
     parser.add_argument(
+        "--mtp-self-forcing-p",
+        type=float,
+        default=0.0,
+        help=(
+            "Scheduled self-forcing probability for MTP training. For steps after "
+            "step 0, feed the previous MTP argmax token instead of the gold token "
+            "with this probability. Default 0.0 preserves teacher forcing."
+        ),
+    )
+    parser.add_argument(
+        "--mtp-val-self-forcing-p",
+        type=float,
+        default=None,
+        help=(
+            "Self-forcing probability for MTP validation. Defaults to "
+            "--mtp-self-forcing-p."
+        ),
+    )
+    parser.add_argument(
         "--draft-arch",
         type=str,
         default="llama",

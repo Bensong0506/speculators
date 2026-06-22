@@ -81,6 +81,8 @@ export NUM_TRAIN_GPUS="${NUM_TRAIN_GPUS:-4}"
 export SPECULATOR_TYPE=mtp
 export NUM_SPECULATIVE_STEPS="${NUM_SPECULATIVE_STEPS:-3}"
 export STEP_WEIGHT_BETA="${STEP_WEIGHT_BETA:-0.6}"
+export MTP_SELF_FORCING_P="${MTP_SELF_FORCING_P:-0.0}"
+export MTP_VAL_SELF_FORCING_P="${MTP_VAL_SELF_FORCING_P:-$MTP_SELF_FORCING_P}"
 export FINETUNE_FROM=""        # MTP extracts the head from MODEL itself
 export DRAFT_VOCAB_SIZE=""     # full vocab
 
@@ -117,6 +119,7 @@ echo "  trainer:     $NUM_TRAIN_GPUS GPUs [$TRAIN_GPUS]"
 echo "  dataset:     $DATASET"
 echo "  save_path:   $SAVE_PATH"
 echo "  spec_steps:  $NUM_SPECULATIVE_STEPS   step_weight_beta=$STEP_WEIGHT_BETA"
+echo "  self_force:  train=$MTP_SELF_FORCING_P   val=$MTP_VAL_SELF_FORCING_P"
 echo "  epochs:      $EPOCHS   lr=$LR   max_samples=$MAX_SAMPLES   seq_len=$SEQ_LENGTH"
 echo "  log:         $NOHUP_LOG_PATH"
 

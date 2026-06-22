@@ -38,6 +38,13 @@ def compute_step_weights(beta: float = 0.6, num_steps: int = 3) -> list[float]:
     return [w / total for w in raw]
 
 
+def _validate_probability(name: str, value: float) -> float:
+    value = float(value)
+    if not 0.0 <= value <= 1.0:
+        raise ValueError(f"{name} must be in [0, 1], got {value}.")
+    return value
+
+
 @SpeculatorModel.register("mtp")
 class MTPDraftModel(DraftVocabMixin, SpeculatorModel):
     """MTP speculator model for multi-token prediction.
@@ -117,14 +124,19 @@ class MTPDraftModel(DraftVocabMixin, SpeculatorModel):
         loss_mask: torch.Tensor | None = None,
         step_weights: list[float] | None = None,
         return_dict: bool = True,  # noqa: ARG002
+        self_forcing_p: float = 0.0,
         **kwargs: Any,  # noqa: ARG002
     ) -> tuple:
-        """Forward pass for MTP multi-token prediction (teacher-forced).
+        """Forward pass for MTP multi-token prediction.
 
-        At step k, uses ground-truth input_ids[t+k+1] as the embedding input and
-        the MTP output from step k-1 (or verifier hidden states for step 0) as the
-        hidden state input. Hidden states are passed recursively: each step's MTP
-        output feeds the next step.
+        At step k, uses input_ids[t+k+1] as the embedding input by default and
+        the MTP output from step k-1 (or verifier hidden states for step 0) as
+        the hidden state input. Hidden states are passed recursively: each step's
+        MTP output feeds the next step.
+
+        If self_forcing_p > 0, steps after the first one feed the previous MTP
+        step's argmax token instead of the ground-truth token with probability
+        self_forcing_p. Targets remain gold tokens.
 
         Targets are derived from input_ids via per-step offset slicing -- no
         separate label tensor is needed. Use loss_mask to exclude positions
@@ -139,6 +151,8 @@ class MTPDraftModel(DraftVocabMixin, SpeculatorModel):
             0=ignore.
         :param step_weights: Per-step loss weights (None = uniform). Training only.
         :param return_dict: Unused, kept for interface compatibility.
+        :param self_forcing_p: Probability of feeding the previous draft argmax
+            token instead of the gold token for MTP steps after step 0.
         :param kwargs: Absorbs unexpected batch keys
             (lengths, verifier_last_hidden_states)
         :return: Tuple of (logits_list, loss, metrics)
@@ -147,6 +161,7 @@ class MTPDraftModel(DraftVocabMixin, SpeculatorModel):
         device = input_ids.device
         batch_size, seq_len = input_ids.shape
         num_steps = self.config.num_speculative_steps
+        self_forcing_p = _validate_probability("self_forcing_p", self_forcing_p)
 
         if step_weights is not None and len(step_weights) != num_steps:
             raise ValueError(
@@ -186,9 +201,22 @@ class MTPDraftModel(DraftVocabMixin, SpeculatorModel):
         current_hidden = hidden_states
         for step in range(effective_steps):
             step_hidden = current_hidden[:, :valid_len]
-            step_embeds = self.embed_tokens(
-                input_ids[:, step + 1 : step + 1 + valid_len]
-            )
+            gold_step_tokens = input_ids[:, step + 1 : step + 1 + valid_len]
+            if step > 0 and self_forcing_p > 0.0:
+                prev_step_tokens = all_logits[step - 1].detach().argmax(dim=-1)
+                if self_forcing_p >= 1.0:
+                    step_tokens = prev_step_tokens
+                else:
+                    use_prev = (
+                        torch.rand(gold_step_tokens.shape, device=device)
+                        < self_forcing_p
+                    )
+                    step_tokens = torch.where(
+                        use_prev, prev_step_tokens, gold_step_tokens
+                    )
+            else:
+                step_tokens = gold_step_tokens
+            step_embeds = self.embed_tokens(step_tokens)
             step_pos_emb = self.rotary_emb(step_hidden, step_pos_ids)
 
             mtp_output = self.mtp_layers[0](
@@ -292,7 +320,22 @@ class MTPDraftModel(DraftVocabMixin, SpeculatorModel):
                 beta=kwargs.get("step_weight_beta", 0.6),
                 num_steps=kwargs["num_speculative_steps"],
             )
-        train_kwargs: dict[str, Any] = {"step_weights": step_weights}
-        val_kwargs = train_kwargs.copy()
+        self_forcing_p = _validate_probability(
+            "mtp_self_forcing_p", kwargs.get("mtp_self_forcing_p", 0.0)
+        )
+        val_self_forcing_p = kwargs.get("mtp_val_self_forcing_p")
+        if val_self_forcing_p is None:
+            val_self_forcing_p = self_forcing_p
+        val_self_forcing_p = _validate_probability(
+            "mtp_val_self_forcing_p", val_self_forcing_p
+        )
+        train_kwargs: dict[str, Any] = {
+            "step_weights": step_weights,
+            "self_forcing_p": self_forcing_p,
+        }
+        val_kwargs = {
+            "step_weights": step_weights,
+            "self_forcing_p": val_self_forcing_p,
+        }
 
         return train_kwargs, val_kwargs
