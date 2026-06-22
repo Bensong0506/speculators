@@ -434,24 +434,30 @@ step1+ 按概率喂上一 MTP step 的 argmax token,target 仍是 gold。
 Smoke 先确认新 unroll 跑通:
 ```bash
 pkill -f vllm || true
+pkill -f 'torchrun.*scripts/train.py' || true
+pkill -f 'scripts/train.py' || true
+RUN_NAME=mtp9b_smoke_s5_sf10_$(date +%m%d_%H%M)
 MODEL=/home/wenxuan/Qwen3.5-9B \
 DISTILLED_ALLAVA_JSONL=$PWD/data/allava/allava_qwen35_distill_10k.jsonl \
 ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V \
+VLLM_PORT=18009 \
 MAX_SAMPLES=50 EPOCHS=1 NUM_SPECULATIVE_STEPS=5 STEP_WEIGHT_BETA=1.0 \
   MTP_SELF_FORCING_P=1.0 MTP_VAL_SELF_FORCING_P=1.0 \
-  RUN_NAME=mtp9b_smoke_s5_sf10 \
+  RUN_NAME=$RUN_NAME \
   bash examples/train/nohup_mtp_qwen3.5_9b_allava_distilled.sh
-tail -f run_logs/mtp9b_smoke_s5_sf10.nohup.log
+tail -f run_logs/${RUN_NAME}.nohup.log
 ```
 
 Overnight 主跑建议先用 scheduled self-forcing,别一上来全 1:
 ```bash
+RUN_NAME=mtp9b_100k_s5_b10_sf05_$(date +%m%d_%H%M)
 MODEL=/home/wenxuan/Qwen3.5-9B \
 DISTILLED_ALLAVA_JSONL=$PWD/data/allava/allava_qwen35_distill_100k.jsonl \
 ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V \
+VLLM_PORT=18009 \
 NUM_SPECULATIVE_STEPS=5 STEP_WEIGHT_BETA=1.0 \
   MTP_SELF_FORCING_P=0.5 MTP_VAL_SELF_FORCING_P=0.5 \
-  RUN_NAME=mtp9b_100k_s5_b10_sf05 \
+  RUN_NAME=$RUN_NAME \
   bash examples/train/nohup_mtp_qwen3.5_9b_allava_distilled_100k.sh
 ```
 

@@ -98,6 +98,7 @@ export SEQ_LENGTH="${SEQ_LENGTH:-4096}"
 export PREPROCESS_SEQ_LENGTH="${PREPROCESS_SEQ_LENGTH:-3584}"
 export NO_RESUME_FROM_CHECKPOINT="${NO_RESUME_FROM_CHECKPOINT:-1}"
 export VALIDATE_INITIAL="${VALIDATE_INITIAL:-1}"
+export VLLM_PORT="${VLLM_PORT:-18009}"  # avoid stale/default :8000 servers during smoke
 
 export LOGGER="${LOGGER:-wandb}"
 export WANDB_BASE_URL="${WANDB_BASE_URL:-http://10.155.156.175:38080}"
@@ -113,6 +114,7 @@ echo "  save_path:   $SAVE_PATH"
 echo "  spec_steps:  $NUM_SPECULATIVE_STEPS   step_weight_beta=$STEP_WEIGHT_BETA"
 echo "  self_force:  train=$MTP_SELF_FORCING_P   val=$MTP_VAL_SELF_FORCING_P"
 echo "  epochs:      $EPOCHS   lr=$LR   max_samples=$MAX_SAMPLES"
+echo "  vllm_port:   $VLLM_PORT"
 echo "  log:         $NOHUP_LOG_PATH"
 
 nohup bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh \

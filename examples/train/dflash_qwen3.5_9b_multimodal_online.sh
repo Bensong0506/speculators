@@ -516,6 +516,8 @@ echo "vLLM server ready."
 
 # Step 3: Train the DFlash drafter against the live vLLM server -------------
 echo "=== Step 3: Training ==="
+echo "    train verifier: $MODEL"
+echo "    train endpoint: http://localhost:${VLLM_PORT}/v1"
 CUDA_VISIBLE_DEVICES="$TRAIN_GPUS" torchrun \
     --standalone --nproc_per_node "$NUM_TRAIN_GPUS" \
     scripts/train.py \
