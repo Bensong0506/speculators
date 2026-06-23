@@ -147,6 +147,7 @@ SMOKE(50 条,先确认 domino 跑通):
 ```bash
 ENABLE_DOMINO=1 DOMINO_LOSS_DECAY_GAMMA=4 BLOCK_SIZE=8 \
 NO_RESUME_FROM_CHECKPOINT=1 OUTPUT_DIR=$PWD/output/dflash_domino_smoke \
+LOGGER=wandb WANDB_BASE_URL=http://10.155.156.175:38080 WANDB_PROJECT=speculators RUN_NAME=dflash_domino_smoke \
 FINETUNE_FROM=$PWD/output/<你最好的 dflash run>/checkpoints/checkpoint_best \
 MODEL=/home/wenxuan/Qwen3.5-9B \
 USE_ALLAVA=0 DATASET=$PWD/data/allava/allava_qwen35_distill_100k.jsonl \
@@ -161,6 +162,7 @@ bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
 ```bash
 ENABLE_DOMINO=1 DOMINO_LOSS_DECAY_GAMMA=4 BLOCK_SIZE=8 \
 NO_RESUME_FROM_CHECKPOINT=1 OUTPUT_DIR=$PWD/output/dflash_domino_100k \
+LOGGER=wandb WANDB_BASE_URL=http://10.155.156.175:38080 WANDB_PROJECT=speculators RUN_NAME=dflash_domino_100k \
 FINETUNE_FROM=$PWD/output/<你最好的 dflash run>/checkpoints/checkpoint_best \
 MODEL=/home/wenxuan/Qwen3.5-9B \
 USE_ALLAVA=0 DATASET=$PWD/data/allava/allava_qwen35_distill_100k.jsonl \
@@ -170,6 +172,7 @@ MAX_SAMPLES=100000 EPOCHS=2 \
 bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
 ```
 > 要 raw ALLaVA 100k 而非蒸馏:去掉 `USE_ALLAVA=0 DATASET=...`、保留 `MAX_SAMPLES=100000`。
+> 📊 **wandb**:base launcher 默认 `LOGGER=tensorboard`(本地 `./train_logs`),**不设 `LOGGER=wandb` 就不进 wandb**。首次:`wandb login --host http://10.155.156.175:38080`(或设 `WANDB_API_KEY`)。不想要 wandb 就删那行,用 `bash examples/train/view_tensorboard.sh` 看本地 tensorboard。`RUN_NAME` 决定 wandb 里的 run 名。
 > ⚠️ **每个 run 必带 `NO_RESUME_FROM_CHECKPOINT=1` + 独立 `OUTPUT_DIR`**:否则 full 会撞上 smoke 在同一 `OUTPUT_DIR` 留下的 checkpoint 去 resume → `Missing optimizer state for 'verifier_lm_head.weight'` 崩(base launcher 默认 resume=on)。
 
 - **gamma 按 block_size**:bs8→4 / bs10→5 / bs16→7。**你的 DFlash 是 bs=8**(`_full` wrapper 默认 `BLOCK_SIZE=8`,`train.py` 会覆盖 z-lab 的 16)→ **gamma=4(launcher 默认即可)**。不放心就核一眼:`grep -o '"block_size":[^,]*' <ckpt>/config.json`。
