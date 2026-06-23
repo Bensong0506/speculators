@@ -129,6 +129,34 @@ WANDB_BASE_URL=http://<internal-wandb-host>:<port> \
 ```
 First time for tensorboard only: `pip install tensorboard`.
 
+### 1e. Domino-style causal correction head(NEW — 仅训练侧)
+
+Domino = 在 DFlash 并行块草稿上加一个**轻量 GRU 因果修正头**(teacher-forced prefix + base-anchored λ 课程),目标:DFlash 的速度 + 接近 MTP 的接受率(论文/SpecForge:Domino > DFlash/DART/EAGLE-3)。默认关,开关 `ENABLE_DOMINO=1`。架构默认已对齐 SpecForge(GRU 1024 / 低秩 256 / teacher-forced)。
+
+> ⚠️ **只做了训练,没做 serving**:trained 头(`prefix_gru`+`embed_proj`)目前只在训练 forward 生效;**vLLM DFlash proposer 不认识它** → 现在**量不到真实 vLLM 接受率、不能部署**。判断有没有用看训练/val metrics **`domino_final_acc` vs `domino_base_acc`**(teacher-forced 下修正头 top-1 vs 纯 DFlash top-1;final 稳 > base = 有效)。值了再做 serve 侧。
+
+先跑单测(GPU 机;本地 torch 太老跑不了):
+```bash
+pytest tests/unit/models/test_dflash_domino.py tests/unit/train/test_cli_args.py -q
+```
+
+Smoke(50 条;warm-start 自你**最好的已训 DFlash**,base 越强课程越省):
+```bash
+ENABLE_DOMINO=1 DOMINO_LOSS_DECAY_GAMMA=7 \
+FINETUNE_FROM=$PWD/output/<你最好的 dflash 100k run>/checkpoints/checkpoint_best \
+MODEL=/home/wenxuan/Qwen3.5-9B \
+DISTILLED_ALLAVA_JSONL=$PWD/data/allava/allava_qwen35_distill_100k.jsonl \
+ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V \
+VLLM_GPUS=0 VLLM_TP=1 VLLM_DP=1 TRAIN_GPUS=4,5,6,7 NUM_TRAIN_GPUS=4 \
+MAX_SAMPLES=50 EPOCHS=1 \
+bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
+```
+日志确认:`domino_enabled: 1` + `domino lambda_base: 1.0 -> 0`,且 metrics 出现 `domino_final_acc/base_acc`。过了 → 去掉 `MAX_SAMPLES=50 EPOCHS=1` 跑全量。
+
+- **gamma 按 block_size**:bs8→4 / bs10→5 / **bs16→7**(默认 4 是 bs8 的;你的 DFlash 是 16)。
+- 旋钮(默认对齐 SpecForge):`DOMINO_GRU_HIDDEN_DIM=1024` · `DOMINO_EMB_DIM=256` · `DOMINO_PURE_DRAFT_PREFIX_LEN=1` · `DOMINO_LAMBDA_BASE_START=1.0`→0 · `DOMINO_LAMBDA_BASE_DECAY_RATIO=1.0`(全程衰减;想后段才转 corrected 调小,如 0.5)。
+- **盯**:`domino_final_acc` 是否稳 > `domino_base_acc`(尤其中后位)。是 → 有效,再投 vLLM serve 侧;否 → 调 `DOMINO_LAMBDA_BASE_DECAY_RATIO` / gamma。
+
 ---
 
 ## 2. Serve on GPU (verifier + OUR trained draft)
