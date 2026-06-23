@@ -66,7 +66,7 @@ auto-converts ALLaVA → a conversations jsonl (`scripts/llava_to_jsonl.py`).
 ```bash
 FINETUNE_FROM=/home/models/Qwen3.5-9B-DFlash \
   ALLAVA_INPUTS="/home/wenxuan/ALLaVA-4V/allava_laion/ALLaVA-Caption-LAION-4V.json /home/wenxuan/ALLaVA-4V/allava_laion/ALLaVA-Instruct-LAION-4V.json" \
-  ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V \
+  MEDIA_ROOT=/home/wenxuan/ALLaVA-4V \
   MAX_SAMPLES=100000 EPOCHS=2 \
   bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
 # -> ./output/dflash_qwen3.5_9b_mm_ft/checkpoints/checkpoint_best
@@ -141,7 +141,7 @@ pytest tests/unit/models/test_dflash_domino.py tests/unit/train/test_cli_args.py
 ```
 
 Smoke(50 条;warm-start 自你**最好的已训 DFlash**,base 越强课程越省):
-> ⚠️ **数据怎么喂**:这个 launcher 用 `DATASET`/`USE_ALLAVA` 喂数据,**不认 `DISTILLED_ALLAVA_JSONL`**;且 `MAX_SAMPLES` 默认 **5000**、`USE_ALLAVA=1` 默认会拿 **raw** ALLaVA。要训**蒸馏 100k** 必须三件套:`USE_ALLAVA=0` + `DATASET=<蒸馏 jsonl>` + `MAX_SAMPLES=100000`。数据**对齐你 base DFlash 训练用的那种**(蒸馏就蒸馏,raw 就 raw)。
+> ⚠️ **数据怎么喂**:这个 launcher 用 `DATASET`/`USE_ALLAVA` 喂数据,**不认 `DISTILLED_ALLAVA_JSONL`**;且 `MAX_SAMPLES` 默认 **5000**、`USE_ALLAVA=1` 默认会拿 **raw** ALLaVA。要训**蒸馏 100k** 必须**四件套**:`USE_ALLAVA=0` + `DATASET=<蒸馏 jsonl>` + `MEDIA_ROOT=<图片根,如 /home/wenxuan/ALLaVA-4V>` + `MAX_SAMPLES=100000`。⚠️ `USE_ALLAVA=0` 下 **`ALLAVA_IMAGE_ROOT` 被忽略**,`--allowed-local-media-path` 只认 **`MEDIA_ROOT`**(不设就 fallback 到 `/path/to/coco` → `Invalid --allowed-local-media-path` 崩);`MEDIA_ROOT` 必须是 jsonl 里图片绝对路径的**父目录**。数据**对齐你 base DFlash 训练用的那种**(蒸馏就蒸馏,raw 就 raw)。
 
 SMOKE(50 条,先确认 domino 跑通):
 ```bash
@@ -150,7 +150,7 @@ NO_RESUME_FROM_CHECKPOINT=1 OUTPUT_DIR=$PWD/output/dflash_domino_smoke \
 FINETUNE_FROM=$PWD/output/<你最好的 dflash run>/checkpoints/checkpoint_best \
 MODEL=/home/wenxuan/Qwen3.5-9B \
 USE_ALLAVA=0 DATASET=$PWD/data/allava/allava_qwen35_distill_100k.jsonl \
-ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V \
+MEDIA_ROOT=/home/wenxuan/ALLaVA-4V \
 VLLM_GPUS=0 VLLM_TP=1 VLLM_DP=1 TRAIN_GPUS=4,5,6,7 NUM_TRAIN_GPUS=4 \
 MAX_SAMPLES=50 EPOCHS=1 \
 bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
@@ -164,7 +164,7 @@ NO_RESUME_FROM_CHECKPOINT=1 OUTPUT_DIR=$PWD/output/dflash_domino_100k \
 FINETUNE_FROM=$PWD/output/<你最好的 dflash run>/checkpoints/checkpoint_best \
 MODEL=/home/wenxuan/Qwen3.5-9B \
 USE_ALLAVA=0 DATASET=$PWD/data/allava/allava_qwen35_distill_100k.jsonl \
-ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V \
+MEDIA_ROOT=/home/wenxuan/ALLaVA-4V \
 VLLM_GPUS=0 VLLM_TP=1 VLLM_DP=1 TRAIN_GPUS=4,5,6,7 NUM_TRAIN_GPUS=4 \
 MAX_SAMPLES=100000 EPOCHS=2 \
 bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
