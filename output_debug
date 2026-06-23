@@ -1,115 +1,471 @@
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1885, in _call_impl
-[rank2]:     return inner()
-[rank2]:            ^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1833, in inner
-[rank2]:     result = forward_call(*args, **kwargs)
-[rank2]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/eval_frame.py", line 1024, in compile_wrapper
-[rank2]:     return fn(*args, **kwargs)
-[rank2]:            ^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/home/wenxuan/speculators/src/speculators/models/mtp/core.py", line 239, in forward
-[rank2]:     unreduced = nn.functional.cross_entropy(
-[rank2]:                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/functional.py", line 3504, in cross_entropy
-[rank2]:     return torch._C._nn.cross_entropy_loss(
-[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank2]: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 1.89 GiB. GPU 2 has a total capacity of 79.32 GiB of which 243.62 MiB is free. Process 1535037 has 43.47 GiB memory in use. Process 1535051 has 35.60 GiB memory in use. Of the allocated memory 33.25 GiB is allocated by PyTorch, and 1.44 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)
-[rank3]: Traceback (most recent call last):
-[rank3]:   File "/home/wenxuan/speculators/scripts/train.py", line 973, in <module>
-[rank3]:     main(args)
-[rank3]:   File "/home/wenxuan/speculators/scripts/train.py", line 576, in main
-[rank3]:     trainer.run_training()
-[rank3]:   File "/home/wenxuan/speculators/src/speculators/train/graceful_shutdown.py", line 118, in wrapper
-[rank3]:     return fn(self, *args, **kwargs)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/home/wenxuan/speculators/src/speculators/train/trainer.py", line 360, in run_training
-[rank3]:     self.train_epoch(epoch)
-[rank3]:   File "/home/wenxuan/speculators/src/speculators/train/trainer.py", line 213, in train_epoch
-[rank3]:     _draft_tokens, loss, metrics = self.model(
-[rank3]:                                    ^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
-[rank3]:     return self._call_impl(*args, **kwargs)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1885, in _call_impl
-[rank3]:     return inner()
-[rank3]:            ^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1833, in inner
-[rank3]:     result = forward_call(*args, **kwargs)
-[rank3]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/eval_frame.py", line 1024, in compile_wrapper
-[rank3]:     return fn(*args, **kwargs)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/home/wenxuan/speculators/src/speculators/models/mtp/core.py", line 239, in forward
-[rank3]:     unreduced = nn.functional.cross_entropy(
-[rank3]:                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/functional.py", line 3504, in cross_entropy
-[rank3]:     return torch._C._nn.cross_entropy_loss(
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 1.89 GiB. GPU 3 has a total capacity of 79.32 GiB of which 243.62 MiB is free. Process 1535038 has 43.47 GiB memory in use. Process 1535052 has 35.60 GiB memory in use. Of the allocated memory 33.25 GiB is allocated by PyTorch, and 1.44 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)
-Epoch 0   0%                                 0/4  [ 0:00:26 < -:--:-- , ? it/s ]
-Traceback (most recent call last):
-  File "/home/wenxuan/speculators/scripts/train.py", line 973, in <module>
-    main(args)
-  File "/home/wenxuan/speculators/scripts/train.py", line 576, in main
-    trainer.run_training()
-  File "/home/wenxuan/speculators/src/speculators/train/graceful_shutdown.py", line 118, in wrapper
-    return fn(self, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/wenxuan/speculators/src/speculators/train/trainer.py", line 360, in run_training
-    self.train_epoch(epoch)
-  File "/home/wenxuan/speculators/src/speculators/train/trainer.py", line 213, in train_epoch
-    _draft_tokens, loss, metrics = self.model(
-                                   ^^^^^^^^^^^
-  File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1885, in _call_impl
-    return inner()
-           ^^^^^^^
-  File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1833, in inner
-    result = forward_call(*args, **kwargs)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/eval_frame.py", line 1024, in compile_wrapper
-    return fn(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^
-  File "/home/wenxuan/speculators/src/speculators/models/mtp/core.py", line 239, in forward
-    unreduced = nn.functional.cross_entropy(
-                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/local/lib/python3.12/dist-packages/torch/nn/functional.py", line 3504, in cross_entropy
-    return torch._C._nn.cross_entropy_loss(
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 1.89 GiB. GPU 0 has a total capacity of 79.32 GiB of which 243.62 MiB is free. Process 1535035 has 43.47 GiB memory in use. Process 1535049 has 35.60 GiB memory in use. Of the allocated memory 33.25 GiB is allocated by PyTorch, and 1.44 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)
-[rank0]: Traceback (most recent call last):
-[rank0]:   File "/home/wenxuan/speculators/scripts/train.py", line 973, in <module>
-[rank0]:     main(args)
-[rank0]:   File "/home/wenxuan/speculators/scripts/train.py", line 576, in main
-[rank0]:     trainer.run_training()
-[rank0]:   File "/home/wenxuan/speculators/src/speculators/train/graceful_shutdown.py", line 118, in wrapper
-[rank0]:     return fn(self, *args, **kwargs)
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/home/wenxuan/speculators/src/speculators/train/trainer.py", line 360, in run_training
-[rank0]:     self.train_epoch(epoch)
-[rank0]:   File "/home/wenxuan/speculators/src/speculators/train/trainer.py", line 213, in train_epoch
-[rank0]:     _draft_tokens, loss, metrics = self.model(
-[rank0]:                                    ^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
-[rank0]:     return self._call_impl(*args, **kwargs)
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1885, in _call_impl
-[rank0]:     return inner()
-[rank0]:            ^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1833, in inner
-[rank0]:     result = forward_call(*args, **kwargs)
-[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/eval_frame.py", line 1024, in compile_wrapper
-[rank0]:     return fn(*args, **kwargs)
-[rank0]:            ^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/home/wenxuan/speculators/src/speculators/models/mtp/core.py", line 239, in forward
-[rank0]:     unreduced = nn.functional.cross_entropy(
-[rank0]:                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/functional.py", line 3504, in cross_entropy
-[rank0]:     return torch._C._nn.cross_entropy_loss(
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 1.89 GiB. GPU 0 has a total capacity of 79.32 GiB of which 243.62 MiB is free. Process 1535035 has 43.47 GiB memory in use. Process 1535049 has 35.60 GiB memory in use. Of the allocated memory 33.25 GiB is allocated by PyTorch, and 1.44 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)
-wandb: 
-wandb: 🚀 View run mtp_qwen35_9b_allava_disti
+root@devserver-bms-af631bb3:/home/wenxuan/speculators# MODEL=/home/wenxuan/Qwen3.5-9B \
+PREV_MTP_CKPT=/home/wenxuan/speculators/output/mtp_qwen3.5_9b_mm_distilled/checkpoint_best \
+NEW_MTP_CKPT=/home/wenxuan/speculators/output/mtp_qwen3.5_9b_mm_distilled/mtp9b_100k_self-force/checkpoints \
+ALLAVA_JSONL=$PWD/data/allava/allava_qwen35_distill_100k.jsonl \
+ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V \
+MMSTAR_JSONL=$PWD/data/mmstar/mmstar.jsonl MMSTAR_IMAGE_ROOT=/home/wenxuan/mmstar/images \
+INFER_NUM_SPEC=7 GPUS=0 \
+bash examples/evaluate/compare_mtp_3way.sh
+[stitch] /home/wenxuan/speculators/output/mtp_qwen3.5_9b_mm_distilled/checkpoint_best + /home/wenxuan/Qwen3.5-9B -> /home/wenxuan/speculators/output/mtp_stitched/3way_prev_output
+╭───────────────────────────────────────────── MTP Stitch ──────────────────────────────────────────────╮
+│ Finetuned: /home/wenxuan/speculators/output/mtp_qwen3.5_9b_mm_distilled/checkpoint_best               │
+│ Verifier:  /home/wenxuan/Qwen3.5-9B                                                                   │
+│ Output:    /home/wenxuan/speculators/output/mtp_stitched/3way_prev_output                             │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────╯
+  Loaded 15 finetuned weight tensors
+  Remapped 15 keys to native format
+⠏ Copying verifier checkpoint 0:00:08
+  Stitching shards ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3/3 shards 0:00:22
+╭────────────────────────────────────── Stitched checkpoint saved ──────────────────────────────────────╮
+│ /home/wenxuan/speculators/output/mtp_stitched/3way_prev_output                                        │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────╯
+[stitch] /home/wenxuan/speculators/output/mtp_qwen3.5_9b_mm_distilled/mtp9b_100k_self-force/checkpoints + /home/wenxuan/Qwen3.5-9B -> /home/wenxuan/speculators/output/mtp_stitched/3way_new_mtp_qwen3.5_9b_mm_distilled
+╭───────────────────────────────────────────── MTP Stitch ──────────────────────────────────────────────╮
+│ Finetuned:                                                                                            │
+│ /home/wenxuan/speculators/output/mtp_qwen3.5_9b_mm_distilled/mtp9b_100k_self-force/checkpoints        │
+│ Verifier:  /home/wenxuan/Qwen3.5-9B                                                                   │
+│ Output:    /home/wenxuan/speculators/output/mtp_stitched/3way_new_mtp_qwen3.5_9b_mm_distilled         │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭────────────────────────────────── Traceback (most recent call last) ──────────────────────────────────╮
+│ /home/wenxuan/speculators/scripts/stitch_mtp.py:384 in main                                           │
+│                                                                                                       │
+│   381 │   if output_path is None:                                                                     │
+│   382 │   │   output_path = Path.cwd() / f"{verifier_path.name}-stitched"                             │
+│   383 │                                                                                               │
+│ ❱ 384 │   stitch(                                                                                     │
+│   385 │   │   finetuned_checkpoint=finetuned_checkpoint,                                              │
+│   386 │   │   verifier_path=verifier_path,                                                            │
+│   387 │   │   output_path=output_path,                                                                │
+│                                                                                                       │
+│ /home/wenxuan/speculators/scripts/stitch_mtp.py:303 in stitch                                         │
+│                                                                                                       │
+│   300 │                                                                                               │
+│   301 │   verifier_path = _resolve_verifier_path(verifier_path)                                       │
+│   302 │                                                                                               │
+│ ❱ 303 │   weights = _load_finetuned_weights(finetuned_checkpoint)                                     │
+│   304 │   console.print(f"  Loaded [cyan]{len(weights)}[/] finetuned weight tensors")                 │
+│   305 │                                                                                               │
+│   306 │   frozen_count = sum(1 for k in weights if k in _FROZEN_KEYS)                                 │
+│                                                                                                       │
+│ /home/wenxuan/speculators/scripts/stitch_mtp.py:196 in _load_finetuned_weights                        │
+│                                                                                                       │
+│   193 │   │   │   │   weights[key] = f.get_tensor(key)                                                │
+│   194 │   │   return weights                                                                          │
+│   195 │                                                                                               │
+│ ❱ 196 │   raise FileNotFoundError(f"No safetensors found at {checkpoint_dir}")                        │
+│   197                                                                                                 │
+│   198                                                                                                 │
+│   199 def _merge_into(                                                                                │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────╯
+FileNotFoundError: No safetensors found at 
+/home/wenxuan/speculators/output/mtp_qwen3.5_9b_mm_distilled/mtp9b_100k_self-force/checkpoints
+[fatal] stitch 失败: /home/wenxuan/speculators/output/mtp_qwen3.5_9b_mm_distilled/mtp9b_100k_self-force/checkpoints
+root@devserver-bms-af631bb3:/home/wenxuan/speculators# MODEL=/home/wenxuan/Qwen3.5-9B \
+PREV_MTP_CKPT=/home/wenxuan/speculators/output/mtp_qwen3.5_9b_mm_distilled/checkpoint_best \
+NEW_MTP_CKPT=/home/wenxuan/speculators/output/mtp_qwen3.5_9b_mm_distilled/mtp9b_100k_self-force/checkpoints/checkpoint_best \
+ALLAVA_JSONL=$PWD/data/allava/allava_qwen35_distill_100k.jsonl \
+ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V \
+MMSTAR_JSONL=$PWD/data/mmstar/mmstar.jsonl MMSTAR_IMAGE_ROOT=/home/wenxuan/mmstar/images \
+INFER_NUM_SPEC=7 GPUS=0 \
+bash examples/evaluate/compare_mtp_3way.sh
+[stitch] 复用 /home/wenxuan/speculators/output/mtp_stitched/3way_prev_output (FORCE_STITCH=1 重建)
+[stitch] /home/wenxuan/speculators/output/mtp_qwen3.5_9b_mm_distilled/mtp9b_100k_self-force/checkpoints/checkpoint_best + /home/wenxuan/Qwen3.5-9B -> /home/wenxuan/speculators/output/mtp_stitched/3way_new_mtp9b_100k_self-force
+╭───────────────────────────────────────────── MTP Stitch ──────────────────────────────────────────────╮
+│ Finetuned:                                                                                            │
+│ /home/wenxuan/speculators/output/mtp_qwen3.5_9b_mm_distilled/mtp9b_100k_self-force/checkpoints/checkp │
+│ oint_best                                                                                             │
+│ Verifier:  /home/wenxuan/Qwen3.5-9B                                                                   │
+│ Output:    /home/wenxuan/speculators/output/mtp_stitched/3way_new_mtp9b_100k_self-force               │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────╯
+  Loaded 15 finetuned weight tensors
+  Remapped 15 keys to native format
+⠼ Copying verifier checkpoint 0:00:08
+  Stitching shards ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3/3 shards 0:00:19
+╭────────────────────────────────────── Stitched checkpoint saved ──────────────────────────────────────╮
+│ /home/wenxuan/speculators/output/mtp_stitched/3way_new_mtp9b_100k_self-force                          │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────╯
+[info] ALLaVA val tail -> /home/wenxuan/speculators/data/allava/allava_qwen35_distill_100k_val_tail10pct.jsonl rows=9972 (of 99720)
+==== allava_native (model=/home/wenxuan/Qwen3.5-9B) ====
+  [server 挂] tail:
+(APIServer pid=301965) INFO 06-23 01:37:40 [utils.py:344]  ▄▄ ▄█ █     █     █ ▀▄▀ █  version 0.22.0
+(APIServer pid=301965) INFO 06-23 01:37:40 [utils.py:344]   █▄█▀ █     █     █     █  model   /home/wenxuan/Qwen3.5-9B
+(APIServer pid=301965) INFO 06-23 01:37:40 [utils.py:344]    ▀▀  ▀▀▀▀▀ ▀▀▀▀▀ ▀     ▀
+(APIServer pid=301965) INFO 06-23 01:37:40 [utils.py:344] 
+(APIServer pid=301965) INFO 06-23 01:37:40 [utils.py:278] non-default args: {'model_tag': '/home/wenxuan/Qwen3.5-9B', 'host': '0.0.0.0', 'port': 8100, 'model': '/home/wenxuan/Qwen3.5-9B', 'trust_remote_code': True, 'dtype': 'bfloat16', 'seed': 42, 'allowed_local_media_path': '/home/wenxuan/ALLaVA-4V', 'max_model_len': 8192, 'enforce_eager': True, 'served_model_name': ['mtp-3way'], 'generation_config': 'vllm', 'tensor_parallel_size': 4, 'gpu_memory_utilization': 0.85, 'limit_mm_per_prompt': {'image': 1}, 'max_num_batched_tokens': 8304, 'max_num_seqs': 16, 'enable_chunked_prefill': False, 'speculative_config': {'method': 'qwen3_5_mtp', 'num_speculative_tokens': 7, 'enforce_eager': True}}
+(APIServer pid=301965) WARNING 06-23 01:37:40 [envs.py:2057] Unknown vLLM environment variable detected: VLLM_BUILD_URL
+(APIServer pid=301965) WARNING 06-23 01:37:40 [envs.py:2057] Unknown vLLM environment variable detected: VLLM_IMAGE_TAG
+(APIServer pid=301965) WARNING 06-23 01:37:40 [envs.py:2057] Unknown vLLM environment variable detected: VLLM_BUILD_PIPELINE
+(APIServer pid=301965) WARNING 06-23 01:37:40 [envs.py:2057] Unknown vLLM environment variable detected: VLLM_BUILD_COMMIT
+(APIServer pid=301965) INFO 06-23 01:37:40 [model.py:617] Resolved architecture: Qwen3_5ForConditionalGeneration
+(APIServer pid=301965) INFO 06-23 01:37:40 [model.py:1752] Using max model len 8192
+(APIServer pid=301965) WARNING 06-23 01:37:40 [arg_utils.py:2383] This model does not officially support disabling chunked prefill. Disabling this manually may cause the engine to crash or produce incorrect outputs.
+(APIServer pid=301965) Traceback (most recent call last):
+(APIServer pid=301965)   File "/usr/local/bin/vllm", line 10, in <module>
+(APIServer pid=301965)     sys.exit(main())
+(APIServer pid=301965)              ^^^^^^
+(APIServer pid=301965)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/cli/main.py", line 92, in main
+(APIServer pid=301965)     args.dispatch_function(args)
+(APIServer pid=301965)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/cli/serve.py", line 148, in cmd
+(APIServer pid=301965)     uvloop.run(run_server(args))
+(APIServer pid=301965)   File "/usr/local/lib/python3.12/dist-packages/uvloop/__init__.py", line 96, in run
+(APIServer pid=301965)     return __asyncio.run(
+(APIServer pid=301965)            ^^^^^^^^^^^^^^
+(APIServer pid=301965)   File "/usr/lib/python3.12/asyncio/runners.py", line 195, in run
+(APIServer pid=301965)     return runner.run(main)
+(APIServer pid=301965)            ^^^^^^^^^^^^^^^^
+(APIServer pid=301965)   File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+(APIServer pid=301965)     return self._loop.run_until_complete(task)
+(APIServer pid=301965)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=301965)   File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+(APIServer pid=301965)   File "/usr/local/lib/python3.12/dist-packages/uvloop/__init__.py", line 48, in wrapper
+(APIServer pid=301965)     return await main
+(APIServer pid=301965)            ^^^^^^^^^^
+(APIServer pid=301965)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/api_server.py", line 678, in run_server
+(APIServer pid=301965)     await run_server_worker(listen_address, sock, args, **uvicorn_kwargs)
+(APIServer pid=301965)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/api_server.py", line 692, in run_server_worker
+(APIServer pid=301965)     async with build_async_engine_client(
+(APIServer pid=301965)                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=301965)   File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+(APIServer pid=301965)     return await anext(self.gen)
+(APIServer pid=301965)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=301965)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/api_server.py", line 100, in build_async_engine_client
+(APIServer pid=301965)     async with build_async_engine_client_from_engine_args(
+(APIServer pid=301965)                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=301965)   File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+(APIServer pid=301965)     return await anext(self.gen)
+(APIServer pid=301965)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=301965)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/api_server.py", line 124, in build_async_engine_client_from_engine_args
+(APIServer pid=301965)     vllm_config = engine_args.create_engine_config(usage_context=usage_context)
+(APIServer pid=301965)                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=301965)   File "/usr/local/lib/python3.12/dist-packages/vllm/engine/arg_utils.py", line 1957, in create_engine_config
+(APIServer pid=301965)     parallel_config = ParallelConfig(
+(APIServer pid=301965)                       ^^^^^^^^^^^^^^^
+(APIServer pid=301965)   File "/usr/local/lib/python3.12/dist-packages/pydantic/_internal/_dataclasses.py", line 121, in __init__
+(APIServer pid=301965)     s.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs), self_instance=s)
+(APIServer pid=301965) pydantic_core._pydantic_core.ValidationError: 1 validation error for ParallelConfig
+(APIServer pid=301965)   Value error, World size (4) is larger than the number of available GPUs (1) in this node. If this is intentional and you are using:
+(APIServer pid=301965) - ray, set '--distributed-executor-backend ray'.
+(APIServer pid=301965) - multiprocessing, set '--nnodes' appropriately. [type=value_error, input_value=ArgsKwargs((), {'pipeline...'numa_bind_cpus': None}), input_type=ArgsKwargs]
+(APIServer pid=301965)     For further information visit https://errors.pydantic.dev/2.13/v/value_error
+==== allava_prev (model=/home/wenxuan/speculators/output/mtp_stitched/3way_prev_output) ====
+  [server 挂] tail:
+(APIServer pid=302168) INFO 06-23 01:37:53 [utils.py:344]  ▄▄ ▄█ █     █     █ ▀▄▀ █  version 0.22.0
+(APIServer pid=302168) INFO 06-23 01:37:53 [utils.py:344]   █▄█▀ █     █     █     █  model   /home/wenxuan/speculators/output/mtp_stitched/3way_prev_output
+(APIServer pid=302168) INFO 06-23 01:37:53 [utils.py:344]    ▀▀  ▀▀▀▀▀ ▀▀▀▀▀ ▀     ▀
+(APIServer pid=302168) INFO 06-23 01:37:53 [utils.py:344] 
+(APIServer pid=302168) INFO 06-23 01:37:53 [utils.py:278] non-default args: {'model_tag': '/home/wenxuan/speculators/output/mtp_stitched/3way_prev_output', 'host': '0.0.0.0', 'port': 8100, 'model': '/home/wenxuan/speculators/output/mtp_stitched/3way_prev_output', 'trust_remote_code': True, 'dtype': 'bfloat16', 'seed': 42, 'allowed_local_media_path': '/home/wenxuan/ALLaVA-4V', 'max_model_len': 8192, 'enforce_eager': True, 'served_model_name': ['mtp-3way'], 'generation_config': 'vllm', 'tensor_parallel_size': 4, 'gpu_memory_utilization': 0.85, 'limit_mm_per_prompt': {'image': 1}, 'max_num_batched_tokens': 8304, 'max_num_seqs': 16, 'enable_chunked_prefill': False, 'speculative_config': {'method': 'qwen3_5_mtp', 'num_speculative_tokens': 7, 'enforce_eager': True}}
+(APIServer pid=302168) WARNING 06-23 01:37:53 [envs.py:2057] Unknown vLLM environment variable detected: VLLM_BUILD_URL
+(APIServer pid=302168) WARNING 06-23 01:37:53 [envs.py:2057] Unknown vLLM environment variable detected: VLLM_IMAGE_TAG
+(APIServer pid=302168) WARNING 06-23 01:37:53 [envs.py:2057] Unknown vLLM environment variable detected: VLLM_BUILD_PIPELINE
+(APIServer pid=302168) WARNING 06-23 01:37:53 [envs.py:2057] Unknown vLLM environment variable detected: VLLM_BUILD_COMMIT
+(APIServer pid=302168) INFO 06-23 01:37:53 [model.py:617] Resolved architecture: Qwen3_5ForConditionalGeneration
+(APIServer pid=302168) INFO 06-23 01:37:53 [model.py:1752] Using max model len 8192
+(APIServer pid=302168) WARNING 06-23 01:37:53 [arg_utils.py:2383] This model does not officially support disabling chunked prefill. Disabling this manually may cause the engine to crash or produce incorrect outputs.
+(APIServer pid=302168) Traceback (most recent call last):
+(APIServer pid=302168)   File "/usr/local/bin/vllm", line 10, in <module>
+(APIServer pid=302168)     sys.exit(main())
+(APIServer pid=302168)              ^^^^^^
+(APIServer pid=302168)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/cli/main.py", line 92, in main
+(APIServer pid=302168)     args.dispatch_function(args)
+(APIServer pid=302168)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/cli/serve.py", line 148, in cmd
+(APIServer pid=302168)     uvloop.run(run_server(args))
+(APIServer pid=302168)   File "/usr/local/lib/python3.12/dist-packages/uvloop/__init__.py", line 96, in run
+(APIServer pid=302168)     return __asyncio.run(
+(APIServer pid=302168)            ^^^^^^^^^^^^^^
+(APIServer pid=302168)   File "/usr/lib/python3.12/asyncio/runners.py", line 195, in run
+(APIServer pid=302168)     return runner.run(main)
+(APIServer pid=302168)            ^^^^^^^^^^^^^^^^
+(APIServer pid=302168)   File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+(APIServer pid=302168)     return self._loop.run_until_complete(task)
+(APIServer pid=302168)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=302168)   File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+(APIServer pid=302168)   File "/usr/local/lib/python3.12/dist-packages/uvloop/__init__.py", line 48, in wrapper
+(APIServer pid=302168)     return await main
+(APIServer pid=302168)            ^^^^^^^^^^
+(APIServer pid=302168)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/api_server.py", line 678, in run_server
+(APIServer pid=302168)     await run_server_worker(listen_address, sock, args, **uvicorn_kwargs)
+(APIServer pid=302168)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/api_server.py", line 692, in run_server_worker
+(APIServer pid=302168)     async with build_async_engine_client(
+(APIServer pid=302168)                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=302168)   File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+(APIServer pid=302168)     return await anext(self.gen)
+(APIServer pid=302168)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=302168)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/api_server.py", line 100, in build_async_engine_client
+(APIServer pid=302168)     async with build_async_engine_client_from_engine_args(
+(APIServer pid=302168)                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=302168)   File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+(APIServer pid=302168)     return await anext(self.gen)
+(APIServer pid=302168)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=302168)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/api_server.py", line 124, in build_async_engine_client_from_engine_args
+(APIServer pid=302168)     vllm_config = engine_args.create_engine_config(usage_context=usage_context)
+(APIServer pid=302168)                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=302168)   File "/usr/local/lib/python3.12/dist-packages/vllm/engine/arg_utils.py", line 1957, in create_engine_config
+(APIServer pid=302168)     parallel_config = ParallelConfig(
+(APIServer pid=302168)                       ^^^^^^^^^^^^^^^
+(APIServer pid=302168)   File "/usr/local/lib/python3.12/dist-packages/pydantic/_internal/_dataclasses.py", line 121, in __init__
+(APIServer pid=302168)     s.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs), self_instance=s)
+(APIServer pid=302168) pydantic_core._pydantic_core.ValidationError: 1 validation error for ParallelConfig
+(APIServer pid=302168)   Value error, World size (4) is larger than the number of available GPUs (1) in this node. If this is intentional and you are using:
+(APIServer pid=302168) - ray, set '--distributed-executor-backend ray'.
+(APIServer pid=302168) - multiprocessing, set '--nnodes' appropriately. [type=value_error, input_value=ArgsKwargs((), {'pipeline...'numa_bind_cpus': None}), input_type=ArgsKwargs]
+(APIServer pid=302168)     For further information visit https://errors.pydantic.dev/2.13/v/value_error
+==== allava_new (model=/home/wenxuan/speculators/output/mtp_stitched/3way_new_mtp9b_100k_self-force) ====
+  [server 挂] tail:
+(APIServer pid=302371) INFO 06-23 01:38:07 [utils.py:344]  ▄▄ ▄█ █     █     █ ▀▄▀ █  version 0.22.0
+(APIServer pid=302371) INFO 06-23 01:38:07 [utils.py:344]   █▄█▀ █     █     █     █  model   /home/wenxuan/speculators/output/mtp_stitched/3way_new_mtp9b_100k_self-force
+(APIServer pid=302371) INFO 06-23 01:38:07 [utils.py:344]    ▀▀  ▀▀▀▀▀ ▀▀▀▀▀ ▀     ▀
+(APIServer pid=302371) INFO 06-23 01:38:07 [utils.py:344] 
+(APIServer pid=302371) INFO 06-23 01:38:07 [utils.py:278] non-default args: {'model_tag': '/home/wenxuan/speculators/output/mtp_stitched/3way_new_mtp9b_100k_self-force', 'host': '0.0.0.0', 'port': 8100, 'model': '/home/wenxuan/speculators/output/mtp_stitched/3way_new_mtp9b_100k_self-force', 'trust_remote_code': True, 'dtype': 'bfloat16', 'seed': 42, 'allowed_local_media_path': '/home/wenxuan/ALLaVA-4V', 'max_model_len': 8192, 'enforce_eager': True, 'served_model_name': ['mtp-3way'], 'generation_config': 'vllm', 'tensor_parallel_size': 4, 'gpu_memory_utilization': 0.85, 'limit_mm_per_prompt': {'image': 1}, 'max_num_batched_tokens': 8304, 'max_num_seqs': 16, 'enable_chunked_prefill': False, 'speculative_config': {'method': 'qwen3_5_mtp', 'num_speculative_tokens': 7, 'enforce_eager': True}}
+(APIServer pid=302371) WARNING 06-23 01:38:07 [envs.py:2057] Unknown vLLM environment variable detected: VLLM_BUILD_URL
+(APIServer pid=302371) WARNING 06-23 01:38:07 [envs.py:2057] Unknown vLLM environment variable detected: VLLM_IMAGE_TAG
+(APIServer pid=302371) WARNING 06-23 01:38:07 [envs.py:2057] Unknown vLLM environment variable detected: VLLM_BUILD_PIPELINE
+(APIServer pid=302371) WARNING 06-23 01:38:07 [envs.py:2057] Unknown vLLM environment variable detected: VLLM_BUILD_COMMIT
+(APIServer pid=302371) INFO 06-23 01:38:07 [model.py:617] Resolved architecture: Qwen3_5ForConditionalGeneration
+(APIServer pid=302371) INFO 06-23 01:38:07 [model.py:1752] Using max model len 8192
+(APIServer pid=302371) WARNING 06-23 01:38:07 [arg_utils.py:2383] This model does not officially support disabling chunked prefill. Disabling this manually may cause the engine to crash or produce incorrect outputs.
+(APIServer pid=302371) Traceback (most recent call last):
+(APIServer pid=302371)   File "/usr/local/bin/vllm", line 10, in <module>
+(APIServer pid=302371)     sys.exit(main())
+(APIServer pid=302371)              ^^^^^^
+(APIServer pid=302371)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/cli/main.py", line 92, in main
+(APIServer pid=302371)     args.dispatch_function(args)
+(APIServer pid=302371)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/cli/serve.py", line 148, in cmd
+(APIServer pid=302371)     uvloop.run(run_server(args))
+(APIServer pid=302371)   File "/usr/local/lib/python3.12/dist-packages/uvloop/__init__.py", line 96, in run
+(APIServer pid=302371)     return __asyncio.run(
+(APIServer pid=302371)            ^^^^^^^^^^^^^^
+(APIServer pid=302371)   File "/usr/lib/python3.12/asyncio/runners.py", line 195, in run
+(APIServer pid=302371)     return runner.run(main)
+(APIServer pid=302371)            ^^^^^^^^^^^^^^^^
+(APIServer pid=302371)   File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+(APIServer pid=302371)     return self._loop.run_until_complete(task)
+(APIServer pid=302371)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=302371)   File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+(APIServer pid=302371)   File "/usr/local/lib/python3.12/dist-packages/uvloop/__init__.py", line 48, in wrapper
+(APIServer pid=302371)     return await main
+(APIServer pid=302371)            ^^^^^^^^^^
+(APIServer pid=302371)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/api_server.py", line 678, in run_server
+(APIServer pid=302371)     await run_server_worker(listen_address, sock, args, **uvicorn_kwargs)
+(APIServer pid=302371)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/api_server.py", line 692, in run_server_worker
+(APIServer pid=302371)     async with build_async_engine_client(
+(APIServer pid=302371)                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=302371)   File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+(APIServer pid=302371)     return await anext(self.gen)
+(APIServer pid=302371)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=302371)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/api_server.py", line 100, in build_async_engine_client
+(APIServer pid=302371)     async with build_async_engine_client_from_engine_args(
+(APIServer pid=302371)                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=302371)   File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+(APIServer pid=302371)     return await anext(self.gen)
+(APIServer pid=302371)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=302371)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/api_server.py", line 124, in build_async_engine_client_from_engine_args
+(APIServer pid=302371)     vllm_config = engine_args.create_engine_config(usage_context=usage_context)
+(APIServer pid=302371)                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=302371)   File "/usr/local/lib/python3.12/dist-packages/vllm/engine/arg_utils.py", line 1957, in create_engine_config
+(APIServer pid=302371)     parallel_config = ParallelConfig(
+(APIServer pid=302371)                       ^^^^^^^^^^^^^^^
+(APIServer pid=302371)   File "/usr/local/lib/python3.12/dist-packages/pydantic/_internal/_dataclasses.py", line 121, in __init__
+(APIServer pid=302371)     s.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs), self_instance=s)
+(APIServer pid=302371) pydantic_core._pydantic_core.ValidationError: 1 validation error for ParallelConfig
+(APIServer pid=302371)   Value error, World size (4) is larger than the number of available GPUs (1) in this node. If this is intentional and you are using:
+(APIServer pid=302371) - ray, set '--distributed-executor-backend ray'.
+(APIServer pid=302371) - multiprocessing, set '--nnodes' appropriately. [type=value_error, input_value=ArgsKwargs((), {'pipeline...'numa_bind_cpus': None}), input_type=ArgsKwargs]
+(APIServer pid=302371)     For further information visit https://errors.pydantic.dev/2.13/v/value_error
+==== mmstar_native (model=/home/wenxuan/Qwen3.5-9B) ====
+  [server 挂] tail:
+(APIServer pid=302574) INFO 06-23 01:38:19 [utils.py:344]  ▄▄ ▄█ █     █     █ ▀▄▀ █  version 0.22.0
+(APIServer pid=302574) INFO 06-23 01:38:19 [utils.py:344]   █▄█▀ █     █     █     █  model   /home/wenxuan/Qwen3.5-9B
+(APIServer pid=302574) INFO 06-23 01:38:19 [utils.py:344]    ▀▀  ▀▀▀▀▀ ▀▀▀▀▀ ▀     ▀
+(APIServer pid=302574) INFO 06-23 01:38:19 [utils.py:344] 
+(APIServer pid=302574) INFO 06-23 01:38:19 [utils.py:278] non-default args: {'model_tag': '/home/wenxuan/Qwen3.5-9B', 'host': '0.0.0.0', 'port': 8100, 'model': '/home/wenxuan/Qwen3.5-9B', 'trust_remote_code': True, 'dtype': 'bfloat16', 'seed': 42, 'allowed_local_media_path': '/home/wenxuan/mmstar/images', 'max_model_len': 8192, 'enforce_eager': True, 'served_model_name': ['mtp-3way'], 'generation_config': 'vllm', 'tensor_parallel_size': 4, 'gpu_memory_utilization': 0.85, 'limit_mm_per_prompt': {'image': 1}, 'max_num_batched_tokens': 8304, 'max_num_seqs': 16, 'enable_chunked_prefill': False, 'speculative_config': {'method': 'qwen3_5_mtp', 'num_speculative_tokens': 7, 'enforce_eager': True}}
+(APIServer pid=302574) WARNING 06-23 01:38:19 [envs.py:2057] Unknown vLLM environment variable detected: VLLM_BUILD_URL
+(APIServer pid=302574) WARNING 06-23 01:38:19 [envs.py:2057] Unknown vLLM environment variable detected: VLLM_IMAGE_TAG
+(APIServer pid=302574) WARNING 06-23 01:38:19 [envs.py:2057] Unknown vLLM environment variable detected: VLLM_BUILD_PIPELINE
+(APIServer pid=302574) WARNING 06-23 01:38:19 [envs.py:2057] Unknown vLLM environment variable detected: VLLM_BUILD_COMMIT
+(APIServer pid=302574) INFO 06-23 01:38:19 [model.py:617] Resolved architecture: Qwen3_5ForConditionalGeneration
+(APIServer pid=302574) INFO 06-23 01:38:19 [model.py:1752] Using max model len 8192
+(APIServer pid=302574) WARNING 06-23 01:38:19 [arg_utils.py:2383] This model does not officially support disabling chunked prefill. Disabling this manually may cause the engine to crash or produce incorrect outputs.
+(APIServer pid=302574) Traceback (most recent call last):
+(APIServer pid=302574)   File "/usr/local/bin/vllm", line 10, in <module>
+(APIServer pid=302574)     sys.exit(main())
+(APIServer pid=302574)              ^^^^^^
+(APIServer pid=302574)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/cli/main.py", line 92, in main
+(APIServer pid=302574)     args.dispatch_function(args)
+(APIServer pid=302574)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/cli/serve.py", line 148, in cmd
+(APIServer pid=302574)     uvloop.run(run_server(args))
+(APIServer pid=302574)   File "/usr/local/lib/python3.12/dist-packages/uvloop/__init__.py", line 96, in run
+(APIServer pid=302574)     return __asyncio.run(
+(APIServer pid=302574)            ^^^^^^^^^^^^^^
+(APIServer pid=302574)   File "/usr/lib/python3.12/asyncio/runners.py", line 195, in run
+(APIServer pid=302574)     return runner.run(main)
+(APIServer pid=302574)            ^^^^^^^^^^^^^^^^
+(APIServer pid=302574)   File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+(APIServer pid=302574)     return self._loop.run_until_complete(task)
+(APIServer pid=302574)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=302574)   File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+(APIServer pid=302574)   File "/usr/local/lib/python3.12/dist-packages/uvloop/__init__.py", line 48, in wrapper
+(APIServer pid=302574)     return await main
+(APIServer pid=302574)            ^^^^^^^^^^
+(APIServer pid=302574)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/api_server.py", line 678, in run_server
+(APIServer pid=302574)     await run_server_worker(listen_address, sock, args, **uvicorn_kwargs)
+(APIServer pid=302574)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/api_server.py", line 692, in run_server_worker
+(APIServer pid=302574)     async with build_async_engine_client(
+(APIServer pid=302574)                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=302574)   File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+(APIServer pid=302574)     return await anext(self.gen)
+(APIServer pid=302574)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=302574)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/api_server.py", line 100, in build_async_engine_client
+(APIServer pid=302574)     async with build_async_engine_client_from_engine_args(
+(APIServer pid=302574)                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=302574)   File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+(APIServer pid=302574)     return await anext(self.gen)
+(APIServer pid=302574)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=302574)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/api_server.py", line 124, in build_async_engine_client_from_engine_args
+(APIServer pid=302574)     vllm_config = engine_args.create_engine_config(usage_context=usage_context)
+(APIServer pid=302574)                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=302574)   File "/usr/local/lib/python3.12/dist-packages/vllm/engine/arg_utils.py", line 1957, in create_engine_config
+(APIServer pid=302574)     parallel_config = ParallelConfig(
+(APIServer pid=302574)                       ^^^^^^^^^^^^^^^
+(APIServer pid=302574)   File "/usr/local/lib/python3.12/dist-packages/pydantic/_internal/_dataclasses.py", line 121, in __init__
+(APIServer pid=302574)     s.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs), self_instance=s)
+(APIServer pid=302574) pydantic_core._pydantic_core.ValidationError: 1 validation error for ParallelConfig
+(APIServer pid=302574)   Value error, World size (4) is larger than the number of available GPUs (1) in this node. If this is intentional and you are using:
+(APIServer pid=302574) - ray, set '--distributed-executor-backend ray'.
+(APIServer pid=302574) - multiprocessing, set '--nnodes' appropriately. [type=value_error, input_value=ArgsKwargs((), {'pipeline...'numa_bind_cpus': None}), input_type=ArgsKwargs]
+(APIServer pid=302574)     For further information visit https://errors.pydantic.dev/2.13/v/value_error
+==== mmstar_prev (model=/home/wenxuan/speculators/output/mtp_stitched/3way_prev_output) ====
+  [server 挂] tail:
+(APIServer pid=302777) INFO 06-23 01:38:32 [utils.py:344]  ▄▄ ▄█ █     █     █ ▀▄▀ █  version 0.22.0
+(APIServer pid=302777) INFO 06-23 01:38:32 [utils.py:344]   █▄█▀ █     █     █     █  model   /home/wenxuan/speculators/output/mtp_stitched/3way_prev_output
+(APIServer pid=302777) INFO 06-23 01:38:32 [utils.py:344]    ▀▀  ▀▀▀▀▀ ▀▀▀▀▀ ▀     ▀
+(APIServer pid=302777) INFO 06-23 01:38:32 [utils.py:344] 
+(APIServer pid=302777) INFO 06-23 01:38:32 [utils.py:278] non-default args: {'model_tag': '/home/wenxuan/speculators/output/mtp_stitched/3way_prev_output', 'host': '0.0.0.0', 'port': 8100, 'model': '/home/wenxuan/speculators/output/mtp_stitched/3way_prev_output', 'trust_remote_code': True, 'dtype': 'bfloat16', 'seed': 42, 'allowed_local_media_path': '/home/wenxuan/mmstar/images', 'max_model_len': 8192, 'enforce_eager': True, 'served_model_name': ['mtp-3way'], 'generation_config': 'vllm', 'tensor_parallel_size': 4, 'gpu_memory_utilization': 0.85, 'limit_mm_per_prompt': {'image': 1}, 'max_num_batched_tokens': 8304, 'max_num_seqs': 16, 'enable_chunked_prefill': False, 'speculative_config': {'method': 'qwen3_5_mtp', 'num_speculative_tokens': 7, 'enforce_eager': True}}
+(APIServer pid=302777) WARNING 06-23 01:38:32 [envs.py:2057] Unknown vLLM environment variable detected: VLLM_BUILD_URL
+(APIServer pid=302777) WARNING 06-23 01:38:32 [envs.py:2057] Unknown vLLM environment variable detected: VLLM_IMAGE_TAG
+(APIServer pid=302777) WARNING 06-23 01:38:32 [envs.py:2057] Unknown vLLM environment variable detected: VLLM_BUILD_PIPELINE
+(APIServer pid=302777) WARNING 06-23 01:38:32 [envs.py:2057] Unknown vLLM environment variable detected: VLLM_BUILD_COMMIT
+(APIServer pid=302777) INFO 06-23 01:38:32 [model.py:617] Resolved architecture: Qwen3_5ForConditionalGeneration
+(APIServer pid=302777) INFO 06-23 01:38:32 [model.py:1752] Using max model len 8192
+(APIServer pid=302777) WARNING 06-23 01:38:32 [arg_utils.py:2383] This model does not officially support disabling chunked prefill. Disabling this manually may cause the engine to crash or produce incorrect outputs.
+(APIServer pid=302777) Traceback (most recent call last):
+(APIServer pid=302777)   File "/usr/local/bin/vllm", line 10, in <module>
+(APIServer pid=302777)     sys.exit(main())
+(APIServer pid=302777)              ^^^^^^
+(APIServer pid=302777)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/cli/main.py", line 92, in main
+(APIServer pid=302777)     args.dispatch_function(args)
+(APIServer pid=302777)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/cli/serve.py", line 148, in cmd
+(APIServer pid=302777)     uvloop.run(run_server(args))
+(APIServer pid=302777)   File "/usr/local/lib/python3.12/dist-packages/uvloop/__init__.py", line 96, in run
+(APIServer pid=302777)     return __asyncio.run(
+(APIServer pid=302777)            ^^^^^^^^^^^^^^
+(APIServer pid=302777)   File "/usr/lib/python3.12/asyncio/runners.py", line 195, in run
+(APIServer pid=302777)     return runner.run(main)
+(APIServer pid=302777)            ^^^^^^^^^^^^^^^^
+(APIServer pid=302777)   File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+(APIServer pid=302777)     return self._loop.run_until_complete(task)
+(APIServer pid=302777)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=302777)   File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+(APIServer pid=302777)   File "/usr/local/lib/python3.12/dist-packages/uvloop/__init__.py", line 48, in wrapper
+(APIServer pid=302777)     return await main
+(APIServer pid=302777)            ^^^^^^^^^^
+(APIServer pid=302777)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/api_server.py", line 678, in run_server
+(APIServer pid=302777)     await run_server_worker(listen_address, sock, args, **uvicorn_kwargs)
+(APIServer pid=302777)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/api_server.py", line 692, in run_server_worker
+(APIServer pid=302777)     async with build_async_engine_client(
+(APIServer pid=302777)                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=302777)   File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+(APIServer pid=302777)     return await anext(self.gen)
+(APIServer pid=302777)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=302777)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/api_server.py", line 100, in build_async_engine_client
+(APIServer pid=302777)     async with build_async_engine_client_from_engine_args(
+(APIServer pid=302777)                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=302777)   File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+(APIServer pid=302777)     return await anext(self.gen)
+(APIServer pid=302777)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=302777)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/api_server.py", line 124, in build_async_engine_client_from_engine_args
+(APIServer pid=302777)     vllm_config = engine_args.create_engine_config(usage_context=usage_context)
+(APIServer pid=302777)                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=302777)   File "/usr/local/lib/python3.12/dist-packages/vllm/engine/arg_utils.py", line 1957, in create_engine_config
+(APIServer pid=302777)     parallel_config = ParallelConfig(
+(APIServer pid=302777)                       ^^^^^^^^^^^^^^^
+(APIServer pid=302777)   File "/usr/local/lib/python3.12/dist-packages/pydantic/_internal/_dataclasses.py", line 121, in __init__
+(APIServer pid=302777)     s.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs), self_instance=s)
+(APIServer pid=302777) pydantic_core._pydantic_core.ValidationError: 1 validation error for ParallelConfig
+(APIServer pid=302777)   Value error, World size (4) is larger than the number of available GPUs (1) in this node. If this is intentional and you are using:
+(APIServer pid=302777) - ray, set '--distributed-executor-backend ray'.
+(APIServer pid=302777) - multiprocessing, set '--nnodes' appropriately. [type=value_error, input_value=ArgsKwargs((), {'pipeline...'numa_bind_cpus': None}), input_type=ArgsKwargs]
+(APIServer pid=302777)     For further information visit https://errors.pydantic.dev/2.13/v/value_error
+==== mmstar_new (model=/home/wenxuan/speculators/output/mtp_stitched/3way_new_mtp9b_100k_self-force) ====
+  [server 挂] tail:
+(APIServer pid=302980) INFO 06-23 01:38:45 [utils.py:344]  ▄▄ ▄█ █     █     █ ▀▄▀ █  version 0.22.0
+(APIServer pid=302980) INFO 06-23 01:38:45 [utils.py:344]   █▄█▀ █     █     █     █  model   /home/wenxuan/speculators/output/mtp_stitched/3way_new_mtp9b_100k_self-force
+(APIServer pid=302980) INFO 06-23 01:38:45 [utils.py:344]    ▀▀  ▀▀▀▀▀ ▀▀▀▀▀ ▀     ▀
+(APIServer pid=302980) INFO 06-23 01:38:45 [utils.py:344] 
+(APIServer pid=302980) INFO 06-23 01:38:45 [utils.py:278] non-default args: {'model_tag': '/home/wenxuan/speculators/output/mtp_stitched/3way_new_mtp9b_100k_self-force', 'host': '0.0.0.0', 'port': 8100, 'model': '/home/wenxuan/speculators/output/mtp_stitched/3way_new_mtp9b_100k_self-force', 'trust_remote_code': True, 'dtype': 'bfloat16', 'seed': 42, 'allowed_local_media_path': '/home/wenxuan/mmstar/images', 'max_model_len': 8192, 'enforce_eager': True, 'served_model_name': ['mtp-3way'], 'generation_config': 'vllm', 'tensor_parallel_size': 4, 'gpu_memory_utilization': 0.85, 'limit_mm_per_prompt': {'image': 1}, 'max_num_batched_tokens': 8304, 'max_num_seqs': 16, 'enable_chunked_prefill': False, 'speculative_config': {'method': 'qwen3_5_mtp', 'num_speculative_tokens': 7, 'enforce_eager': True}}
+(APIServer pid=302980) WARNING 06-23 01:38:45 [envs.py:2057] Unknown vLLM environment variable detected: VLLM_BUILD_URL
+(APIServer pid=302980) WARNING 06-23 01:38:45 [envs.py:2057] Unknown vLLM environment variable detected: VLLM_IMAGE_TAG
+(APIServer pid=302980) WARNING 06-23 01:38:45 [envs.py:2057] Unknown vLLM environment variable detected: VLLM_BUILD_PIPELINE
+(APIServer pid=302980) WARNING 06-23 01:38:45 [envs.py:2057] Unknown vLLM environment variable detected: VLLM_BUILD_COMMIT
+(APIServer pid=302980) INFO 06-23 01:38:46 [model.py:617] Resolved architecture: Qwen3_5ForConditionalGeneration
+(APIServer pid=302980) INFO 06-23 01:38:46 [model.py:1752] Using max model len 8192
+(APIServer pid=302980) WARNING 06-23 01:38:46 [arg_utils.py:2383] This model does not officially support disabling chunked prefill. Disabling this manually may cause the engine to crash or produce incorrect outputs.
+(APIServer pid=302980) Traceback (most recent call last):
+(APIServer pid=302980)   File "/usr/local/bin/vllm", line 10, in <module>
+(APIServer pid=302980)     sys.exit(main())
+(APIServer pid=302980)              ^^^^^^
+(APIServer pid=302980)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/cli/main.py", line 92, in main
+(APIServer pid=302980)     args.dispatch_function(args)
+(APIServer pid=302980)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/cli/serve.py", line 148, in cmd
+(APIServer pid=302980)     uvloop.run(run_server(args))
+(APIServer pid=302980)   File "/usr/local/lib/python3.12/dist-packages/uvloop/__init__.py", line 96, in run
+(APIServer pid=302980)     return __asyncio.run(
+(APIServer pid=302980)            ^^^^^^^^^^^^^^
+(APIServer pid=302980)   File "/usr/lib/python3.12/asyncio/runners.py", line 195, in run
+(APIServer pid=302980)     return runner.run(main)
+(APIServer pid=302980)            ^^^^^^^^^^^^^^^^
+(APIServer pid=302980)   File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+(APIServer pid=302980)     return self._loop.run_until_complete(task)
+(APIServer pid=302980)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=302980)   File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+(APIServer pid=302980)   File "/usr/local/lib/python3.12/dist-packages/uvloop/__init__.py", line 48, in wrapper
+(APIServer pid=302980)     return await main
+(APIServer pid=302980)            ^^^^^^^^^^
+(APIServer pid=302980)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/api_server.py", line 678, in run_server
+(APIServer pid=302980)     await run_server_worker(listen_address, sock, args, **uvicorn_kwargs)
+(APIServer pid=302980)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/api_server.py", line 692, in run_server_worker
+(APIServer pid=302980)     async with build_async_engine_client(
+(APIServer pid=302980)                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=302980)   File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+(APIServer pid=302980)     return await anext(self.gen)
+(APIServer pid=302980)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=302980)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/api_server.py", line 100, in build_async_engine_client
+(APIServer pid=302980)     async with build_async_engine_client_from_engine_args(
+(APIServer pid=302980)                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=302980)   File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+(APIServer pid=302980)     return await anext(self.gen)
+(APIServer pid=302980)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=302980)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/api_server.py", line 124, in build_async_engine_client_from_engine_args
+(APIServer pid=302980)     vllm_config = engine_args.create_engine_config(usage_context=usage_context)
+(APIServer pid=302980)                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=302980)   File "/usr/local/lib/python3.12/dist-packages/vllm/engine/arg_utils.py", line 1957, in create_engine_config
+(APIServer pid=302980)     parallel_config = ParallelConfig(
+(APIServer pid=302980)                       ^^^^^^^^^^^^^^^
+(APIServer pid=302980)   File "/usr/local/lib/python3.12/dist-packages/pydantic/_internal/_dataclasses.py", line 121, in __init__
+(APIServer pid=302980)     s.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs), self_instance=s)
+(APIServer pid=302980) pydantic_core._pydantic_core.ValidationError: 1 validation error for ParallelConfig
+(APIServer pid=302980)   Value error, World size (4) is larger than the number of available GPUs (1) in this node. If this is intentional and you are using:
+(APIServer pid=302980) - ray, set '--distributed-executor-backend ray'.
+(APIServer pid=302980) - multiprocessing, set '--nnodes' appropriately. [type=value_error, input_value=ArgsKwargs((), {'pipeline...'numa_bind_cpus': None}), input_type=ArgsKwargs]
+(APIServer pid=302980)     For further information visit https://errors.pydantic.dev/2.13/v/value_error
+# MTP 3-way: native vs prev vs new (self-forcing)  ·  spec=7
+
+prev ckpt: `/home/wenxuan/speculators/output/mtp_qwen3.5_9b_mm_distilled/checkpoint_best`  
+new  ckpt: `/home/wenxuan/speculators/output/mtp_qwen3.5_9b_mm_distilled/mtp9b_100k_self-force/checkpoints/checkpoint_best`  
+> 关键看 **new vs prev** 的 mean-accept 和中后位 per-position;both vs native 看相对原生。
+
+---
+⚠️ confound:若 prev 是 beta=0.6/sf=0、new 是 beta=1.0/sf=0.5,则 new−prev 混了 beta 与 self-forcing;要干净隔离请用同 beta、sf=0 的对照。
+
+[written] /home/wenxuan/speculators/output/mtp_3way/20260623_013655/mtp_3way_summary.md
+
+Artifacts: /home/wenxuan/speculators/output/mtp_3way/20260623_013655/mtp_3way_summary.md  (+ {allava,mmstar}_{native,prev,new}_summary.json)
