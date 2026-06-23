@@ -1,131 +1,76 @@
-ading safetensors checkpoint shards: 100% Completed | 4/4 [00:03<00:00,  1.06it/s]
-(Worker pid=316611) 
-Loading safetensors checkpoint shards: 100% Completed | 4/4 [00:03<00:00,  1.05it/s]
-Loading safetensors checkpoint shards: 100% Completed | 4/4 [00:03<00:00,  1.03it/s]
-(Worker pid=316614) 
-Loading safetensors checkpoint shards: 100% Completed | 4/4 [00:04<00:00,  1.05it/s]
-Loading safetensors checkpoint shards: 100% Completed | 4/4 [00:04<00:00,  1.00s/it]
-(Worker pid=316613) 
-(EngineCore_DP3 pid=314990) [transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
-(EngineCore_DP1 pid=314988) [transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
-(EngineCore_DP2 pid=314989) [transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
-(EngineCore_DP0 pid=314987) [transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
-(EngineCore_DP3 pid=314990) [transformers] The `use_fast` parameter is deprecated and will be removed in a future version. Use `backend="torchvision"` instead of `use_fast=True`, or `backend="pil"` instead of `use_fast=False`.
-(EngineCore_DP1 pid=314988) [transformers] The `use_fast` parameter is deprecated and will be removed in a future version. Use `backend="torchvision"` instead of `use_fast=True`, or `backend="pil"` instead of `use_fast=False`.
-(EngineCore_DP2 pid=314989) [transformers] The `use_fast` parameter is deprecated and will be removed in a future version. Use `backend="torchvision"` instead of `use_fast=True`, or `backend="pil"` instead of `use_fast=False`.
-(EngineCore_DP0 pid=314987) [transformers] The `use_fast` parameter is deprecated and will be removed in a future version. Use `backend="torchvision"` instead of `use_fast=True`, or `backend="pil"` instead of `use_fast=False`.
-(ApiServer_1 pid=314992) INFO:     Started server process [314992]
-(ApiServer_1 pid=314992) INFO:     Waiting for application startup.
-(ApiServer_2 pid=314993) INFO:     Started server process [314993]
-(ApiServer_2 pid=314993) INFO:     Waiting for application startup.
-(ApiServer_0 pid=314991) INFO:     Started server process [314991]
-(ApiServer_0 pid=314991) INFO:     Waiting for application startup.
-(ApiServer_3 pid=314994) INFO:     Started server process [314994]
-(ApiServer_3 pid=314994) INFO:     Waiting for application startup.
-(ApiServer_1 pid=314992) INFO:     Application startup complete.
-(ApiServer_2 pid=314993) INFO:     Application startup complete.
-(ApiServer_0 pid=vLLM server ready.
-=== Step 3: Training ===
-W0623 03:31:35.440000 318269 torch/distributed/run.py:851] 
-W0623 03:31:35.440000 318269 torch/distributed/run.py:851] *****************************************
-W0623 03:31:35.440000 318269 torch/distributed/run.py:851] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
-W0623 03:31:35.440000 318269 torch/distributed/run.py:851] *****************************************
-[03:31:41] INFO     Started distributed with local_rank=0, world_size=4                       utils.py:40
-[03:31:41] INFO     Started distributed with local_rank=2, world_size=4                       utils.py:40
-           WARNING  No vocab mappings found, and can't generate new ones because either      train.py:337
-                    token_freq_path='output/dflash_qwen3.5_9b_mm_ft/token_freq.pt' doesn't               
-                    exist or --draft-vocab-size is None. Using full verifier vocab                       
-[03:31:41] INFO     Started distributed with local_rank=1, world_size=4                       utils.py:40
-[03:31:41] INFO     Started distributed with local_rank=3, world_size=4                       utils.py:40
-/home/wenxuan/speculators/scripts/train.py:377: UserWarning: Draft architecture 'qwen3' is not yet supported in vLLM. The trained model may not be usable for inference in vLLM. Consider using 'llama' (the default) for full vLLM compatibility.
-  transformer_layer_config = create_transformer_layer_config(
-/home/wenxuan/speculators/scripts/train.py:377: UserWarning: Draft architecture 'qwen3' is not yet supported in vLLM. The trained model may not be usable for inference in vLLM. Consider using 'llama' (the default) for full vLLM compatibility.
-  transformer_layer_config = create_transformer_layer_config(
-/home/wenxuan/speculators/scripts/train.py:377: UserWarning: Draft architecture 'qwen3' is not yet supported in vLLM. The trained model may not be usable for inference in vLLM. Consider using 'llama' (the default) for full vLLM compatibility.
-  transformer_layer_config = create_transformer_layer_config(
-           INFO     Using explicit mask_token_id=248070                                       utils.py:76
-/home/wenxuan/speculators/scripts/train.py:377: UserWarning: Draft architecture 'qwen3' is not yet supported in vLLM. The trained model may not be usable for inference in vLLM. Consider using 'llama' (the default) for full vLLM compatibility.
-  transformer_layer_config = create_transformer_layer_config(
-Loading weights: 100%|██████████| 60/60 [00:02<00:00, 22.15it/s]
-Loading weights: 100%|██████████| 60/60 [00:02<00:00, 22.36it/s]
-Loading weights: 100%|██████████| 60/60 [00:02<00:00, 21.96it/s]
-Loading weights: 100%|██████████| 60/60 [00:02<00:00, 22.18it/s]
-[transformers] DFlashDraftModel LOAD REPORT from: /home/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_distilled_10k_continue_dflash/dflash_ce_fp32_lr3e5_100k_0612_0831/checkpoints/checkpoint_best
-Key                      | Status  | 
--------------------------+---------+-
-embed_proj.{0, 2}.weight | MISSING | 
-verifier_lm_head.weight  | MISSING | 
-prefix_gru.weight_hh_l0  | MISSING | 
-prefix_gru.weight_ih_l0  | MISSING | 
-
-Notes:
-- MISSING:      those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-06-23 03:31:45.152 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
-2026-06-23 03:31:45.152 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
-2026-06-23 03:31:45.153 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
-[transformers] DFlashDraftModel LOAD REPORT from: /home/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_distilled_10k_continue_dflash/dflash_ce_fp32_lr3e5_100k_0612_0831/checkpoints/checkpoint_best
-Key                      | Status  | 
--------------------------+---------+-
-prefix_gru.weight_hh_l0  | MISSING | 
-embed_proj.{0, 2}.weight | MISSING | 
-verifier_lm_head.weight  | MISSING | 
-prefix_gru.weight_ih_l0  | MISSING | 
-
-Notes:
-- MISSING:      those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-[transformers] DFlashDraftModel LOAD REPORT from: /home/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_distilled_10k_continue_dflash/dflash_ce_fp32_lr3e5_100k_0612_0831/checkpoints/checkpoint_best
-Key                      | Status  | 
--------------------------+---------+-
-embed_proj.{0, 2}.weight | MISSING | 
-verifier_lm_head.weight  | MISSING | 
-prefix_gru.weight_ih_l0  | MISSING | 
-prefix_gru.weight_hh_l0  | MISSING | 
-
-Notes:
-- MISSING:      those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-06-23 03:31:45.178 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
-2026-06-23 03:31:45.179 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
-2026-06-23 03:31:45.179 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
-2026-06-23 03:31:45.186 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
-2026-06-23 03:31:45.187 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
-2026-06-23 03:31:45.187 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
-[transformers] DFlashDraftModel LOAD REPORT from: /home/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_distilled_10k_continue_dflash/dflash_ce_fp32_lr3e5_100k_0612_0831/checkpoints/checkpoint_best
-Key                      | Status  | 
--------------------------+---------+-
-embed_proj.{0, 2}.weight | MISSING | 
-prefix_gru.weight_ih_l0  | MISSING | 
-prefix_gru.weight_hh_l0  | MISSING | 
-verifier_lm_head.weight  | MISSING | 
-
-Notes:
-- MISSING:      those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-06-23 03:31:45.243 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
-2026-06-23 03:31:45.244 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
-2026-06-23 03:31:45.244 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
-[03:31:51] INFO     Expected hidden_states width: 20480                                      train.py:426
-           INFO     Found checkpoint at output/dflash_qwen3.5_9b_mm_ft/checkpoints/0.       trainer.py:80
-           INFO     Resuming training on 1 epoch.                                           trainer.py:83
-           INFO     Restored best_val_loss=1.585938 from checkpoint                        trainer.py:101
-[rank3]: Traceback (most recent call last):
-[rank3]:   File "/home/wenxuan/speculators/scripts/train.py", line 940, in <module>
-[rank3]:     main(args)
-[rank3]:   File "/home/wenxuan/speculators/scripts/train.py", line 523, in main
-[rank3]:     trainer = Trainer(draft_model, trainer_config, train_loader, val_loader)
-[rank3]:               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/home/wenxuan/speculators/src/speculators/train/trainer.py", line 76, in __init__
-[rank3]:     self.setup_optimizer()
-[rank3]:   File "/home/wenxuan/speculators/src/speculators/train/trainer.py", line 150, in setup_optimizer
-[rank3]:     self.checkpointer.load_optimizer_state_dict(self.model, self.opt)
-[rank3]:   File "/home/wenxuan/speculators/src/speculators/train/checkpointer.py", line 311, in load_optimizer_state_dict
-[rank3]:     set_optimizer_state_dict(
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/checkpoint/state_dict.py", line 1448, in set_optimizer_state_dict
-[rank3]:     _load_optim_state_dict(model, optimizers, optim_state_dict, info)
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/_contextlib.py", line 124, in decorate_context
-[rank3]:     return func(*args, **kwargs)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/checkpoint/state_dict.py", line 1069, in _load_optim_state_dict
-[rank3]:     optim_state_dict = _split_optim_state_dict(
-[rank3]:                        ^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/checkpoint/state_dict.py", line 1009, in _split_optim_state_dict
-[rank3]:     raise RuntimeError(
-[rank3]: RuntimeError: Missing optimizer state for parameter 'verifier_lm_head.weight' in checkpoint. The parameter requires gradients but has no saved optimizer state. To load anyway, use StateDictOptions(strict=False).
+(ApiServer_0 pid=319267)     await self.app(scope, receive, send)
+(ApiServer_0 pid=319267)   File "/usr/local/lib/python3.12/dist-packages/starlette/routing.py", line 716, in __call__
+(ApiServer_0 pid=319267)     await self.middleware_stack(scope, receive, send)
+(ApiServer_0 pid=319267)   File "/usr/local/lib/python3.12/dist-packages/starlette/routing.py", line 736, in app
+(ApiServer_0 pid=319267)     await route.handle(scope, receive, send)
+(ApiServer_0 pid=319267)   File "/usr/local/lib/python3.12/dist-packages/starlette/routing.py", line 290, in handle
+(ApiServer_0 pid=319267)     await self.app(scope, receive, send)
+(ApiServer_0 pid=319267)   File "/usr/local/lib/python3.12/dist-packages/fastapi/routing.py", line 134, in app
+(ApiServer_0 pid=319267)     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+(ApiServer_0 pid=319267)   File "/usr/local/lib/python3.12/dist-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+(ApiServer_0 pid=319267)     raise exc
+(ApiServer_0 pid=319267)   File "/usr/local/lib/python3.12/dist-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+(ApiServer_0 pid=319267)     await app(scope, receive, sender)
+(ApiServer_0 pid=319267)   File "/usr/local/lib/python3.12/dist-packages/fastapi/routing.py", line 120, in app
+(ApiServer_0 pid=319267)     response = await f(request)
+(ApiServer_0 pid=319267)                ^^^^^^^^^^^^^^^^
+(ApiServer_0 pid=319267)   File "/usr/local/lib/python3.12/dist-packages/fastapi/routing.py", line 674, in app
+(ApiServer_0 pid=319267)     raw_response = await run_endpoint_function(
+(ApiServer_0 pid=319267)                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(ApiServer_0 pid=319267)   File "/usr/local/lib/python3.12/dist-packages/fastapi/routing.py", line 328, in run_endpoint_function
+(ApiServer_0 pid=319267)     return await dependant.call(**values)
+(ApiServer_0 pid=319267)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(ApiServer_0 pid=319267)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/utils.py", line 96, in wrapper
+(ApiServer_0 pid=319267)     return handler_task.result()
+(ApiServer_0 pid=319267)            ^^^^^^^^^^^^^^^^^^^^^
+(ApiServer_0 pid=319267)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/utils.py", line 117, in wrapper
+(ApiServer_0 pid=319267)     return await func(*args, **kwargs)
+(ApiServer_0 pid=319267)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(ApiServer_0 pid=319267)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/chat_completion/api_router.py", line 61, in create_chat_completion
+(ApiServer_0 pid=319267)     generator = await handler.create_chat_completion(request, raw_request)
+(ApiServer_0 pid=319267)                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(ApiServer_0 pid=319267)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/chat_completion/serving.py", line 240, in create_chat_completion
+(ApiServer_0 pid=319267)     return await self._with_kv_transfer_rejection_cleanup(
+(ApiServer_0 pid=319267)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(ApiServer_0 pid=319267)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/engine/serving.py", line 431, in _with_kv_transfer_rejection_cleanup
+(ApiServer_0 pid=319267)     return await awaitable
+(ApiServer_0 pid=319267)            ^^^^^^^^^^^^^^^
+(ApiServer_0 pid=319267)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/chat_completion/serving.py", line 259, in _create_chat_completion
+(ApiServer_0 pid=319267)     result = await self.render_chat_request(request)
+(ApiServer_0 pid=319267)              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(ApiServer_0 pid=319267)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/chat_completion/serving.py", line 226, in render_chat_request
+(ApiServer_0 pid=319267)     return await self.openai_serving_render.render_chat(request)
+(ApiServer_0 pid=319267)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(ApiServer_0 pid=319267)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/serve/render/serving.py", line 250, in render_chat
+(ApiServer_0 pid=319267)     conversation, engine_inputs = await self.preprocess_chat(
+(ApiServer_0 pid=319267)                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(ApiServer_0 pid=319267)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/serve/render/serving.py", line 562, in preprocess_chat
+(ApiServer_0 pid=319267)     (conversation,), (engine_input,) = await renderer.render_chat_async(
+(ApiServer_0 pid=319267)                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(ApiServer_0 pid=319267)   File "/usr/local/lib/python3.12/dist-packages/vllm/renderers/base.py", line 1019, in render_chat_async
+(ApiServer_0 pid=319267)     for conv, prompt in await asyncio.gather(*rendered):
+(ApiServer_0 pid=319267)                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(ApiServer_0 pid=319267)   File "/usr/local/lib/python3.12/dist-packages/vllm/renderers/hf.py", line 938, in render_messages_async
+(ApiServer_0 pid=319267)     conversation, mm_data, mm_uuids = await parse_chat_messages_async(
+(ApiServer_0 pid=319267)                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(ApiServer_0 pid=319267)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/chat_utils.py", line 1902, in parse_chat_messages_async
+(ApiServer_0 pid=319267)     sub_messages = _parse_chat_message_content(
+(ApiServer_0 pid=319267)                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(ApiServer_0 pid=319267)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/chat_utils.py", line 1741, in _parse_chat_message_content
+(ApiServer_0 pid=319267)     result = _parse_chat_message_content_parts(
+(ApiServer_0 pid=319267)              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(ApiServer_0 pid=319267)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/chat_utils.py", line 1562, in _parse_chat_message_content_parts
+(ApiServer_0 pid=319267)     mm_parser = mm_tracker.create_parser(mm_processor_kwargs=mm_processor_kwargs)
+(ApiServer_0 pid=319267)                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(ApiServer_0 pid=319267)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/chat_utils.py", line 827, in create_parser
+(ApiServer_0 pid=319267)     return AsyncMultiModalContentParser(
+(ApiServer_0 pid=319267)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(ApiServer_0 pid=319267)   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/chat_utils.py", line 1053, in __init__
+(ApiServer_0 pid=319267)     self._connector: MediaConnector = MEDIA_CONNECTOR_REGISTRY.load(
+(ApiServer_0 pid=319267)                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(ApiServer_0 pid=319267)   File "/usr/local/lib/python3.12/dist-packages/vllm/utils/registry.py", line 51, in load
+(ApiServer_0 pid=319267)     return cls(*args, **kwargs)
+(ApiServer_0 pid=319267)            ^^^^^^^^^^^^^^^^^^^^
+(ApiServer_0 pid=319267)   File "/usr/local/lib/python3.12/dist-packages/vllm/multimodal/media/connector.py", line 110, in __init__
+(ApiServer_0 pid=319267)     raise ValueError(
+(ApiServer_0 pid=319267) ValueError: Invalid `--allowed-local-media-path`: The path /path/to/coco does not exist.
