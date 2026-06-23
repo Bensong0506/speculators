@@ -172,6 +172,11 @@ def load_pretrained_config_with_current_verifier(model_class, args: argparse.Nam
                 args.verifier_name_or_path,
             )
             verifier_config.name_or_path = args.verifier_name_or_path
+    if args.speculator_type == "dflash" and args.dflash_domino:
+        config.domino_enabled = True
+        config.domino_emb_dim = args.domino_emb_dim
+        config.domino_gru_hidden_dim = args.domino_gru_hidden_dim
+        config.domino_pure_draft_prefix_len = args.domino_pure_draft_prefix_len
     return config
 
 
@@ -787,6 +792,64 @@ def parse_args():
         type=int,
         default=256,
         help="Maximum anchor positions for DFlash training (default: 256)",
+    )
+    parser.add_argument(
+        "--dflash-domino",
+        action="store_true",
+        default=False,
+        help=(
+            "Enable Domino-style causal logit correction head for DFlash training. "
+            "This keeps the vLLM online hidden-state training path but adds a GRU "
+            "prefix encoder and residual logit projector on top of DFlash logits."
+        ),
+    )
+    parser.add_argument(
+        "--domino-emb-dim",
+        type=int,
+        default=256,
+        help="Hidden width for Domino's low-rank correction MLP (default: 256)",
+    )
+    parser.add_argument(
+        "--domino-gru-hidden-dim",
+        type=int,
+        default=1024,
+        help="Hidden size for Domino's prefix GRU (default: 1024)",
+    )
+    parser.add_argument(
+        "--domino-pure-draft-prefix-len",
+        type=int,
+        default=1,
+        help=(
+            "Number of speculative positions after the anchor that remain pure "
+            "DFlash before Domino correction starts (default: 1)."
+        ),
+    )
+    parser.add_argument(
+        "--domino-loss-decay-gamma",
+        type=float,
+        default=None,
+        help=(
+            "Optional exponential per-position loss decay for Domino CE loss. "
+            "SpecForge suggests roughly 4 for block_size=8, 5 for 10, 7 for 16."
+        ),
+    )
+    parser.add_argument(
+        "--domino-lambda-base-start",
+        type=float,
+        default=1.0,
+        help=(
+            "Initial weight for base DFlash CE loss in Domino curriculum "
+            "(default: 1.0). It decays linearly to 0."
+        ),
+    )
+    parser.add_argument(
+        "--domino-lambda-base-decay-ratio",
+        type=float,
+        default=1.0,
+        help=(
+            "Fraction of total training steps used to decay Domino base-loss "
+            "weight to 0 (default: 1.0)."
+        ),
     )
     # P-EAGLE specific parameters
     parser.add_argument(

@@ -78,6 +78,33 @@ class DFlashSpeculatorConfig(SpeculatorModelConfig):
         "bidirectional.",
     )
 
+    domino_enabled: bool = Field(
+        default=False,
+        description=(
+            "Enable a Domino-style causal correction head on top of DFlash base "
+            "logits. This is training-side support; serving must also know how to "
+            "apply the correction head."
+        ),
+    )
+
+    domino_emb_dim: int = Field(
+        default=256,
+        description="Hidden width of the Domino low-rank logit correction MLP.",
+    )
+
+    domino_gru_hidden_dim: int = Field(
+        default=1024,
+        description="Hidden size of the Domino prefix GRU.",
+    )
+
+    domino_pure_draft_prefix_len: int = Field(
+        default=1,
+        description=(
+            "Number of speculative positions after the anchor that stay as pure "
+            "DFlash logits before Domino correction starts."
+        ),
+    )
+
     @field_serializer("transformer_layer_config")
     def serialize_transformer_config(self, value: PretrainedConfig) -> dict:
         """Serialize transformer config to dict."""

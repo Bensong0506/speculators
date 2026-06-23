@@ -3,6 +3,7 @@ from typing import ClassVar
 
 import torch
 from torch import nn
+import torch.nn.functional as F
 from torch.nn.attention.flex_attention import create_block_mask
 from transformers import PretrainedConfig
 from transformers.models.qwen3.modeling_qwen3 import (
@@ -19,7 +20,12 @@ from speculators.models.dflash.utils import (
     get_base_indices_for_anchored_blocks,
     select_anchors,
 )
-from speculators.models.metrics import kl_div_loss, resolve_loss_fn
+from speculators.models.metrics import (
+    ce_loss,
+    dflash_loss_decay,
+    kl_div_loss,
+    resolve_loss_fn,
+)
 from speculators.models.utils import resolve_target_layer_ids
 
 
@@ -102,6 +108,32 @@ class DFlashDraftModel(DraftVocabMixin, SpeculatorModel):
             config.transformer_layer_config.hidden_size,
             eps=config.transformer_layer_config.rms_norm_eps,  # type: ignore[arg-type]
         )
+        self.domino_enabled = config.domino_enabled
+        self.domino_pure_draft_prefix_len = config.domino_pure_draft_prefix_len
+        if self.domino_enabled:
+            if self.domino_pure_draft_prefix_len < 0:
+                raise ValueError("domino_pure_draft_prefix_len must be >= 0")
+            if self.domino_pure_draft_prefix_len >= config.block_size:
+                raise ValueError(
+                    "domino_pure_draft_prefix_len must be smaller than block_size"
+                )
+            self.prefix_gru = nn.GRU(
+                input_size=config.transformer_layer_config.hidden_size,
+                hidden_size=config.domino_gru_hidden_dim,
+                num_layers=1,
+                batch_first=True,
+                bias=False,
+            )
+            self.embed_proj = nn.Sequential(
+                nn.Linear(
+                    config.transformer_layer_config.hidden_size
+                    + config.domino_gru_hidden_dim,
+                    config.domino_emb_dim,
+                    bias=False,
+                ),
+                nn.SiLU(),
+                nn.Linear(config.domino_emb_dim, config.draft_vocab_size, bias=False),
+            )
         self.verifier_norm = Qwen3RMSNorm(
             config.transformer_layer_config.hidden_size,
             eps=config.transformer_layer_config.rms_norm_eps,  # type: ignore[arg-type]
@@ -160,6 +192,12 @@ class DFlashDraftModel(DraftVocabMixin, SpeculatorModel):
             aux_hidden_state_layer_ids=target_layer_ids,
             mask_token_id=kwargs.get("mask_token_id"),
             sliding_window_non_causal=kwargs.get("sliding_window_non_causal", False),
+            domino_enabled=kwargs.get("dflash_domino", False),
+            domino_emb_dim=kwargs.get("domino_emb_dim", 256),
+            domino_gru_hidden_dim=kwargs.get("domino_gru_hidden_dim", 1024),
+            domino_pure_draft_prefix_len=kwargs.get(
+                "domino_pure_draft_prefix_len", 1
+            ),
             speculators_config=SpeculatorsConfig(
                 algorithm="dflash",
                 proposal_methods=[
@@ -191,7 +229,25 @@ class DFlashDraftModel(DraftVocabMixin, SpeculatorModel):
             Tuple of (train_call_kwargs, val_call_kwargs)
         """
         loss_fn = resolve_loss_fn(kwargs["loss_fn"])
-        return {"loss_fn": loss_fn}, {"loss_fn": loss_fn}
+        train_kwargs = {"loss_fn": loss_fn}
+        if kwargs.get("dflash_domino", False):
+            train_kwargs.update(
+                {
+                    "domino_lambda_base_start": kwargs.get(
+                        "domino_lambda_base_start", 1.0
+                    ),
+                    "domino_lambda_base_decay_ratio": kwargs.get(
+                        "domino_lambda_base_decay_ratio", 1.0
+                    ),
+                    "domino_loss_decay_gamma": kwargs.get("domino_loss_decay_gamma"),
+                }
+            )
+        val_kwargs = {
+            "loss_fn": loss_fn,
+            "domino_lambda_base": 0.0,
+            "domino_loss_decay_gamma": kwargs.get("domino_loss_decay_gamma"),
+        }
+        return train_kwargs, val_kwargs
 
     @property
     def mask_token_id(self) -> int:
@@ -202,6 +258,112 @@ class DFlashDraftModel(DraftVocabMixin, SpeculatorModel):
                 "was saved with mask_token_id set."
             )
         return self.config.mask_token_id
+
+    @property
+    def _domino_suffix_start(self) -> int:
+        # Position 0 is the anchor and has no loss in the vLLM DFlash convention.
+        return 1 + self.domino_pure_draft_prefix_len
+
+    def _target_ids_to_embedding_ids(self, target_ids: torch.Tensor) -> torch.Tensor:
+        if not self.use_draft_vocab:
+            return target_ids
+        if self.d2t is None:
+            raise ValueError("d2t mapping is required for Domino with draft vocab")
+        return self.d2t[target_ids]
+
+    def _apply_domino_head(
+        self,
+        base_logits: torch.Tensor,
+        hidden_states: torch.Tensor,
+        target_ids: torch.Tensor,
+    ) -> torch.Tensor:
+        if not self.domino_enabled:
+            return base_logits
+
+        batch_size, flat_seq_len, hidden_size = hidden_states.shape
+        block_size = self.block_size
+        num_blocks = flat_seq_len // block_size
+        suffix_start = self._domino_suffix_start
+        if suffix_start >= block_size:
+            return base_logits
+
+        hidden4d = hidden_states.reshape(batch_size, num_blocks, block_size, hidden_size)
+        target_ids4d = target_ids.reshape(batch_size, num_blocks, block_size)
+        embed_ids4d = self._target_ids_to_embedding_ids(target_ids4d)
+        block_emb = self.embed_tokens(embed_ids4d)
+
+        gru_inputs = block_emb[:, :, : block_size - 1, :].reshape(
+            batch_size * num_blocks, block_size - 1, hidden_size
+        )
+        gru_out, _ = self.prefix_gru(gru_inputs)
+        gru_out = gru_out.reshape(
+            batch_size, num_blocks, block_size - 1, self.config.domino_gru_hidden_dim
+        )
+        prefix_states = gru_out[:, :, suffix_start - 1 :, :]
+
+        z_n = hidden4d[:, :, suffix_start:, :]
+        correction_logits = self.embed_proj(torch.cat([z_n, prefix_states], dim=-1))
+
+        base_logits4d = base_logits.reshape(
+            batch_size, num_blocks, block_size, base_logits.shape[-1]
+        )
+        prefix_logits = base_logits4d[:, :, :suffix_start, :]
+        suffix_logits = base_logits4d[:, :, suffix_start:, :] + correction_logits
+        return torch.cat([prefix_logits, suffix_logits], dim=2).reshape_as(base_logits)
+
+    def _compute_domino_loss_and_metrics(
+        self,
+        logits: torch.Tensor,
+        base_logits: torch.Tensor,
+        targets: torch.Tensor,
+        loss_mask: torch.Tensor,
+        lambda_base: float,
+        loss_decay_gamma: float | None,
+    ) -> tuple[torch.Tensor, dict]:
+        pos_idx = torch.arange(logits.shape[1], device=logits.device) % self.block_size
+        pos_idx = pos_idx.unsqueeze(0)
+        weight_mask = loss_mask.to(logits.dtype)
+        if loss_decay_gamma is not None and loss_decay_gamma > 0:
+            weight_mask = weight_mask * dflash_loss_decay(
+                pos_idx.to(logits.dtype), loss_decay_gamma
+            )
+
+        target_ids = torch.argmax(targets, dim=-1)
+        denom = weight_mask.sum() + 1e-5
+        final_loss_per_token = F.cross_entropy(
+            logits.reshape(-1, logits.shape[-1]),
+            target_ids.reshape(-1),
+            reduction="none",
+        ).reshape_as(weight_mask)
+        base_loss_per_token = F.cross_entropy(
+            base_logits.reshape(-1, base_logits.shape[-1]),
+            target_ids.reshape(-1),
+            reduction="none",
+        ).reshape_as(weight_mask)
+        final_loss = (final_loss_per_token * weight_mask).sum() / denom
+        base_loss = (base_loss_per_token * weight_mask).sum() / denom
+        loss = (1.0 - lambda_base) * final_loss + lambda_base * base_loss
+
+        _, metrics = compute_metrics(
+            logits, targets, loss_mask, self.block_size, loss_fn=ce_loss
+        )
+        with torch.no_grad():
+            base_pred_ids = torch.argmax(base_logits, dim=-1)
+            final_pred_ids = torch.argmax(logits, dim=-1)
+            valid = loss_mask.to(torch.bool)
+            actual = valid.sum().to(logits.dtype) + 1e-5
+            base_acc = ((base_pred_ids == target_ids) & valid).sum().to(logits.dtype)
+            final_acc = ((final_pred_ids == target_ids) & valid).sum().to(logits.dtype)
+            metrics["domino_final_loss_sum"] = final_loss.detach()
+            metrics["domino_final_loss_total"] = torch.tensor(1.0, device=logits.device)
+            metrics["domino_base_loss_sum"] = base_loss.detach()
+            metrics["domino_base_loss_total"] = torch.tensor(1.0, device=logits.device)
+            metrics["domino_base_acc_sum"] = base_acc
+            metrics["domino_base_acc_total"] = actual
+            metrics["domino_final_acc_sum"] = final_acc
+            metrics["domino_final_acc_total"] = actual
+            metrics["domino_lambda_base"] = torch.tensor(lambda_base, device=logits.device)
+        return loss, metrics
 
     @torch.compiler.disable
     def _build_attention_mask(self, loss_mask, lengths, device):
@@ -250,6 +412,8 @@ class DFlashDraftModel(DraftVocabMixin, SpeculatorModel):
         lengths: torch.Tensor | None = None,  # shape: [batch_size]
         position_ids: torch.Tensor | None = None,  # shape: [1, total_seq_len]
         loss_fn=kl_div_loss,
+        domino_lambda_base: float = 0.0,
+        domino_loss_decay_gamma: float | None = None,
         **kwargs,
     ):
         device = hidden_states.device
@@ -319,7 +483,10 @@ class DFlashDraftModel(DraftVocabMixin, SpeculatorModel):
                 **kwargs,
             )
 
-        logits = self.lm_head(self.norm(noise_embedding))
+        model_hidden = self.norm(noise_embedding)
+        base_logits = self.lm_head(model_hidden)
+        target_ids = torch.argmax(targets, dim=-1)
+        logits = self._apply_domino_head(base_logits, model_hidden, target_ids)
         # shape: [1, num_anchors*block_size, vocab_size]
 
         aligned_loss_mask = loss_mask.clone()[:, anchored_block_indices]
@@ -333,9 +500,19 @@ class DFlashDraftModel(DraftVocabMixin, SpeculatorModel):
         )  # shape: [1, num_anchors*block_size]
 
         aligned_loss_mask[:, :: self.block_size] = 0
-        loss, metrics = compute_metrics(
-            logits, targets, aligned_loss_mask, self.block_size, loss_fn=loss_fn
-        )
+        if self.domino_enabled:
+            loss, metrics = self._compute_domino_loss_and_metrics(
+                logits=logits,
+                base_logits=base_logits,
+                targets=targets,
+                loss_mask=aligned_loss_mask,
+                lambda_base=domino_lambda_base,
+                loss_decay_gamma=domino_loss_decay_gamma,
+            )
+        else:
+            loss, metrics = compute_metrics(
+                logits, targets, aligned_loss_mask, self.block_size, loss_fn=loss_fn
+            )
         draft_tokens = torch.argmax(logits, dim=-1)
 
         return draft_tokens, loss, metrics

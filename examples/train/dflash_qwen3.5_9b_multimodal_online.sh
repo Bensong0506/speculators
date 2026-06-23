@@ -130,6 +130,18 @@ MAX_ANCHORS="${MAX_ANCHORS:-512}"  # max anchor positions sampled per step (memo
 NUM_LAYERS=5            # draft transformer layers (DFlash typically uses ~5)
 DRAFT_VOCAB_SIZE="${DRAFT_VOCAB_SIZE-32000}"  # empty = full vocab; default scratch uses reduced vocab
 
+# Domino-style causal correction head for DFlash. This keeps the same vLLM
+# online hidden-state pipeline, but trains an extra GRU + low-rank residual
+# logit projector on top of DFlash. Default off so ordinary DFlash runs do not
+# change. Recommended first try: ENABLE_DOMINO=1 FINETUNE_FROM=<trained dflash>.
+ENABLE_DOMINO="${ENABLE_DOMINO:-0}"
+DOMINO_EMB_DIM="${DOMINO_EMB_DIM:-256}"
+DOMINO_GRU_HIDDEN_DIM="${DOMINO_GRU_HIDDEN_DIM:-1024}"
+DOMINO_PURE_DRAFT_PREFIX_LEN="${DOMINO_PURE_DRAFT_PREFIX_LEN:-1}"
+DOMINO_LOSS_DECAY_GAMMA="${DOMINO_LOSS_DECAY_GAMMA:-4.0}"  # SpecForge: ~4 for block_size=8
+DOMINO_LAMBDA_BASE_START="${DOMINO_LAMBDA_BASE_START:-1.0}"
+DOMINO_LAMBDA_BASE_DECAY_RATIO="${DOMINO_LAMBDA_BASE_DECAY_RATIO:-1.0}"
+
 # --- Warm-start (continue-training) from a pretrained DFlash --------------
 # Point at a DFlash checkpoint dir (e.g. /data/wenxuan/Qwen3.5-9B-DFlash-spec) to
 # FINE-TUNE it instead of training from scratch. The block below reads its
@@ -247,6 +259,19 @@ fi
 VOCAB_FLAG=();     [ -n "$DRAFT_VOCAB_SIZE" ]  && VOCAB_FLAG=(--draft-vocab-size "$DRAFT_VOCAB_SIZE")
 DRAFTARCH_FLAG=(); [ -n "${DRAFT_ARCH:-}" ]    && DRAFTARCH_FLAG=(--draft-arch "$DRAFT_ARCH")
 MASK_FLAG=();      [ -n "${MASK_TOKEN_ID:-}" ] && MASK_FLAG=(--mask-token-id "$MASK_TOKEN_ID")
+DOMINO_FLAG=()
+if [ "$ENABLE_DOMINO" = "1" ]; then
+    DOMINO_FLAG=(
+        --dflash-domino
+        --domino-emb-dim "$DOMINO_EMB_DIM"
+        --domino-gru-hidden-dim "$DOMINO_GRU_HIDDEN_DIM"
+        --domino-pure-draft-prefix-len "$DOMINO_PURE_DRAFT_PREFIX_LEN"
+        --domino-loss-decay-gamma "$DOMINO_LOSS_DECAY_GAMMA"
+        --domino-lambda-base-start "$DOMINO_LAMBDA_BASE_START"
+        --domino-lambda-base-decay-ratio "$DOMINO_LAMBDA_BASE_DECAY_RATIO"
+        --loss-fn ce
+    )
+fi
 NO_RESUME_FLAG=()
 if [ "$NO_RESUME_FROM_CHECKPOINT" = "1" ]; then
     NO_RESUME_FLAG=(--no-resume-from-checkpoint)
@@ -304,6 +329,14 @@ echo "    require_pretrained_weights: $REQUIRE_PRETRAINED_WEIGHTS"
 echo "    force_eager_training: $FORCE_EAGER"
 echo "    dflash_compile_training: $DFLASH_COMPILE"
 echo "    target_layer_ids: $TARGET_LAYER_IDS"
+echo "    domino_enabled: $ENABLE_DOMINO"
+if [ "$ENABLE_DOMINO" = "1" ]; then
+    echo "    domino emb_dim: $DOMINO_EMB_DIM"
+    echo "    domino gru_hidden_dim: $DOMINO_GRU_HIDDEN_DIM"
+    echo "    domino pure_draft_prefix_len: $DOMINO_PURE_DRAFT_PREFIX_LEN"
+    echo "    domino loss_decay_gamma: $DOMINO_LOSS_DECAY_GAMMA"
+    echo "    domino lambda_base: $DOMINO_LAMBDA_BASE_START -> 0 over ratio $DOMINO_LAMBDA_BASE_DECAY_RATIO"
+fi
 
 # Step 0 (optional): build a `conversations` jsonl from the chosen data source.
 # Idempotent: skips conversion only when the source/image-root fingerprint matches.
@@ -484,6 +517,7 @@ CUDA_VISIBLE_DEVICES="$TRAIN_GPUS" torchrun \
     "${FROM_FLAG[@]}" \
     "${DRAFTARCH_FLAG[@]}" \
     "${MASK_FLAG[@]}" \
+    "${DOMINO_FLAG[@]}" \
     "${NO_RESUME_FLAG[@]}" \
     "${FORCE_EAGER_FLAG[@]}" \
     --epochs "$EPOCHS" \

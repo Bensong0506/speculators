@@ -183,6 +183,23 @@ class Trainer:
         if self.resume_from_checkpoint and self.checkpointer.previous_epoch != -1:
             self.checkpointer.load_scheduler_state_dict(self.scheduler)
 
+    def _train_call_kwargs_for_step(self) -> dict:
+        kwargs = dict(self.config.train_call_kwargs)
+        lambda_start = kwargs.pop("domino_lambda_base_start", None)
+        if lambda_start is None:
+            return kwargs
+
+        decay_ratio = kwargs.pop("domino_lambda_base_decay_ratio", 1.0)
+        total_steps = self.config.scheduler_total_steps or (
+            self.config.num_epochs * len(self.train_loader)
+        )
+        decay_steps = max(1, int(total_steps * decay_ratio))
+        progress = min(self.global_step / decay_steps, 1.0)
+        kwargs["domino_lambda_base"] = max(
+            0.0, min(1.0, lambda_start * (1.0 - progress))
+        )
+        return kwargs
+
     def train_epoch(self, epoch: int):
         self.model.train()
         if hasattr(self.train_loader.batch_sampler, "set_epoch"):
@@ -207,7 +224,7 @@ class Trainer:
             }
 
             _draft_tokens, loss, metrics = self.model(
-                **gpu_batch, **self.config.train_call_kwargs
+                **gpu_batch, **self._train_call_kwargs_for_step()
             )
 
             self.opt.zero_grad()
