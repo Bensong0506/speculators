@@ -141,19 +141,35 @@ pytest tests/unit/models/test_dflash_domino.py tests/unit/train/test_cli_args.py
 ```
 
 Smoke(50 条;warm-start 自你**最好的已训 DFlash**,base 越强课程越省):
+> ⚠️ **数据怎么喂**:这个 launcher 用 `DATASET`/`USE_ALLAVA` 喂数据,**不认 `DISTILLED_ALLAVA_JSONL`**;且 `MAX_SAMPLES` 默认 **5000**、`USE_ALLAVA=1` 默认会拿 **raw** ALLaVA。要训**蒸馏 100k** 必须三件套:`USE_ALLAVA=0` + `DATASET=<蒸馏 jsonl>` + `MAX_SAMPLES=100000`。数据**对齐你 base DFlash 训练用的那种**(蒸馏就蒸馏,raw 就 raw)。
+
+SMOKE(50 条,先确认 domino 跑通):
 ```bash
-ENABLE_DOMINO=1 DOMINO_LOSS_DECAY_GAMMA=7 \
-FINETUNE_FROM=$PWD/output/<你最好的 dflash 100k run>/checkpoints/checkpoint_best \
+ENABLE_DOMINO=1 DOMINO_LOSS_DECAY_GAMMA=4 BLOCK_SIZE=8 \
+FINETUNE_FROM=$PWD/output/<你最好的 dflash run>/checkpoints/checkpoint_best \
 MODEL=/home/wenxuan/Qwen3.5-9B \
-DISTILLED_ALLAVA_JSONL=$PWD/data/allava/allava_qwen35_distill_100k.jsonl \
+USE_ALLAVA=0 DATASET=$PWD/data/allava/allava_qwen35_distill_100k.jsonl \
 ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V \
 VLLM_GPUS=0 VLLM_TP=1 VLLM_DP=1 TRAIN_GPUS=4,5,6,7 NUM_TRAIN_GPUS=4 \
 MAX_SAMPLES=50 EPOCHS=1 \
 bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
 ```
-日志确认:`domino_enabled: 1` + `domino lambda_base: 1.0 -> 0`,且 metrics 出现 `domino_final_acc/base_acc`。过了 → 去掉 `MAX_SAMPLES=50 EPOCHS=1` 跑全量。
+日志确认:`domino_enabled: 1` + `domino lambda_base: 1.0 -> 0` + metrics 有 `domino_final_acc/base_acc`,且 "Resolved training limits" 里 `block_size=8`、样本数=50。
 
-- **gamma 按 block_size**:bs8→4 / bs10→5 / **bs16→7**(默认 4 是 bs8 的;你的 DFlash 是 16)。
+全量 **100k**(smoke 过后;把 `MAX_SAMPLES=50 EPOCHS=1` 换成 `MAX_SAMPLES=100000 EPOCHS=2`,其余不变):
+```bash
+ENABLE_DOMINO=1 DOMINO_LOSS_DECAY_GAMMA=4 BLOCK_SIZE=8 \
+FINETUNE_FROM=$PWD/output/<你最好的 dflash run>/checkpoints/checkpoint_best \
+MODEL=/home/wenxuan/Qwen3.5-9B \
+USE_ALLAVA=0 DATASET=$PWD/data/allava/allava_qwen35_distill_100k.jsonl \
+ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V \
+VLLM_GPUS=0 VLLM_TP=1 VLLM_DP=1 TRAIN_GPUS=4,5,6,7 NUM_TRAIN_GPUS=4 \
+MAX_SAMPLES=100000 EPOCHS=2 \
+bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
+```
+> 要 raw ALLaVA 100k 而非蒸馏:去掉 `USE_ALLAVA=0 DATASET=...`、保留 `MAX_SAMPLES=100000`。
+
+- **gamma 按 block_size**:bs8→4 / bs10→5 / bs16→7。**你的 DFlash 是 bs=8**(`_full` wrapper 默认 `BLOCK_SIZE=8`,`train.py` 会覆盖 z-lab 的 16)→ **gamma=4(launcher 默认即可)**。不放心就核一眼:`grep -o '"block_size":[^,]*' <ckpt>/config.json`。
 - 旋钮(默认对齐 SpecForge):`DOMINO_GRU_HIDDEN_DIM=1024` · `DOMINO_EMB_DIM=256` · `DOMINO_PURE_DRAFT_PREFIX_LEN=1` · `DOMINO_LAMBDA_BASE_START=1.0`→0 · `DOMINO_LAMBDA_BASE_DECAY_RATIO=1.0`(全程衰减;想后段才转 corrected 调小,如 0.5)。
 - **盯**:`domino_final_acc` 是否稳 > `domino_base_acc`(尤其中后位)。是 → 有效,再投 vLLM serve 侧;否 → 调 `DOMINO_LAMBDA_BASE_DECAY_RATIO` / gamma。
 
