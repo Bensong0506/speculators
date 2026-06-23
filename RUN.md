@@ -495,8 +495,10 @@ NEW_MTP_CKPT=$PWD/output/mtp_qwen3.5_9b_mm_distilled/mtp9b_100k_s5_b10_sf05_<日
 ALLAVA_JSONL=$PWD/data/allava/allava_qwen35_distill_100k.jsonl \
 ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V \
 MMSTAR_JSONL=$PWD/data/mmstar/mmstar.jsonl MMSTAR_IMAGE_ROOT=/home/wenxuan/mmstar/images \
-INFER_NUM_SPEC=7 GPUS=0 \
+INFER_NUM_SPEC=7 GPUS=0 TP=1 \
 bash examples/evaluate/compare_mtp_3way.sh
+# ↑ TP=1 是必须的:9B 单卡。若不写、且 shell 里残留了 122B 的 export TP=4,
+#   会 "World size (4) > available GPUs (1)" 崩(脚本现在也会自动把 TP 降到可见 GPU 数兜底)。
 ```
 - 出 `output/mtp_3way/<stamp>/mtp_3way_summary.md`:每数据集 native/prev/new + `new−prev`/`new/prev`/`new/native` + 逐位 accepted 计数的 `new−prev`(看哪几位涨)+ 判断。
 - **重点**:ALLaVA 的 `new vs prev` mean-accept、逐位 `new−prev` 在 **pos 3-5** 是否为正;MMStar 看 OOD 帮还是伤。训的是 s5 → 想看匹配深度再补一遍 `INFER_NUM_SPEC=5`。

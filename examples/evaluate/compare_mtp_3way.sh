@@ -44,6 +44,13 @@ MMSTAR_JSONL="${MMSTAR_JSONL:-}"; MMSTAR_IMAGE_ROOT="${MMSTAR_IMAGE_ROOT:-}"
 
 # ---- serve knobs (mirror the 9B 2-arm script) ----
 GPUS="${GPUS:-0}"; TP="${TP:-1}"; PORT="${PORT:-8100}"
+# 9B 单卡即可。若 shell 里残留了 122B 的 `export TP=4`,这里把 TP 降到可见 GPU 数,
+# 否则会 "World size (4) > available GPUs (1)" 直接崩。要多卡显式 GPUS=0,1,2,3 TP=4。
+_NGPU="$(echo "$GPUS" | tr ',' ' ' | wc -w)"
+if [ "$TP" -gt "$_NGPU" ]; then
+  echo "[warn] TP=$TP > 可见 GPU 数 ($_NGPU, GPUS=$GPUS) -> 自动降为 $_NGPU(疑似 shell 残留 export TP=4;9B 用 TP=1)"
+  TP="$_NGPU"
+fi
 MAX_MODEL_LEN="${MAX_MODEL_LEN:-8192}"; MAX_NUM_SEQS="${MAX_NUM_SEQS:-16}"
 GPU_MEMORY_UTIL="${GPU_MEMORY_UTIL:-0.85}"; DTYPE="${DTYPE:-bfloat16}"
 NUM_PROMPTS="${NUM_PROMPTS:-128}"; MAX_TOKENS="${MAX_TOKENS:-128}"
