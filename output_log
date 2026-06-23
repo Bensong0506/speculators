@@ -1,18 +1,42 @@
-(ApiServer_1 pid=vLLM server ready.
+ading safetensors checkpoint shards: 100% Completed | 4/4 [00:03<00:00,  1.06it/s]
+(Worker pid=316611) 
+Loading safetensors checkpoint shards: 100% Completed | 4/4 [00:03<00:00,  1.05it/s]
+Loading safetensors checkpoint shards: 100% Completed | 4/4 [00:03<00:00,  1.03it/s]
+(Worker pid=316614) 
+Loading safetensors checkpoint shards: 100% Completed | 4/4 [00:04<00:00,  1.05it/s]
+Loading safetensors checkpoint shards: 100% Completed | 4/4 [00:04<00:00,  1.00s/it]
+(Worker pid=316613) 
+(EngineCore_DP3 pid=314990) [transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
+(EngineCore_DP1 pid=314988) [transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
+(EngineCore_DP2 pid=314989) [transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
+(EngineCore_DP0 pid=314987) [transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
+(EngineCore_DP3 pid=314990) [transformers] The `use_fast` parameter is deprecated and will be removed in a future version. Use `backend="torchvision"` instead of `use_fast=True`, or `backend="pil"` instead of `use_fast=False`.
+(EngineCore_DP1 pid=314988) [transformers] The `use_fast` parameter is deprecated and will be removed in a future version. Use `backend="torchvision"` instead of `use_fast=True`, or `backend="pil"` instead of `use_fast=False`.
+(EngineCore_DP2 pid=314989) [transformers] The `use_fast` parameter is deprecated and will be removed in a future version. Use `backend="torchvision"` instead of `use_fast=True`, or `backend="pil"` instead of `use_fast=False`.
+(EngineCore_DP0 pid=314987) [transformers] The `use_fast` parameter is deprecated and will be removed in a future version. Use `backend="torchvision"` instead of `use_fast=True`, or `backend="pil"` instead of `use_fast=False`.
+(ApiServer_1 pid=314992) INFO:     Started server process [314992]
+(ApiServer_1 pid=314992) INFO:     Waiting for application startup.
+(ApiServer_2 pid=314993) INFO:     Started server process [314993]
+(ApiServer_2 pid=314993) INFO:     Waiting for application startup.
+(ApiServer_0 pid=314991) INFO:     Started server process [314991]
+(ApiServer_0 pid=314991) INFO:     Waiting for application startup.
+(ApiServer_3 pid=314994) INFO:     Started server process [314994]
+(ApiServer_3 pid=314994) INFO:     Waiting for application startup.
+(ApiServer_1 pid=314992) INFO:     Application startup complete.
+(ApiServer_2 pid=314993) INFO:     Application startup complete.
+(ApiServer_0 pid=vLLM server ready.
 === Step 3: Training ===
-W0623 03:21:17.961000 312675 torch/distributed/run.py:851] 
-W0623 03:21:17.961000 312675 torch/distributed/run.py:851] *****************************************
-W0623 03:21:17.961000 312675 torch/distributed/run.py:851] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
-W0623 03:21:17.961000 312675 torch/distributed/run.py:851] *****************************************
-[03:21:24] INFO     Started distributed with local_rank=1, world_size=4                       utils.py:40
-[03:21:24] INFO     Started distributed with local_rank=3, world_size=4                       utils.py:40
-[03:21:24] INFO     Started distributed with local_rank=0, world_size=4                       utils.py:40
-[03:21:24] INFO     Started distributed with local_rank=2, world_size=4                       utils.py:40
+W0623 03:31:35.440000 318269 torch/distributed/run.py:851] 
+W0623 03:31:35.440000 318269 torch/distributed/run.py:851] *****************************************
+W0623 03:31:35.440000 318269 torch/distributed/run.py:851] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W0623 03:31:35.440000 318269 torch/distributed/run.py:851] *****************************************
+[03:31:41] INFO     Started distributed with local_rank=0, world_size=4                       utils.py:40
+[03:31:41] INFO     Started distributed with local_rank=2, world_size=4                       utils.py:40
            WARNING  No vocab mappings found, and can't generate new ones because either      train.py:337
                     token_freq_path='output/dflash_qwen3.5_9b_mm_ft/token_freq.pt' doesn't               
                     exist or --draft-vocab-size is None. Using full verifier vocab                       
-/home/wenxuan/speculators/scripts/train.py:377: UserWarning: Draft architecture 'qwen3' is not yet supported in vLLM. The trained model may not be usable for inference in vLLM. Consider using 'llama' (the default) for full vLLM compatibility.
-  transformer_layer_config = create_transformer_layer_config(
+[03:31:41] INFO     Started distributed with local_rank=1, world_size=4                       utils.py:40
+[03:31:41] INFO     Started distributed with local_rank=3, world_size=4                       utils.py:40
 /home/wenxuan/speculators/scripts/train.py:377: UserWarning: Draft architecture 'qwen3' is not yet supported in vLLM. The trained model may not be usable for inference in vLLM. Consider using 'llama' (the default) for full vLLM compatibility.
   transformer_layer_config = create_transformer_layer_config(
 /home/wenxuan/speculators/scripts/train.py:377: UserWarning: Draft architecture 'qwen3' is not yet supported in vLLM. The trained model may not be usable for inference in vLLM. Consider using 'llama' (the default) for full vLLM compatibility.
@@ -20,214 +44,88 @@ W0623 03:21:17.961000 312675 torch/distributed/run.py:851] *********************
 /home/wenxuan/speculators/scripts/train.py:377: UserWarning: Draft architecture 'qwen3' is not yet supported in vLLM. The trained model may not be usable for inference in vLLM. Consider using 'llama' (the default) for full vLLM compatibility.
   transformer_layer_config = create_transformer_layer_config(
            INFO     Using explicit mask_token_id=248070                                       utils.py:76
-Loading weights: 100%|██████████| 60/60 [00:02<00:00, 22.24it/s]
-Loading weights: 100%|██████████| 60/60 [00:02<00:00, 22.25it/s]
-Loading weights: 100%|██████████| 60/60 [00:02<00:00, 22.21it/s]
-Loading weights: 100%|██████████| 60/60 [00:02<00:00, 21.76it/s]
+/home/wenxuan/speculators/scripts/train.py:377: UserWarning: Draft architecture 'qwen3' is not yet supported in vLLM. The trained model may not be usable for inference in vLLM. Consider using 'llama' (the default) for full vLLM compatibility.
+  transformer_layer_config = create_transformer_layer_config(
+Loading weights: 100%|██████████| 60/60 [00:02<00:00, 22.15it/s]
+Loading weights: 100%|██████████| 60/60 [00:02<00:00, 22.36it/s]
+Loading weights: 100%|██████████| 60/60 [00:02<00:00, 21.96it/s]
+Loading weights: 100%|██████████| 60/60 [00:02<00:00, 22.18it/s]
 [transformers] DFlashDraftModel LOAD REPORT from: /home/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_distilled_10k_continue_dflash/dflash_ce_fp32_lr3e5_100k_0612_0831/checkpoints/checkpoint_best
 Key                      | Status  | 
 -------------------------+---------+-
-verifier_lm_head.weight  | MISSING | 
 embed_proj.{0, 2}.weight | MISSING | 
-prefix_gru.weight_ih_l0  | MISSING | 
-prefix_gru.weight_hh_l0  | MISSING | 
-
-Notes:
-- MISSING:      those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-06-23 03:21:27.454 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
-2026-06-23 03:21:27.454 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
-2026-06-23 03:21:27.455 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
-[transformers] DFlashDraftModel LOAD REPORT from: /home/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_distilled_10k_continue_dflash/dflash_ce_fp32_lr3e5_100k_0612_0831/checkpoints/checkpoint_best
-Key                      | Status  | 
--------------------------+---------+-
-prefix_gru.weight_hh_l0  | MISSING | 
-embed_proj.{0, 2}.weight | MISSING | 
-prefix_gru.weight_ih_l0  | MISSING | 
-verifier_lm_head.weight  | MISSING | 
-
-Notes:
-- MISSING:      those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-[transformers] DFlashDraftModel LOAD REPORT from: /home/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_distilled_10k_continue_dflash/dflash_ce_fp32_lr3e5_100k_0612_0831/checkpoints/checkpoint_best
-Key                      | Status  | 
--------------------------+---------+-
 verifier_lm_head.weight  | MISSING | 
 prefix_gru.weight_hh_l0  | MISSING | 
-embed_proj.{0, 2}.weight | MISSING | 
 prefix_gru.weight_ih_l0  | MISSING | 
 
 Notes:
 - MISSING:      those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-06-23 03:21:27.545 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
-2026-06-23 03:21:27.545 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
-2026-06-23 03:21:27.546 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
-2026-06-23 03:21:27.548 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
-2026-06-23 03:21:27.548 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
-2026-06-23 03:21:27.548 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
+2026-06-23 03:31:45.152 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
+2026-06-23 03:31:45.152 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
+2026-06-23 03:31:45.153 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
 [transformers] DFlashDraftModel LOAD REPORT from: /home/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_distilled_10k_continue_dflash/dflash_ce_fp32_lr3e5_100k_0612_0831/checkpoints/checkpoint_best
 Key                      | Status  | 
 -------------------------+---------+-
 prefix_gru.weight_hh_l0  | MISSING | 
 embed_proj.{0, 2}.weight | MISSING | 
+verifier_lm_head.weight  | MISSING | 
 prefix_gru.weight_ih_l0  | MISSING | 
+
+Notes:
+- MISSING:      those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[transformers] DFlashDraftModel LOAD REPORT from: /home/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_distilled_10k_continue_dflash/dflash_ce_fp32_lr3e5_100k_0612_0831/checkpoints/checkpoint_best
+Key                      | Status  | 
+-------------------------+---------+-
+embed_proj.{0, 2}.weight | MISSING | 
+verifier_lm_head.weight  | MISSING | 
+prefix_gru.weight_ih_l0  | MISSING | 
+prefix_gru.weight_hh_l0  | MISSING | 
+
+Notes:
+- MISSING:      those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-06-23 03:31:45.178 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
+2026-06-23 03:31:45.179 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
+2026-06-23 03:31:45.179 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
+2026-06-23 03:31:45.186 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
+2026-06-23 03:31:45.187 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
+2026-06-23 03:31:45.187 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
+[transformers] DFlashDraftModel LOAD REPORT from: /home/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_distilled_10k_continue_dflash/dflash_ce_fp32_lr3e5_100k_0612_0831/checkpoints/checkpoint_best
+Key                      | Status  | 
+-------------------------+---------+-
+embed_proj.{0, 2}.weight | MISSING | 
+prefix_gru.weight_ih_l0  | MISSING | 
+prefix_gru.weight_hh_l0  | MISSING | 
 verifier_lm_head.weight  | MISSING | 
 
 Notes:
 - MISSING:      those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-06-23 03:21:27.574 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
-2026-06-23 03:21:27.574 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
-2026-06-23 03:21:27.575 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
-[03:21:35] INFO     Expected hidden_states width: 20480                                      train.py:426
-           INFO     No previous checkpoint found. Starting from scratch.                    trainer.py:92
-[03:21:52] INFO     Training epoch 1/1 started                                             trainer.py:356
-n, Methods: HEAD, GET
-(ApiServer_0 pid=309399) INFO 06-23 03:21:15 [launcher.py:46] Route: /docs, Methods: HEAD, GET
-(ApiServer_0 pid=309399) INFO 06-23 03:21:15 [launcher.py:46] Route: /docs/oauth2-redirect, Methods: HEAD, GET
-(ApiServer_0 pid=309399) INFO 06-23 03:21:15 [launcher.py:46] Route: /redoc, Methods: HEAD, GET
-(ApiServer_0 pid=309399) INFO 06-23 03:21:15 [launcher.py:46] Route: /tokenize, Methods: POST
-(ApiServer_0 pid=309399) INFO 06-23 03:21:15 [launcher.py:46] Route: /detokenize, Methods: POST
-(ApiServer_0 pid=309399) INFO 06-23 03:21:15 [launcher.py:46] Route: /load, Methods: GET
-(ApiServer_0 pid=309399) INFO 06-23 03:21:15 [launcher.py:46] Route: /version, Methods: GET
-(ApiServer_0 pid=309399) INFO 06-23 03:21:15 [launcher.py:46] Route: /health, Methods: GET
-(ApiServer_0 pid=309399) INFO 06-23 03:21:15 [launcher.py:46] Route: /metrics, Methods: GET
-(ApiServer_0 pid=309399) INFO 06-23 03:21:15 [launcher.py:46] Route: /v1/models, Methods: GET
-(ApiServer_0 pid=309399) INFO 06-23 03:21:15 [launcher.py:46] Route: /ping, Methods: GET
-(ApiServer_0 pid=309399) INFO 06-23 03:21:15 [launcher.py:46] Route: /ping, Methods: POST
-(ApiServer_0 pid=309399) INFO 06-23 03:21:15 [launcher.py:46] Route: /invocations, Methods: POST
-(ApiServer_0 pid=309399) INFO 06-23 03:21:15 [launcher.py:46] Route: /v1/chat/completions, Methods: POST
-(ApiServer_0 pid=309399) INFO 06-23 03:21:15 [launcher.py:46] Route: /v1/chat/completions/batch, Methods: POST
-(ApiServer_0 pid=309399) INFO 06-23 03:21:15 [launcher.py:46] Route: /v1/responses, Methods: POST
-(ApiServer_0 pid=309399) INFO 06-23 03:21:15 [launcher.py:46] Route: /v1/responses/{response_id}, Methods: GET
-(ApiServer_0 pid=309399) INFO 06-23 03:21:15 [launcher.py:46] Route: /v1/responses/{response_id}/cancel, Methods: POST
-(ApiServer_0 pid=309399) INFO 06-23 03:21:15 [launcher.py:46] Route: /v1/completions, Methods: POST
-(ApiServer_0 pid=309399) INFO 06-23 03:21:15 [launcher.py:46] Route: /v1/messages, Methods: POST
-(ApiServer_0 pid=309399) INFO 06-23 03:21:15 [launcher.py:46] Route: /v1/messages/count_tokens, Methods: POST
-(ApiServer_0 pid=309399) INFO 06-23 03:21:15 [launcher.py:46] Route: /inference/v1/generate, Methods: POST
-(ApiServer_0 pid=309399) INFO 06-23 03:21:15 [launcher.py:46] Route: /scale_elastic_ep, Methods: POST
-(ApiServer_0 pid=309399) INFO 06-23 03:21:15 [launcher.py:46] Route: /is_scaling_elastic_ep, Methods: POST
-(ApiServer_0 pid=309399) INFO 06-23 03:21:15 [launcher.py:46] Route: /generative_scoring, Methods: POST
-(ApiServer_0 pid=309399) INFO 06-23 03:21:15 [launcher.py:46] Route: /v1/chat/completions/render, Methods: POST
-(ApiServer_0 pid=309399) INFO 06-23 03:21:15 [launcher.py:46] Route: /v1/completions/render, Methods: POST
-(Worker pid=311013) WARNING 06-23 03:21:52 [jit_monitor.py:103] Triton kernel JIT compilation during inference: _zero_kv_blocks_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
-(Worker pid=311013) WARNING 06-23 03:21:52 [jit_monitor.py:103] Triton kernel JIT compilation during inference: _compute_slot_mapping_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
-(Worker pid=311013) WARNING 06-23 03:21:52 [jit_monitor.py:103] Triton kernel JIT compilation during inference: _bilinear_pos_embed_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
-(Worker pid=311013) WARNING 06-23 03:21:53 [jit_monitor.py:103] Triton kernel JIT compilation during inference: _causal_conv1d_fwd_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
-(Worker pid=311013) WARNING 06-23 03:21:53 [jit_monitor.py:103] Triton kernel JIT compilation during inference: rotary_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
-(Worker pid=311013) WARNING 06-23 03:21:53 [jit_monitor.py:103] Triton kernel JIT compilation during inference: _fused_post_conv_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
-(Worker pid=311013) WARNING 06-23 03:21/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
-  result = _VF.gru(
-/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
-  result = _VF.gru(
-/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
-  result = _VF.gru(
-/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
-  result = _VF.gru(
-[03:22:05] INFO     train/domino_lambda_base=1.000, train/loss=1.859,                      trainer.py:247
-                    train/full_acc=0.310, train/position_1_acc=0.726,                                    
-                    train/position_2_acc=0.460, train/position_3_acc=0.319,                              
-                    train/position_4_acc=0.242, train/position_5_acc=0.172,                              
-                    train/position_6_acc=0.132, train/position_7_acc=0.104,                              
-                    train/domino_final_loss=3.641, train/domino_base_loss=3.531,                         
-                    train/domino_base_acc=0.186, train/domino_final_acc=0.178, epoch=0,                  
-                    lr=1.00e-04, global_step=0                                                           
-/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
-  result = _VF.gru(
-/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
-  result = _VF.gru(
-/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
-  result = _VF.gru(
-/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
-  result = _VF.gru(
-[03:22:08] INFO     train/domino_lambda_base=0.750, train/loss=1.836,                      trainer.py:247
-                    train/full_acc=0.309, train/position_1_acc=0.721,                                    
-                    train/position_2_acc=0.455, train/position_3_acc=0.325,                              
-                    train/position_4_acc=0.234, train/position_5_acc=0.172,                              
-                    train/position_6_acc=0.135, train/position_7_acc=0.112,                              
-                    train/domino_final_loss=3.578, train/domino_base_loss=3.453,                         
-                    train/domino_base_acc=0.182, train/domino_final_acc=0.177, epoch=0,                  
-                    lr=7.50e-05, global_step=1                                                           
-/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
-  result = _VF.gru(
-/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
-  result = _VF.gru(
-/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
-  result = _VF.gru(
-/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
-  result = _VF.gru(
-[03:22:09] INFO     train/domino_lambda_base=0.500, train/loss=1.719,                      trainer.py:247
-                    train/full_acc=0.347, train/position_1_acc=0.738,                                    
-                    train/position_2_acc=0.497, train/position_3_acc=0.363,                              
-                    train/position_4_acc=0.280, train/position_5_acc=0.222,                              
-                    train/position_6_acc=0.176, train/position_7_acc=0.147,                              
-                    train/domino_final_loss=3.328, train/domino_base_loss=3.219,                         
-                    train/domino_base_acc=0.204, train/domino_final_acc=0.198, epoch=0,                  
-                    lr=5.00e-05, global_step=2                                                           
-/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
-  result = _VF.gru(
-/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
-  result = _VF.gru(
-/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
-  result = _VF.gru(
-/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
-  result = _VF.gru(
-[03:22:10] INFO     train/domino_lambda_base=0.250, train/loss=1.695,                      trainer.py:247
-                    train/full_acc=0.343, train/position_1_acc=0.750,                                    
-                    train/position_2_acc=0.518, train/position_3_acc=0.355,                              
-                    train/position_4_acc=0.281, train/position_5_acc=0.211,                              
-                    train/position_6_acc=0.150, train/position_7_acc=0.125,                              
-                    train/domino_final_loss=3.297, train/domino_base_loss=3.219,                         
-                    train/domino_base_acc=0.213, train/domino_final_acc=0.208, epoch=0,                  
-                    lr=2.50e-05, global_step=3                                                           
-Epoch 0 100% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4/4  [ 0:00:18 < 0:00:00 , 1 it/s ]
-           INFO     Training epoch 1/1 completed                                           trainer.py:358
-           INFO     Saving checkpoint to output/dflash_qwen3.5_9b_mm_ft/checkpoints/0      trainer.py:322
-Writing model shards: 100%|██████████| 1/1 [00:05<00:00,  5.33s/it]
-[03:22:34] INFO     Checkpoint saved to output/dflash_qwen3.5_9b_mm_ft/checkpoints/0       trainer.py:326
-           INFO     Validation epoch 1/1 started                                           trainer.py:373
-/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
-  result = _VF.gru(
-/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
-  result = _VF.gru(
-/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
-  result = _VF.gru(
-/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
-  result = _VF.gru(
-Epoch 0 100% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1/1  [ 0:00:05 < 0:00:00 , ? it/s ]
-[03:22:39] INFO     val/domino_lambda_base_epoch=0.00e+00, val/loss_epoch=1.586,           trainer.py:304
-                    val/full_acc_epoch=0.365, val/position_1_acc_epoch=0.750,                            
-                    val/position_2_acc_epoch=0.525, val/position_3_acc_epoch=0.394,                      
-                    val/position_4_acc_epoch=0.309, val/position_5_acc_epoch=0.229,                      
-                    val/position_6_acc_epoch=0.182, val/position_7_acc_epoch=0.155,                      
-                    val/domino_final_loss_epoch=3.078, val/domino_base_loss_epoch=3.031,                 
-                    val/domino_base_acc_epoch=0.095, val/domino_final_acc_epoch=0.091,                   
-                    epoch=0                                                                              
-           INFO     Validation epoch 1/1 completed                                         trainer.py:375
-           INFO     Updated checkpoint_best -> 0 (loss_epoch=1.585938)                     trainer.py:346
-[03:22:39] INFO     Destroyed distributed with local_rank=1, world_size=4                     utils.py:54
-[03:22:39] INFO     Destroyed distributed with local_rank=3, world_size=4                     utils.py:54
-           INFO     Destroyed distributed with local_rank=0, world_size=4                     utils.py:54
-[03:22:39] INFO     Destroyed distributed with local_rank=2, world_size=4                     utils.py:54
-Done. Checkpoints saved to ./output/dflash_qwen3.5_9b_mm_ft/checkpoints/
-Stopping vLLM server...
-309400) INFO:     Application startup complete.
-(ApiServer_0 pid=309399) INFO:     Application startup complete.
-/usr/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 4 leaked semaphore objects to clean up at shutdown
-  warnings.warn('resource_tracker: There appear to be %d '
-/usr/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 8 leaked shared_memory objects to clean up at shutdown
-  warnings.warn('resource_tracker: There appear to be %d '
-:53 [jit_monitor.py:103] Triton kernel JIT compilation during inference: _triton_mrope_forward. This causes a latency spike; consider extending warmup to cover this shape/config.
-INFO 06-23 03:22:43 [serve.py:369] Waiting up to 0 seconds for processes to exit
-(ApiServer_3 pid=309402) INFO 06-23 03:22:43 [launcher.py:137] Shutting down FastAPI HTTP server.
-(EngineCore_DP0 pid=309395) INFO 06-23 03:22:43 [core.py:1266] Shutdown initiated (timeout=0)
-(EngineCore_DP2 pid=309397) INFO 06-23 03:22:43 [core.py:1266] Shutdown initiated (timeout=0)
-(EngineCore_DP0 pid=309395) INFO 06-23 03:22:43 [core.py:1289] Shutdown complete
-(EngineCore_DP2 pid=309397) INFO 06-23 03:22:43 [core.py:1289] Shutdown complete
-(EngineCore_DP1 pid=309396) INFO 06-23 03:22:43 [core.py:1266] Shutdown initiated (timeout=0)
-(EngineCore_DP1 pid=309396) INFO 06-23 03:22:43 [core.py:1289] Shutdown complete
-(Worker pid=311013) INFO 06-23 03:22:43 [multiproc_executor.py:775] Parent process exited, terminating worker queues
-(Worker pid=311013) INFO 06-23 03:22:43 [multiproc_executor.py:872] WorkerProc shutting down.
-(EngineCore_DP3 pid=309398) INFO 06-23 03:22:43 [core.py:1266] Shutdown initiated (timeout=0)
-(Worker pid=311022) INFO 06-23 03:22:43 [multiproc_executor.py:872] WorkerProc shutting down.
-(Worker pid=311020) INFO 06-23 03:22:43 [multiproc_executor.py:872] WorkerProc shutting down.
-(EngineCore_DP3 pid=309398) INFO 06-23 03:22:43 [core.py:1289] Shutdown complete
-(Worker pid=311021) INFO 06-23 03:22:43 [multiproc_executor.py:872] WorkerProc shutting down.
-root@devserver-bms-af631bb3:/home/wenxuan/speculators# 
+2026-06-23 03:31:45.243 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
+2026-06-23 03:31:45.244 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
+2026-06-23 03:31:45.244 | INFO     | speculators.utils.loading:_resolve_file:83 - Loading from local directory: /home/wenxuan/Qwen3.5-9B
+[03:31:51] INFO     Expected hidden_states width: 20480                                      train.py:426
+           INFO     Found checkpoint at output/dflash_qwen3.5_9b_mm_ft/checkpoints/0.       trainer.py:80
+           INFO     Resuming training on 1 epoch.                                           trainer.py:83
+           INFO     Restored best_val_loss=1.585938 from checkpoint                        trainer.py:101
+[rank3]: Traceback (most recent call last):
+[rank3]:   File "/home/wenxuan/speculators/scripts/train.py", line 940, in <module>
+[rank3]:     main(args)
+[rank3]:   File "/home/wenxuan/speculators/scripts/train.py", line 523, in main
+[rank3]:     trainer = Trainer(draft_model, trainer_config, train_loader, val_loader)
+[rank3]:               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/wenxuan/speculators/src/speculators/train/trainer.py", line 76, in __init__
+[rank3]:     self.setup_optimizer()
+[rank3]:   File "/home/wenxuan/speculators/src/speculators/train/trainer.py", line 150, in setup_optimizer
+[rank3]:     self.checkpointer.load_optimizer_state_dict(self.model, self.opt)
+[rank3]:   File "/home/wenxuan/speculators/src/speculators/train/checkpointer.py", line 311, in load_optimizer_state_dict
+[rank3]:     set_optimizer_state_dict(
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/checkpoint/state_dict.py", line 1448, in set_optimizer_state_dict
+[rank3]:     _load_optim_state_dict(model, optimizers, optim_state_dict, info)
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+[rank3]:     return func(*args, **kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/checkpoint/state_dict.py", line 1069, in _load_optim_state_dict
+[rank3]:     optim_state_dict = _split_optim_state_dict(
+[rank3]:                        ^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/checkpoint/state_dict.py", line 1009, in _split_optim_state_dict
+[rank3]:     raise RuntimeError(
+[rank3]: RuntimeError: Missing optimizer state for parameter 'verifier_lm_head.weight' in checkpoint. The parameter requires gradients but has no saved optimizer state. To load anyway, use StateDictOptions(strict=False).
