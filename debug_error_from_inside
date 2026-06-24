@@ -1,984 +1,245 @@
-"""Phase 3/4 worker patch: worker-side direct encoder.
-
-Pairs with phase1.py.
-
-When API-side phase1 has skipped HF image preprocessing, image features arrive
-with image_grid_thw but no pixel_values. This worker patch detects that lite
-case, reloads local paths, runs the real HF processor on each TP rank's assigned
-slice, runs local embed_multimodal only for that slice, all-gathers encoder
-embeddings, restores original image order, and writes encoder_cache using the
-original feature.mm_hash.
-
-Fallbacks kept:
-  - full-direct path for features that already contain pixel_values
-  - v3-slow path: every rank reloads + preprocesses all lite images and forwards
-    them through embed_multimodal
-
-Environment:
-  PHASE3_DEBUG=1                    verbose logs
-  PHASE3_DISABLE_DIRECT_ENCODER=1   disable direct encoder and use v3-slow
-  PHASE3_DIRECT_RAISE_ON_ERROR=1    raise direct-encoder local errors instead of
-                                    falling back to v3-slow on all ranks
-"""
-from __future__ import annotations
-
-import os
-import traceback
-from pathlib import Path
-
-
-_WORKER_PATCHED = False
-DEBUG = os.environ.get("PHASE3_DEBUG", "0") == "1"
-
-
-def dlog(msg: str) -> None:
-    if DEBUG:
-        print(f"[P3v4] {msg}", flush=True)
-
-
-def _is_valid_image_feature(feature) -> bool:
-    """Check if a feature is a valid, uncached image feature."""
-    if feature.modality != "image":
-        return False
-    if feature.data is None:
-        return False
-    mh = getattr(feature, "mm_hash", None)
-    if mh is None:
-        return False
-    return True
-
-
-def _collect_uncached_image_features(self, scheduled) -> list:
-    """Collect image features that are scheduled but not yet cached."""
-    image_features = []
-    for req_id in scheduled:
-        req_state = self.requests.get(req_id)
-        if req_state is None:
-            continue
-        for feature in req_state.mm_features:
-            if not _is_valid_image_feature(feature):
-                continue
-            if DEBUG:
-                mh = feature.mm_hash
-                data_keys = (
-                    list(feature.data.keys())
-                    if hasattr(feature.data, "keys")
-                    else "N/A"
-                )
-                print(
-                    f"[P3v4] worker feature mm_hash={str(mh)[:12]} "
-                    f"data_keys={data_keys} in_cache={mh in self.encoder_cache}",
-                    flush=True,
-                )
-            if feature.mm_hash in self.encoder_cache:
-                continue
-            image_features.append(feature)
-    return image_features
-
-
-def _normalize_grid_thw(grid, mh: str) -> list[int]:
-    """Normalize image_grid_thw to a list of 3 integers."""
-    if hasattr(grid, "data"):
-        grid = grid.data
-    if hasattr(grid, "detach"):
-        grid = grid.detach().cpu().tolist()
-    if isinstance(grid, list) and grid and isinstance(grid[0], list):
-        grid = grid[0]
-    if not (isinstance(grid, list) and len(grid) == 3):
-        raise RuntimeError(f"feature {str(mh)[:12]} bad image_grid_thw: {grid}")
-    return [int(grid[0]), int(grid[1]), int(grid[2])]
-
-
-def _collect_paths_from_requests(scheduled, requests) -> dict[str, list[str | None]]:
-    """Extract phase3_paths from sampling_params.extra_args per request."""
-    req_to_paths: dict[str, list[str | None]] = {}
-    for req_id in scheduled:
-        req_state = requests.get(req_id)
-        if req_state is None:
-            continue
-        sp = getattr(req_state, "sampling_params", None)
-        ea = getattr(sp, "extra_args", None) if sp is not None else None
-        if isinstance(ea, dict):
-            p3 = ea.get("phase3_paths")
-            if isinstance(p3, dict) and isinstance(p3.get("image"), list):
-                req_to_paths[req_id] = p3["image"]
-    return req_to_paths
-
-
-def _resolve_feature_path(
-    req_id: str,
-    idx: int,
-    req_to_paths: dict[str, list],
-    feature_data,
-    mh,
-) -> str:
-    """Resolve the file path for a single lite feature."""
-    paths = req_to_paths.get(req_id)
-    if isinstance(paths, list) and idx < len(paths):
-        path = paths[idx]
-        if isinstance(path, str):
-            return path
-
-    # Fallback: check sidecar paths in feature.data
-    sidecar = feature_data.get("_phase3_paths") if isinstance(feature_data, dict) else None
-    if isinstance(sidecar, list):
-        if len(sidecar) == 1 and isinstance(sidecar[0], str):
-            return sidecar[0]
-        if idx < len(sidecar) and isinstance(sidecar[idx], str):
-            return sidecar[idx]
-    elif isinstance(sidecar, str):
-        return sidecar
-
-    raise RuntimeError(
-        f"req {req_id}: image idx {idx} missing phase3 path "
-        f"for lite feature {str(mh)[:12]}"
-    )
-
-
-def _collect_lite_feature_metadata(
-    self,
-    scheduled,
-    lite_feature_ids: set,
-    req_to_paths: dict[str, list],
-) -> tuple[list[str], list[list[int]]]:
-    """Collect paths and grids for all lite features."""
-    per_feature_path: list[str] = []
-    per_feature_grid: list[list[int]] = []
-    feature_idx_in_req: dict[str, int] = {}
-
-    for req_id in scheduled:
-        req_state = self.requests.get(req_id)
-        if req_state is None:
-            continue
-        for feature in req_state.mm_features:
-            if not _is_valid_image_feature(feature):
-                continue
-            idx = feature_idx_in_req.get(req_id, 0)
-            feature_idx_in_req[req_id] = idx + 1
-
-            if id(feature) not in lite_feature_ids:
-                continue
-
-            mh = feature.mm_hash
-            path = _resolve_feature_path(req_id, idx, req_to_paths, feature.data, mh)
-            per_feature_path.append(path)
-
-            grid = feature.data.get("image_grid_thw")
-            per_feature_grid.append(_normalize_grid_thw(grid, mh))
-
-    return per_feature_path, per_feature_grid
-
-
-def patch_phase3_worker() -> None:
-    """Replace GPUModelRunner._execute_mm_encoder. Idempotent."""
-    global _WORKER_PATCHED
-    if _WORKER_PATCHED:
-        return
-
-    try:
-        from vllm.v1.worker.gpu_model_runner import GPUModelRunner
-    except ImportError as e:
-        print(f"[P3v4] worker ImportError: {e}", flush=True)
-        return
-
-    if getattr(
-        GPUModelRunner._execute_mm_encoder, "__name__", ""
-    ) == "_phase3v4_execute_mm_encoder":
-        _WORKER_PATCHED = True
-        return
-
-    original_execute = GPUModelRunner._execute_mm_encoder
-
-    def _phase3v4_execute_mm_encoder(self, scheduler_output):
-        scheduled = scheduler_output.scheduled_encoder_inputs
-        if not scheduled:
-            return original_execute(self, scheduler_output)
-        return _phase3v4_execute(self, scheduler_output, original_execute)
-
-    GPUModelRunner._execute_mm_encoder = _phase3v4_execute_mm_encoder
-    _WORKER_PATCHED = True
-    dlog("worker patch installed")
-
-
-def _phase3v4_execute(self, scheduler_output, original_execute):
-    """Patched _execute_mm_encoder implementation."""
-    from vllm.distributed import get_tensor_model_parallel_rank
-
-    tp_rank = get_tensor_model_parallel_rank()
-    scheduled = scheduler_output.scheduled_encoder_inputs
-
-    image_features = _collect_uncached_image_features(self, scheduled)
-    if not image_features:
-        if DEBUG:
-            print(
-                f"[P3v4] all image features cached, returning [] "
-                f"(scheduled={len(scheduled)})",
-                flush=True,
-            )
-        return []
-
-    lite_features = [f for f in image_features if "pixel_values" not in f.data]
-    full_features = [f for f in image_features if "pixel_values" in f.data]
-
-    print(
-        f"[P3-MIXED] rank={tp_rank} total={len(image_features)} "
-        f"lite={len(lite_features)} full={len(full_features)} "
-        f"full_data_keys_sample={[list(f.data.keys()) for f in full_features[:3]]}",
-        flush=True,
-    )
-
-    if full_features:
-        _phase3_handle_full_features(self, full_features, tp_rank)
-
-    if not lite_features:
-        return None
-
-    req_to_paths = _collect_paths_from_requests(scheduled, self.requests)
-    lite_feature_ids = {id(f) for f in lite_features}
-    per_feature_path, per_feature_grid = _collect_lite_feature_metadata(
-        self, scheduled, lite_feature_ids, req_to_paths,
-    )
-
-    if len(per_feature_path) != len(lite_features):
-        raise RuntimeError(
-            f"path/feature alignment broken: "
-            f"{len(per_feature_path)} paths vs {len(lite_features)} features"
-        )
-
-    if DEBUG:
-        print(
-            f"[P3v4] worker deferred/direct encode: "
-            f"n_features={len(lite_features)} paths={per_feature_path} "
-            f"grids={per_feature_grid}",
-            flush=True,
-        )
-
-    use_direct_encoder = (
-        os.environ.get("PHASE3_DISABLE_DIRECT_ENCODER", "0") != "1"
-        and len(lite_features) > 0
-    )
-
-    if use_direct_encoder:
-        return _phase3v4_direct_encoder_path(
-            self, lite_features, per_feature_path, per_feature_grid, tp_rank,
-        )
-
-    return _phase3v3_slow_path(
-        self, lite_features, per_feature_path, per_feature_grid, tp_rank,
-    )
-
-
-def _phase3_handle_full_features(self, full_features, tp_rank):
-    """Process features that already have pixel_values."""
-    import torch
-
-    pv_list = []
-    grid_list = []
-    for f in full_features:
-        pv = f.data["pixel_values"]
-        if hasattr(pv, "data"):
-            pv = pv.data
-        if pv.device != self.device:
-            pv = pv.to(self.device)
-        pv_list.append(pv)
-
-        grid_list.append(_normalize_grid_thw(f.data["image_grid_thw"], "full"))
-
-    pixel_values = torch.cat(pv_list, dim=0)
-    grid_thw = torch.tensor(grid_list, dtype=torch.int64)
-
-    if DEBUG:
-        print(
-            f"[P3v4] rank={tp_rank} full-direct: n={len(full_features)} "
-            f"pixel_values_shape={tuple(pixel_values.shape)} "
-            f"grid_thw_shape={tuple(grid_thw.shape)}",
-            flush=True,
-        )
-
-    _phase3v3_forward_and_cache(
-        self,
-        full_features,
-        pixel_values,
-        grid_thw,
-        tp_rank,
-        "full-direct",
-    )
-
-
-def _phase3v3_slow_path(
-    self,
-    image_features,
-    per_feature_path,
-    per_feature_grid,
-    tp_rank,
-):
-    """v3 behavior: every rank loads + preprocesses every lite image."""
-    import torch
-
-    from vllm.multimodal import MULTIMODAL_REGISTRY
-    from vllm.multimodal.media.image import ImageMediaIO
-
-    image_io = ImageMediaIO(image_mode="RGB")
-
-    pil_images = []
-    for p in per_feature_path:
-        media = image_io.load_file(Path(p))
-        inner = getattr(media, "media", media)
-        pil_images.append(inner)
-
-    if not hasattr(self, "_phase3_processor"):
-        self._phase3_processor = MULTIMODAL_REGISTRY.create_processor(
-            self.model_config,
-            cache=None,
-        )
-    processor = self._phase3_processor
-
-    counts = {"image": len(pil_images)}
-    dummy_text = processor.dummy_inputs.get_dummy_text(counts)
-
-    try:
-        mm_data_items = processor.info.parse_mm_data(
-            {"image": pil_images}, validate=False,
-        )
-    except TypeError:
-        mm_data_items = processor.info.parse_mm_data({"image": pil_images})
-
-    _, mm_processed_data, _ = processor._apply_hf_processor_text_mm(
-        prompt_text=dummy_text,
-        mm_items=mm_data_items,
-        hf_processor_mm_kwargs={},
-        tokenization_kwargs={},
-    )
-
-    print(
-        f"[P3-SLOW] rank={tp_rank} keys={list(mm_processed_data.keys())} "
-        f"has_pixel_values={'pixel_values' in mm_processed_data} "
-        f"n_pil={len(pil_images)}",
-        flush=True,
-    )
-
-    pixel_values = mm_processed_data["pixel_values"]
-    if hasattr(pixel_values, "data"):
-        pixel_values = pixel_values.data
-    if pixel_values.device != self.device:
-        pixel_values = pixel_values.to(self.device)
-
-    full_grid_thw = torch.tensor(per_feature_grid, dtype=torch.int64)
-
-    return _phase3v3_forward_and_cache(
-        self,
-        image_features,
-        pixel_values,
-        full_grid_thw,
-        tp_rank,
-        "v3-slow",
-    )
-
-
-def _build_load_and_output_sizes(image_features, per_feature_grid) -> tuple:
-    import math
-
-    load_sizes = []
-    for grid in per_feature_grid:
-        if not (isinstance(grid, list) and len(grid) == 3):
-            raise RuntimeError(f"bad grid_thw for load size: {grid}")
-        load_sizes.append(max(1, int(math.prod(int(x) for x in grid))))
-
-    output_sizes = []
-    for i, feature in enumerate(image_features):
-        mm_position = getattr(feature, "mm_position", None)
-        get_num_embeds = getattr(mm_position, "get_num_embeds", None)
-        if not callable(get_num_embeds):
-            raise RuntimeError(f"feature[{i}] missing mm_position.get_num_embeds()")
-        n_embeds = int(get_num_embeds())
-        if n_embeds <= 0:
-            raise RuntimeError(f"feature[{i}] bad num_embeds={n_embeds}")
-        output_sizes.append(n_embeds)
-
-    return load_sizes, output_sizes
-
-
-def _compute_assignment(
-    order: list, counts: list, tp_rank: int, output_sizes: list, tp_size: int,
-) -> dict:
-    prefix = [0]
-    for c in counts:
-        prefix.append(prefix[-1] + c)
-
-    my_image_indices = list(order[prefix[tp_rank]: prefix[tp_rank + 1]])
-
-    grouped_output_lens = []
-    for rank in range(tp_size):
-        rank_indices = order[prefix[rank]: prefix[rank + 1]]
-        grouped_output_lens.append(sum(output_sizes[idx] for idx in rank_indices))
-
-    max_len_per_rank = max(grouped_output_lens) if grouped_output_lens else 0
-
-    return {
-        "prefix": prefix,
-        "my_image_indices": my_image_indices,
-        "grouped_output_lens": grouped_output_lens,
-        "max_len_per_rank": max_len_per_rank,
-    }
-
-
-def _get_or_create_processor(self) -> object:
-    from vllm.multimodal import MULTIMODAL_REGISTRY
-
-    if not hasattr(self, "_phase3_processor"):
-        self._phase3_processor = MULTIMODAL_REGISTRY.create_processor(
-            self.model_config, cache=None,
-        )
-    return self._phase3_processor
-
-
-def _hf_preprocess_images(processor, pil_images) -> dict:
-    counts_dict = {"image": len(pil_images)}
-    dummy_text = processor.dummy_inputs.get_dummy_text(counts_dict)
-
-    try:
-        mm_data_items = processor.info.parse_mm_data(
-            {"image": pil_images}, validate=False,
-        )
-    except TypeError:
-        mm_data_items = processor.info.parse_mm_data({"image": pil_images})
-
-    _, mm_processed_data, _ = processor._apply_hf_processor_text_mm(
-        prompt_text=dummy_text,
-        mm_items=mm_data_items,
-        hf_processor_mm_kwargs={},
-        tokenization_kwargs={},
-    )
-    return mm_processed_data
-
-
-def _load_local_images(
-    my_image_indices: list, per_feature_path: list,
-) -> list:
-    from vllm.multimodal.media.image import ImageMediaIO
-
-    image_io = ImageMediaIO(image_mode="RGB")
-    my_pil_images = []
-    for idx in my_image_indices:
-        with open(per_feature_path[idx], "rb") as f:
-            data = f.read()
-        media = image_io.load_bytes(data)
-        inner = getattr(media, "media", media)
-        my_pil_images.append(inner)
-    return my_pil_images
-
-
-def _encode_local_images(
-    self, model, processor, my_pil_images: list, my_image_indices: list,
-) -> list:
-    from vllm.multimodal.inputs import MultiModalKwargsItems
-    from vllm.multimodal.utils import group_and_batch_mm_kwargs
-    from vllm.v1.worker.utils import sanity_check_mm_encoder_outputs
-
-    mm_processed_data = _hf_preprocess_images(processor, my_pil_images)
-
-    if DEBUG:
-        print(
-            f"[P3v4-direct] local preprocess: n_local={len(my_pil_images)} "
-            f"keys={list(mm_processed_data.keys())} "
-            f"has_pixel_values={'pixel_values' in mm_processed_data}",
-            flush=True,
-        )
-
-    mm_kwargs = MultiModalKwargsItems.from_hf_inputs(
-        mm_processed_data,
-        processor._get_mm_fields_config(mm_processed_data, {}),
-    )
-    local_items = list(mm_kwargs.get("image", []))
-
-    if len(local_items) != len(my_image_indices):
-        raise RuntimeError(
-            f"local_items count mismatch: {len(local_items)} vs {len(my_image_indices)}"
-        )
-
-    local_mm_kwargs = [("image", item) for item in local_items]
-    local_outputs = []
-
-    # Call the replicated ViT directly instead of model.embed_multimodal().
-    #
-    # Under --mm-encoder-tp-mode=data the vision tower is built disable_tp=True
-    # (replicated, no intra-layer TP collective). _process_image_input routes
-    # through run_dp_sharded_mrope_vision_model ONLY when model.use_data_parallel
-    # is True; that helper is a cross-rank all-gather requiring EVERY TP rank to
-    # participate. Since our load-balanced split can leave some ranks with zero
-    # images (they skip this function entirely), triggering it would deadlock
-    # (507001) -- empty ranks never enter the collective. Toggling
-    # model.use_data_parallel=False is unreliable (the setattr lands on the
-    # graph/compile wrapper while _process_image_input reads the inner model), so
-    # we bypass embed_multimodal and call model.visual directly. This mirrors
-    # _process_image_input's non-data-parallel `else` branch exactly.
-    visual = model.visual
-    merge_size = visual.spatial_merge_size
-
-    for _, num_items, mm_kwargs_batch in group_and_batch_mm_kwargs(
-        local_mm_kwargs, device=self.device, pin_memory=self.pin_memory,
-    ):
-        if DEBUG:
-            print(
-                f"[P3v4-direct] local visual encode: "
-                f"batch_keys={list(mm_kwargs_batch.keys())}",
-                flush=True,
-            )
-        pixel_values = mm_kwargs_batch["pixel_values"].type(visual.dtype)
-        grid_thw = mm_kwargs_batch["image_grid_thw"]
-        image_embeds = visual(pixel_values, grid_thw=grid_thw)
-        sizes = (grid_thw.prod(-1) // merge_size // merge_size).tolist()
-        batch_outputs = list(image_embeds.split(sizes))
-        sanity_check_mm_encoder_outputs(batch_outputs, expected_num_items=num_items)
-        local_outputs.extend(batch_outputs)
-
-    if len(local_outputs) != len(my_image_indices):
-        raise RuntimeError(
-            f"local_outputs count mismatch: {len(local_outputs)} vs {len(my_image_indices)}"
-        )
-
-    return local_outputs
-
-
-def _run_local_encode(
-    self, model, my_image_indices: list, per_feature_path: list,
-    grouped_output_lens: list, output_sizes: list, tp_rank: int,
-) -> tuple:
-    import torch
-
-    if not my_image_indices:
-        return None, None
-
-    try:
-        my_pil_images = _load_local_images(my_image_indices, per_feature_path)
-        processor = _get_or_create_processor(self)
-        local_outputs = _encode_local_images(
-            self, model, processor, my_pil_images, my_image_indices,
-        )
-
-        local_cat = torch.cat([out.contiguous() for out in local_outputs], dim=0)
-        expected_rows = grouped_output_lens[tp_rank]
-        if int(local_cat.shape[0]) != int(expected_rows):
-            raise RuntimeError(
-                f"rank {tp_rank}: local encoder rows mismatch: "
-                f"got {tuple(local_cat.shape)}, expected rows={expected_rows}; "
-                f"my_image_indices={my_image_indices}, "
-                f"output_sizes={[output_sizes[i] for i in my_image_indices]}"
-            )
-        return local_cat, None
-
-    except Exception as exc:
-        local_error = f"{type(exc).__name__}: {exc}\n{traceback.format_exc()}"
-        print(
-            f"[P3v4-direct] rank={tp_rank} local direct encode FAILED:\n{local_error}",
-            flush=True,
-        )
-        return None, local_error
-
-
-def _gather_metadata_and_validate(
-    self, local_cat, local_error, inferred_hidden_size, inferred_dtype,
-    tp_rank: int, tp_size: int, tensor_model_parallel_all_gather,
-) -> tuple:
-    import torch
-
-    if local_cat is not None:
-        local_has_output = 1
-        local_hidden_size = int(local_cat.shape[1])
-        local_dtype_code = _phase3_dtype_to_code(local_cat.dtype)
-    else:
-        local_has_output = 0
-        local_hidden_size = int(inferred_hidden_size or 0)
-        local_dtype_code = _phase3_dtype_to_code(inferred_dtype)
-
-    meta = torch.tensor(
-        [
-            1 if local_error is not None else 0,
-            local_has_output,
-            local_hidden_size,
-            local_dtype_code,
-        ],
-        dtype=torch.int64,
-        device=self.device,
-    )
-    gathered_meta = tensor_model_parallel_all_gather(meta, dim=0).view(tp_size, 4)
-
-    error_count = int(gathered_meta[:, 0].sum().item())
-    if error_count:
-        msg = (
-            f"[P3v4-direct] {error_count}/{tp_size} ranks failed during "
-            f"local direct encode."
-        )
-        if os.environ.get("PHASE3_DIRECT_RAISE_ON_ERROR", "0") == "1":
-            raise RuntimeError(msg)
-        print(f"{msg} Falling back to v3-slow on all ranks.", flush=True)
-        return "fallback_slow", None, None
-
-    has_output_mask = gathered_meta[:, 1] == 1
-    if not bool(has_output_mask.any().item()):
-        raise RuntimeError("[P3v4-direct] no rank produced local encoder outputs")
-
-    hidden_values = sorted(
-        {int(x) for x in gathered_meta[has_output_mask, 2].detach().cpu().tolist()}
-    )
-    dtype_values = sorted(
-        {int(x) for x in gathered_meta[has_output_mask, 3].detach().cpu().tolist()}
-    )
-
-    if len(hidden_values) != 1 or len(dtype_values) != 1:
-        print(
-            f"[P3v4-direct] rank={tp_rank} inconsistent hidden/dtype; "
-            f"fallback slow: hidden={hidden_values}, dtype={dtype_values}",
-            flush=True,
-        )
-        return "fallback_slow", None, None
-
-    hidden_size = hidden_values[0]
-    dtype = _phase3_code_to_dtype(dtype_values[0])
-    if dtype is None or hidden_size <= 0:
-        print(
-            f"[P3v4-direct] rank={tp_rank} cannot infer hidden/dtype; "
-            f"fallback slow: hidden={hidden_size}, dtype_code={dtype_values[0]}",
-            flush=True,
-        )
-        return "fallback_slow", None, None
-
-    return "ok", hidden_size, dtype
-
-
-def _prepare_local_tensor(local_cat, hidden_size: int, dtype, device) -> object:
-    import torch
-
-    if local_cat is None:
-        return torch.empty((0, hidden_size), device=device, dtype=dtype)
-
-    if local_cat.device != device:
-        local_cat = local_cat.to(device)
-    if local_cat.dtype != dtype:
-        local_cat = local_cat.to(dtype=dtype)
-    return local_cat.contiguous()
-
-
-def _pad_and_all_gather(
-    local_cat, hidden_size: int, max_len_per_rank: int, tp_size: int,
-    tensor_model_parallel_all_gather, device, dtype,
-) -> object:
-    import torch
-
-    local_rows = int(local_cat.shape[0])
-    if local_rows < max_len_per_rank:
-        pad = torch.empty(
-            (max_len_per_rank - local_rows, hidden_size),
-            device=device, dtype=dtype,
-        )
-        local_padded = torch.cat([local_cat, pad], dim=0)
-    else:
-        local_padded = local_cat
-
-    gathered = tensor_model_parallel_all_gather(local_padded.contiguous(), dim=0)
-
-    expected_gather_rows = tp_size * max_len_per_rank
-    if int(gathered.shape[0]) != int(expected_gather_rows):
-        raise RuntimeError(
-            f"[P3v4-direct] gathered rows mismatch: "
-            f"got {tuple(gathered.shape)}, expected rows={expected_gather_rows}"
-        )
-    return gathered
-
-
-def _reorder_embeddings(
-    gathered, order: list, prefix: list, output_sizes: list, tp_size: int,
-    max_len_per_rank: int, grouped_output_lens: list, n_images: int,
-) -> list:
-    rank_embeddings = []
-    for rank in range(tp_size):
-        block_start = rank * max_len_per_rank
-        real_len = grouped_output_lens[rank]
-        rank_embeddings.append(gathered[block_start: block_start + real_len])
-
-    original_order_embeddings = [None] * n_images
-    for rank in range(tp_size):
-        rank_indices = order[prefix[rank]: prefix[rank + 1]]
-        rank_embed = rank_embeddings[rank]
-        embed_start = 0
-        for image_idx in rank_indices:
-            image_len = output_sizes[image_idx]
-            image_embed = rank_embed[embed_start: embed_start + image_len]
-            if int(image_embed.shape[0]) != int(image_len):
-                raise RuntimeError(
-                    f"[P3v4-direct] bad slice image_idx={image_idx}: "
-                    f"got {tuple(image_embed.shape)}, expected rows={image_len}"
-                )
-            original_order_embeddings[image_idx] = image_embed.contiguous()
-            embed_start += image_len
-        if embed_start != int(rank_embed.shape[0]):
-            raise RuntimeError(
-                f"[P3v4-direct] rank {rank} unused gathered rows: "
-                f"used={embed_start}, block_rows={rank_embed.shape[0]}"
-            )
-
-    if any(x is None for x in original_order_embeddings):
-        missing = [i for i, x in enumerate(original_order_embeddings) if x is None]
-        raise RuntimeError(f"[P3v4-direct] missing embeddings after reorder: {missing}")
-
-    return original_order_embeddings
-
-
-def _write_to_cache_and_log(
-    self, image_features, original_order_embeddings: list, tp_rank: int,
-    n_images: int, counts: list, loads: list, my_image_indices: list,
-    t0: float, t1: float, t2: float, t3: float,
-) -> list:
-    import time
-
-    cache_writes = 0
-    for feature, output in zip(image_features, original_order_embeddings):
-        mh = getattr(feature, "mm_hash", None)
-        if not isinstance(mh, str):
-            raise RuntimeError(f"[P3v4-direct] feature missing mm_hash: {feature}")
-        self.encoder_cache[mh] = output.contiguous()
-        cache_writes += 1
-        if hasattr(self, "maybe_save_ec_to_connector"):
-            try:
-                self.maybe_save_ec_to_connector(self.encoder_cache, mh)
-            except Exception as e:
-                dlog(f"[v4-direct] maybe_save_ec_to_connector failed for {mh[:12]}: {e}")
-
-    t4 = time.perf_counter()
-
-    print(
-        f"[P3v4-direct-T] rank={tp_rank} n_images={n_images} "
-        f"counts={counts} loads={loads} local_indices={my_image_indices} "
-        f"local_encode={(t1 - t0) * 1000:.1f}ms "
-        f"all_gather={(t2 - t1) * 1000:.1f}ms "
-        f"reorder={(t3 - t2) * 1000:.1f}ms "
-        f"cache={(t4 - t3) * 1000:.1f}ms "
-        f"total={(t4 - t0) * 1000:.1f}ms "
-        f"cache_writes={cache_writes}",
-        flush=True,
-    )
-
-    return list(original_order_embeddings)
-
-
-def _phase3v4_direct_encoder_path(
-    self,
-    image_features,
-    per_feature_path,
-    per_feature_grid,
-    tp_rank,
-):
-    """Direct encoder: local preprocess + local encode + gather embeddings.
-
-    Supports non-divisible image count and mixed image_grid_thw.
-    """
-    import time
-
-    from vllm.distributed import (
-        get_tensor_model_parallel_world_size,
-        tensor_model_parallel_all_gather,
-    )
-    from vllm.model_executor.models.vision import get_load_balance_assignment
-
-    t0 = time.perf_counter()
-
-    tp_size = get_tensor_model_parallel_world_size()
-    n_images = len(image_features)
-    if n_images == 0:
-        return []
-
-    try:
-        load_sizes, output_sizes = _build_load_and_output_sizes(
-            image_features, per_feature_grid,
-        )
-    except Exception as exc:
-        print(
-            f"[P3v4-direct] rank={tp_rank} size build failed; "
-            f"fallback slow: {type(exc).__name__}: {exc}",
-            flush=True,
-        )
-        return _phase3v3_slow_path(
-            self, image_features, per_feature_path, per_feature_grid, tp_rank,
-        )
-
-    order, counts, loads = get_load_balance_assignment(load_sizes, tp_size)
-    order = [int(x) for x in list(order)]
-    counts = [int(x) for x in list(counts)]
-    loads = [int(x) for x in list(loads)]
-
-    assignment = _compute_assignment(order, counts, tp_rank, output_sizes, tp_size)
-    my_image_indices = assignment["my_image_indices"]
-    grouped_output_lens = assignment["grouped_output_lens"]
-    max_len_per_rank = assignment["max_len_per_rank"]
-
-    if DEBUG:
-        print(
-            f"[P3v4-direct] rank={tp_rank} assign: n_images={n_images} "
-            f"order={order} counts={counts} loads={loads} "
-            f"my_image_indices={my_image_indices} "
-            f"grouped_output_lens={grouped_output_lens} "
-            f"max_len_per_rank={max_len_per_rank}",
-            flush=True,
-        )
-
-    inferred_hidden_size, inferred_dtype = _phase3_infer_encoder_hidden_dtype(self)
-
-    local_cat, local_error = _run_local_encode(
-        self, self.model, my_image_indices, per_feature_path,
-        grouped_output_lens, output_sizes, tp_rank,
-    )
-    t1 = time.perf_counter()
-
-    status, hidden_size, dtype = _gather_metadata_and_validate(
-        self, local_cat, local_error, inferred_hidden_size, inferred_dtype,
-        tp_rank, tp_size, tensor_model_parallel_all_gather,
-    )
-
-    if status == "fallback_slow":
-        return _phase3v3_slow_path(
-            self, image_features, per_feature_path, per_feature_grid, tp_rank,
-        )
-
-    local_cat = _prepare_local_tensor(local_cat, hidden_size, dtype, self.device)
-
-    gathered = _pad_and_all_gather(
-        local_cat, hidden_size, max_len_per_rank, tp_size,
-        tensor_model_parallel_all_gather, self.device, dtype,
-    )
-    t2 = time.perf_counter()
-
-    original_order_embeddings = _reorder_embeddings(
-        gathered, order, assignment["prefix"], output_sizes, tp_size,
-        max_len_per_rank, grouped_output_lens, n_images,
-    )
-    t3 = time.perf_counter()
-
-    return _write_to_cache_and_log(
-        self, image_features, original_order_embeddings, tp_rank,
-        n_images, counts, loads, my_image_indices, t0, t1, t2, t3,
-    )
-
-
-def _phase3v3_forward_and_cache(
-    self,
-    image_features,
-    pixel_values,
-    full_grid_thw,
-    tp_rank,
-    tag,
-):
-    """Shared full-forward + cache write logic."""
-    model = self.model
-    image_input = {
-        "pixel_values": pixel_values,
-        "image_grid_thw": full_grid_thw,
-    }
-    full_outputs = model.embed_multimodal(**image_input)
-    if full_outputs is None:
-        raise RuntimeError(f"[{tag}] embed_multimodal returned None")
-    if len(full_outputs) != len(image_features):
-        raise RuntimeError(
-            f"[{tag}] embed_multimodal returned {len(full_outputs)} outputs, "
-            f"expected {len(image_features)}"
-        )
-
-    cache_writes = 0
-    for feature, output in zip(image_features, full_outputs):
-        mh = getattr(feature, "mm_hash", None)
-        if not isinstance(mh, str):
-            raise RuntimeError(f"[{tag}] feature missing mm_hash: {feature}")
-        self.encoder_cache[mh] = output.contiguous()
-        cache_writes += 1
-        if hasattr(self, "maybe_save_ec_to_connector"):
-            try:
-                self.maybe_save_ec_to_connector(self.encoder_cache, mh)
-            except Exception as e:
-                dlog(f"[{tag}] maybe_save_ec_to_connector failed for {mh[:12]}: {e}")
-
-    if DEBUG:
-        print(
-            f"[P3v4] rank={tp_rank} tag={tag} n_images={len(image_features)} "
-            f"cache_writes={cache_writes}",
-            flush=True,
-        )
-
-    return list(full_outputs)
-
-
-def _phase3_dtype_to_code(dtype) -> int:
-    import torch
-
-    if dtype is torch.float16:
-        return 1
-    if dtype is torch.bfloat16:
-        return 2
-    if dtype is torch.float32:
-        return 3
-    if dtype is torch.float64:
-        return 4
-    return 0
-
-
-def _phase3_code_to_dtype(code: int):
-    import torch
-
-    code = int(code)
-    if code == 1:
-        return torch.float16
-    if code == 2:
-        return torch.bfloat16
-    if code == 3:
-        return torch.float32
-    if code == 4:
-        return torch.float64
-    return None
-
-
-def _try_get_attr_first_non_none(obj, attr_names, default=None):
-    """Try multiple attribute names, return first non-None value."""
-    if obj is None:
-        return default
-    for name in attr_names:
-        value = getattr(obj, name, None)
-        if value is not None:
-            return value
-    return default
-
-
-def _phase3_infer_encoder_hidden_dtype(self):
-    """Infer encoder output hidden size/dtype for empty-rank padding."""
-    import torch
-
-    model = self.model
-    visual = getattr(model, "visual", None)
-
-    hidden_size = None
-    if visual is not None:
-        hidden_size = getattr(visual, "out_hidden_size", None)
-
-    if hidden_size is None:
-        hidden_size = _try_get_attr_first_non_none(
-            visual, ("out_hidden_size", "hidden_size", "embed_dim"),
-        )
-
-    if hidden_size is None:
-        model_cfg = getattr(model, "config", None)
-        hidden_size = _try_get_attr_first_non_none(
-            model_cfg, ("out_hidden_size", "hidden_size", "embed_dim"),
-        )
-
-    if hidden_size is not None:
-        hidden_size = int(hidden_size)
-        if getattr(model, "is_multimodal_pruning_enabled", False):
-            hidden_size += 5
-    else:
-        hidden_size = 0
-
-    dtype = getattr(visual, "dtype", None) if visual is not None else None
-    if dtype is None:
-        try:
-            dtype = next(model.parameters()).dtype
-        except Exception:
-            dtype = torch.float16
-
-    return hidden_size, dtype
+(APIServer pid=494121) INFO 06-24 16:34:53 [param_check.py:371] [Begin ] request_id: chatcmpl-30616134366539642d656233362d3430
+(APIServer pid=494121) [P3v4] load_file path=/data/wenxuan/book_en_6.Complex.Analysis.-.Elias.M..Stein_page_205.png media_type=MediaWithBytes inner_type=PngImageFile
+(APIServer pid=494121) [P3v4-PERF] fetch_async route=local download=5.0ms save=0.0ms total=5.1ms url=file:///data/wenxuan/book_en_6.Complex.Analysis.-.Elias.M..S
+(APIServer pid=494121) [P3v4] lite_preprocess counts={'image': 1}
+(APIServer pid=494121) [P3v4] lite_preprocess item[0] type=PngImageFile has_path=True path=/data/wenxuan/book_en_6.Complex.Analysis.-.Elias.M..Stein_page_205.png
+(APIServer pid=494121) [P3v4] lite_preprocess RETURN n=1 grid_thw_shape=(1, 3) paths=['/data/wenxuan/book_en_6.Complex.Analysis.-.Elias.M..Stein_page_205.png'] bf_keys=['image_grid_thw', '_phase3_paths']
+(APIServer pid=494121) [P3v4] renderer injected phase3_paths={'image': ['/data/wenxuan/book_en_6.Complex.Analysis.-.Elias.M..Stein_page_205.png']}
+(APIServer pid=494121) [P3v4] process_inputs req=chatcmpl-30616134366539642d656233362d3430 injected extra_args.phase3_paths={'image': ['/data/wenxuan/book_en_6.Complex.Analysis.-.Elias.M..Stein_page_205.png']}
+(Worker_TP2_EP2 pid=496125) /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/torch_npu/utils/storage.py:56: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.  To access UntypedStorage directly, use tensor.untyped_storage() instead of tensor.storage()
+(Worker_TP2_EP2 pid=496125)   if self.device.type != 'cpu':
+(Worker_TP3_EP3 pid=496219) /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/torch_npu/utils/storage.py:56: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.  To access UntypedStorage directly, use tensor.untyped_storage() instead of tensor.storage()
+(Worker_TP3_EP3 pid=496219)   if self.device.type != 'cpu':
+(Worker_TP1_EP1 pid=496089) /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/torch_npu/utils/storage.py:56: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.  To access UntypedStorage directly, use tensor.untyped_storage() instead of tensor.storage()
+(Worker_TP1_EP1 pid=496089)   if self.device.type != 'cpu':
+(Worker_TP0_EP0 pid=495982) /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/torch_npu/utils/storage.py:56: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.  To access UntypedStorage directly, use tensor.untyped_storage() instead of tensor.storage()
+(Worker_TP0_EP0 pid=495982)   if self.device.type != 'cpu':
+(APIServer pid=494121) INFO:     7.150.12.205:60276 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:56206 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:56206 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:56206 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:33376 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:33376 - "GET /metrics HTTP/1.1" 200 OK
+(Worker_TP1_EP1 pid=496089) [P3v4] worker feature mm_hash=2f5c92a1f046 data_keys=['image_grid_thw'] in_cache=False
+(Worker_TP1_EP1 pid=496089) [P3-MIXED] rank=1 total=1 lite=1 full=0 full_data_keys_sample=[]
+(Worker_TP1_EP1 pid=496089) [P3v4] worker deferred/direct encode: n_features=1 paths=['/data/wenxuan/book_en_6.Complex.Analysis.-.Elias.M..Stein_page_205.png'] grids=[[1, 138, 106]]
+(Worker_TP1_EP1 pid=496089) [P3v4-direct] rank=1 assign: n_images=1 order=[0] counts=[1, 0, 0, 0] loads=[14628, 0, 0, 0] my_image_indices=[] grouped_output_lens=[3657, 0, 0, 0] max_len_per_rank=3657
+(Worker_TP0_EP0 pid=495982) [P3v4] worker feature mm_hash=2f5c92a1f046 data_keys=['image_grid_thw'] in_cache=False
+(Worker_TP0_EP0 pid=495982) [P3-MIXED] rank=0 total=1 lite=1 full=0 full_data_keys_sample=[]
+(Worker_TP0_EP0 pid=495982) [P3v4] worker deferred/direct encode: n_features=1 paths=['/data/wenxuan/book_en_6.Complex.Analysis.-.Elias.M..Stein_page_205.png'] grids=[[1, 138, 106]]
+(Worker_TP0_EP0 pid=495982) [P3v4-direct] rank=0 assign: n_images=1 order=[0] counts=[1, 0, 0, 0] loads=[14628, 0, 0, 0] my_image_indices=[0] grouped_output_lens=[3657, 0, 0, 0] max_len_per_rank=3657
+(Worker_TP2_EP2 pid=496125) [P3v4] worker feature mm_hash=2f5c92a1f046 data_keys=['image_grid_thw'] in_cache=False
+(Worker_TP2_EP2 pid=496125) [P3-MIXED] rank=2 total=1 lite=1 full=0 full_data_keys_sample=[]
+(Worker_TP2_EP2 pid=496125) [P3v4] worker deferred/direct encode: n_features=1 paths=['/data/wenxuan/book_en_6.Complex.Analysis.-.Elias.M..Stein_page_205.png'] grids=[[1, 138, 106]]
+(Worker_TP2_EP2 pid=496125) [P3v4-direct] rank=2 assign: n_images=1 order=[0] counts=[1, 0, 0, 0] loads=[14628, 0, 0, 0] my_image_indices=[] grouped_output_lens=[3657, 0, 0, 0] max_len_per_rank=3657
+(Worker_TP3_EP3 pid=496219) [P3v4] worker feature mm_hash=2f5c92a1f046 data_keys=['image_grid_thw'] in_cache=False
+(Worker_TP3_EP3 pid=496219) [P3-MIXED] rank=3 total=1 lite=1 full=0 full_data_keys_sample=[]
+(Worker_TP3_EP3 pid=496219) [P3v4] worker deferred/direct encode: n_features=1 paths=['/data/wenxuan/book_en_6.Complex.Analysis.-.Elias.M..Stein_page_205.png'] grids=[[1, 138, 106]]
+(Worker_TP3_EP3 pid=496219) [P3v4-direct] rank=3 assign: n_images=1 order=[0] counts=[1, 0, 0, 0] loads=[14628, 0, 0, 0] my_image_indices=[] grouped_output_lens=[3657, 0, 0, 0] max_len_per_rank=3657
+(Worker_TP0_EP0 pid=495982) [P3v4-direct] local preprocess: n_local=1 keys=['attention_mask', 'mm_token_type_ids', 'pixel_values', 'image_grid_thw'] has_pixel_values=True
+(Worker_TP0_EP0 pid=495982) [P3v4-direct] local visual encode: batch_keys=['image_grid_thw', 'pixel_values']
+(Worker_TP0_EP0 pid=495982) [P3v4-direct-T] rank=0 n_images=1 counts=[1, 0, 0, 0] loads=[14628, 0, 0, 0] local_indices=[0] local_encode=363.3ms all_gather=429.6ms reorder=0.1ms cache=0.1ms total=793.1ms cache_writes=1
+(Worker_TP1_EP1 pid=496089) [P3v4-direct-T] rank=1 n_images=1 counts=[1, 0, 0, 0] loads=[14628, 0, 0, 0] local_indices=[] local_encode=0.5ms all_gather=803.5ms reorder=0.1ms cache=0.1ms total=804.2ms cache_writes=1
+(Worker_TP3_EP3 pid=496219) [P3v4-direct-T] rank=3 n_images=1 counts=[1, 0, 0, 0] loads=[14628, 0, 0, 0] local_indices=[] local_encode=0.4ms all_gather=768.4ms reorder=0.1ms cache=0.1ms total=769.0ms cache_writes=1
+(Worker_TP2_EP2 pid=496125) [P3v4-direct-T] rank=2 n_images=1 counts=[1, 0, 0, 0] loads=[14628, 0, 0, 0] local_indices=[] local_encode=0.3ms all_gather=775.4ms reorder=0.0ms cache=0.1ms total=775.8ms cache_writes=1
+(APIServer pid=494121) INFO:     7.150.12.205:33376 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:54964 - "GET /metrics HTTP/1.1" 200 OK
+I20260624 16:35:20.280766 281391411488416 ascend_direct_transport.cpp:797] Connected to segment: 7.150.12.205:30967
+I20260624 16:35:20.355497 281391080138400 ascend_direct_transport.cpp:797] Connected to segment: 7.150.12.205:28320
+I20260624 16:35:20.355638 281391663146656 ascend_direct_transport.cpp:797] Connected to segment: 7.150.12.205:29103
+I20260624 16:35:20.387207 281391736546976 ascend_direct_transport.cpp:797] Connected to segment: 7.150.12.205:31580
+(Worker_TP1_EP1 pid=496089) [WARNING] Please DO NOT tune args ['num_warps', 'num_stages']!
+(Worker_TP1_EP1 pid=496089) INFO 06-24 16:35:20 [mooncake_layerwise_prefill_then_decode_connector.py:2802] Sending done sending signal for request chatcmpl-30616134366539642d656233362d3430 to 7.150.12.205:26011
+(Worker_TP3_EP3 pid=496219) [WARNING] Please DO NOT tune args ['num_warps', 'num_stages']!
+(Worker_TP3_EP3 pid=496219) INFO 06-24 16:35:20 [mooncake_layerwise_prefill_then_decode_connector.py:2802] Sending done sending signal for request chatcmpl-30616134366539642d656233362d3430 to 7.150.12.205:26013
+(Worker_TP2_EP2 pid=496125) [WARNING] Please DO NOT tune args ['num_warps', 'num_stages']!
+(Worker_TP2_EP2 pid=496125) INFO 06-24 16:35:20 [mooncake_layerwise_prefill_then_decode_connector.py:2802] Sending done sending signal for request chatcmpl-30616134366539642d656233362d3430 to 7.150.12.205:26012
+(Worker_TP0_EP0 pid=495982) [WARNING] Please DO NOT tune args ['num_warps', 'num_stages']!
+(Worker_TP0_EP0 pid=495982) INFO 06-24 16:35:20 [mooncake_layerwise_prefill_then_decode_connector.py:2802] Sending done sending signal for request chatcmpl-30616134366539642d656233362d3430 to 7.150.12.205:26010
+(APIServer pid=494121) INFO 06-24 16:35:20 [param_check.py:373] [End ] request_id: chatcmpl-30616134366539642d656233362d3430
+(APIServer pid=494121) INFO:     7.150.12.205:60286 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:54964 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:54964 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:37820 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO 06-24 16:35:28 [loggers.py:259] Engine 000: Avg prompt throughput: 367.1 tokens/s, Avg generation throughput: 0.1 tokens/s, Running: 0 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.0%, Prefix cache hit rate: 0.0%, External prefix cache hit rate: 0.0%, MM cache hit rate: 0.0%
+(APIServer pid=494121) INFO:     7.150.12.205:37820 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:37820 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:36586 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO 06-24 16:35:38 [loggers.py:259] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 0.0 tokens/s, Running: 0 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.0%, Prefix cache hit rate: 0.0%, External prefix cache hit rate: 0.0%, MM cache hit rate: 0.0%
+(APIServer pid=494121) INFO:     7.150.12.205:36586 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:36586 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:35794 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:35794 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:35794 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:57806 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:57806 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:57806 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:50634 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:50634 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:50634 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:60922 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:60922 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:60922 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:34296 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:34296 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:34296 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:52282 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:52282 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:52282 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:40232 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:40232 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:40232 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:49494 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:49494 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:49494 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:37480 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:37480 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:37480 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:39660 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:39660 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:39660 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:35214 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:35214 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:35214 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:39226 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:39226 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:39226 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:53622 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:53622 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:53622 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:60872 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:60872 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:60872 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:52628 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:52628 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:52628 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:33126 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:33126 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:33126 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:47236 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:47236 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:47236 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:58588 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:58588 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:58588 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:37232 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:37232 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:37232 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:45852 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:45852 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) WARNING 06-24 16:39:06 [param_check.py:323] presence_penalty is not supported right now. Ascend-vllm will ignore it and change to default value.
+(APIServer pid=494121) WARNING 06-24 16:39:06 [param_check.py:323] repetition_penalty is not supported right now. Ascend-vllm will ignore it and change to default value.
+(APIServer pid=494121) INFO 06-24 16:39:06 [param_check.py:371] [Begin ] request_id: chatcmpl-32393666353230362d643031372d3438
+(APIServer pid=494121) [P3v4] load_file path=/data/wenxuan/book_en_6.Complex.Analysis.-.Elias.M..Stein_page_205.png media_type=MediaWithBytes inner_type=PngImageFile
+(APIServer pid=494121) [P3v4-PERF] fetch_async route=local download=0.9ms save=0.0ms total=0.9ms url=file:///data/wenxuan/book_en_6.Complex.Analysis.-.Elias.M..S
+(APIServer pid=494121) [P3v4] lite_preprocess counts={'image': 0}
+(APIServer pid=494121) [P3v4] renderer injected phase3_paths={'image': ['/data/wenxuan/book_en_6.Complex.Analysis.-.Elias.M..Stein_page_205.png']}
+(APIServer pid=494121) [P3v4] process_inputs req=chatcmpl-32393666353230362d643031372d3438 injected extra_args.phase3_paths={'image': ['/data/wenxuan/book_en_6.Complex.Analysis.-.Elias.M..Stein_page_205.png']}
+(APIServer pid=494121) INFO:     7.150.12.205:45852 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:45542 - "GET /metrics HTTP/1.1" 200 OK
+(Worker_TP1_EP1 pid=496089) INFO 06-24 16:39:06 [mooncake_layerwise_prefill_then_decode_connector.py:2802] Sending done sending signal for request chatcmpl-32393666353230362d643031372d3438 to 7.150.12.205:26011
+(Worker_TP2_EP2 pid=496125) INFO 06-24 16:39:06 [mooncake_layerwise_prefill_then_decode_connector.py:2802] Sending done sending signal for request chatcmpl-32393666353230362d643031372d3438 to 7.150.12.205:26012
+(Worker_TP3_EP3 pid=496219) INFO 06-24 16:39:06 [mooncake_layerwise_prefill_then_decode_connector.py:2802] Sending done sending signal for request chatcmpl-32393666353230362d643031372d3438 to 7.150.12.205:26013
+(Worker_TP0_EP0 pid=495982) INFO 06-24 16:39:06 [mooncake_layerwise_prefill_then_decode_connector.py:2802] Sending done sending signal for request chatcmpl-32393666353230362d643031372d3438 to 7.150.12.205:26010
+(APIServer pid=494121) INFO 06-24 16:39:06 [param_check.py:373] [End ] request_id: chatcmpl-32393666353230362d643031372d3438
+(APIServer pid=494121) INFO:     7.150.12.205:45532 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO 06-24 16:39:08 [loggers.py:259] Engine 000: Avg prompt throughput: 367.1 tokens/s, Avg generation throughput: 0.1 tokens/s, Running: 0 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.0%, Prefix cache hit rate: 0.0%, External prefix cache hit rate: 0.0%, MM cache hit rate: 50.0%
+(APIServer pid=494121) INFO:     7.150.12.205:45542 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:45542 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:46954 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO 06-24 16:39:18 [loggers.py:259] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 0.0 tokens/s, Running: 0 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.0%, Prefix cache hit rate: 0.0%, External prefix cache hit rate: 0.0%, MM cache hit rate: 50.0%
+(APIServer pid=494121) INFO:     7.150.12.205:46954 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:46954 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:40094 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:40094 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:40094 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:45596 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:45596 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:45596 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:43668 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:43668 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:43668 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:50158 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:50158 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:50158 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:46248 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:46248 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:46248 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:33738 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) WARNING 06-24 16:40:19 [param_check.py:323] presence_penalty is not supported right now. Ascend-vllm will ignore it and change to default value.
+(APIServer pid=494121) WARNING 06-24 16:40:19 [param_check.py:323] repetition_penalty is not supported right now. Ascend-vllm will ignore it and change to default value.
+(APIServer pid=494121) INFO 06-24 16:40:19 [param_check.py:371] [Begin ] request_id: chatcmpl-32383363396237352d396332652d3439
+(APIServer pid=494121) [P3v4] load_file path=/data/wenxuan/book_en_6.Complex.Analysis.-.Elias.M..Stein_page_205.png media_type=MediaWithBytes inner_type=PngImageFile
+(APIServer pid=494121) [P3v4-PERF] fetch_async route=local download=0.9ms save=0.0ms total=0.9ms url=file:///data/wenxuan/book_en_6.Complex.Analysis.-.Elias.M..S
+(APIServer pid=494121) [P3v4] lite_preprocess counts={'image': 0}
+(APIServer pid=494121) [P3v4] renderer injected phase3_paths={'image': ['/data/wenxuan/book_en_6.Complex.Analysis.-.Elias.M..Stein_page_205.png']}
+(APIServer pid=494121) [P3v4] process_inputs req=chatcmpl-32383363396237352d396332652d3439 injected extra_args.phase3_paths={'image': ['/data/wenxuan/book_en_6.Complex.Analysis.-.Elias.M..Stein_page_205.png']}
+(Worker_TP1_EP1 pid=496089) INFO 06-24 16:40:19 [mooncake_layerwise_prefill_then_decode_connector.py:2802] Sending done sending signal for request chatcmpl-32383363396237352d396332652d3439 to 7.150.12.205:26011
+(Worker_TP3_EP3 pid=496219) INFO 06-24 16:40:19 [mooncake_layerwise_prefill_then_decode_connector.py:2802] Sending done sending signal for request chatcmpl-32383363396237352d396332652d3439 to 7.150.12.205:26013
+(Worker_TP2_EP2 pid=496125) INFO 06-24 16:40:19 [mooncake_layerwise_prefill_then_decode_connector.py:2802] Sending done sending signal for request chatcmpl-32383363396237352d396332652d3439 to 7.150.12.205:26012
+(Worker_TP0_EP0 pid=495982) INFO 06-24 16:40:19 [mooncake_layerwise_prefill_then_decode_connector.py:2802] Sending done sending signal for request chatcmpl-32383363396237352d396332652d3439 to 7.150.12.205:26010
+(APIServer pid=494121) INFO 06-24 16:40:19 [param_check.py:373] [End ] request_id: chatcmpl-32383363396237352d396332652d3439
+(APIServer pid=494121) INFO:     7.150.12.205:45532 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:33738 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:33738 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:58706 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO 06-24 16:40:28 [loggers.py:259] Engine 000: Avg prompt throughput: 367.1 tokens/s, Avg generation throughput: 0.1 tokens/s, Running: 0 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.0%, Prefix cache hit rate: 0.0%, External prefix cache hit rate: 0.0%, MM cache hit rate: 66.7%
+(APIServer pid=494121) INFO:     7.150.12.205:58706 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:58706 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO:     7.150.12.205:44630 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=494121) INFO 06-24 16:40:38 [loggers.py:259] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 0.0 tokens/s, Running: 0 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.0%, Prefix cache hit rate: 0.0%, External prefix cache hit rate: 0.0%, MM cache hit rate: 66.7%
+(APIServer pid=494121) INFO:     7.150.12.205:44630 - "GET /metrics HTTP/1.1" 200 OK
+
+下面是curl的结果
+(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 wenxuan]# curl http://7.150.12.205:19800/v1/chat/completions -H "Content-Type: application/json" -d '{
+  "messages":[{
+    "role":"user",
+    "content":[
+      {"type": "image_url", "image_url": {"url": "file:///data/wenxuan/book_en_6.Complex.Analysis.-.Elias.M..Stein_page_205.png"}},
+      {"type": "text", "text": "这是什么"}
+    ]
+  }],
+  "model":"'${MODEL}'",
+  "temperature":1.0,
+  "top_p":1.0,
+  "top_k":40,
+  "min_p":0.0,
+  "presence_penalty":2.0,
+  "repetition_penalty":1.0,
+  "max_completion_tokens":1000
+}'
+{"id":"chatcmpl-30616134366539642d656233362d3430","object":"chat.completion","created":1782290094,"model":"qwen3.5","choices":[{"index":0,"message":{"role":"assistant","content":null,"refusal":null,"annotations":null,"audio":null,"function_call":null,"tool_calls":[],"reasoning":" $\\text{Re}(n^{-s}) = \\text{Re}(e^{-(\\sigma+it)\\log n}) = e^{-\\sigma \\log n} \\cos(t \\log n) = n^{-\\sigma} \\cos(t \\log n)$"},"logprobs":null,"finish_reason":"stop","stop_reason":null,"token_ids":null}],"service_tier":null,"system_fingerprint":null,"usage":{"prompt_tokens":3671,"total_tokens":3727,"completion_tokens":56,"prompt_tokens_details":null,"completion_tokens_details":{"reasoning_tokens":0,"audio_tokens":null,"accepted_prediction_tokens":null,"rejected_prediction_tokens":null}},"prompt_logprobs":null,"prompt_token_ids":null,"kv_transfer_params":null}(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 wenxuan]# curl http://7.150.12.205:19800/v1/chat/completions -H "Content-Type: application/json" -d '{
+  "messages":[{
+    "role":"user",
+    "content":[
+      {"type": "image_url", "image_url": {"url": "file:///data/wenxuan/book_en_6.Complex.Analysis.-.Elias.M..Stein_page_205.png"}},
+      {"type": "text", "text": "这是什么"}
+    ]
+  }],
+  "model":"'${MODEL}'",
+  "temperature":1.0,
+  "top_p":1.0,
+  "top_k":40,
+  "min_p":0.0,
+  "presence_penalty":2.0,
+  "repetition_penalty":1.0,
+  "max_completion_tokens":1000
+}'
+{"id":"chatcmpl-32393666353230362d643031372d3438","object":"chat.completion","created":1782290346,"model":"qwen3.5","choices":[{"index":0,"message":{"role":"assistant","content":"\n\n这是一张**数学教材或学术论文的内页截图**，内容属于**解析数论（Analytic Number Theory）**领域，具体讨论的是**黎曼ζ函数（Riemann Zeta Function）** 与**素数定理（Prime Number Theorem）** 的关系。\n\n---\n\n### 📖 页面基本信息：\n\n- **页码**：186\n- **章节标题**：**Chapter 7. THE ZETA FUNCTION AND PRIME NUMBER THEOREM**  \n  → 第7章：ζ函数与素数定理\n- **作者/书籍未标明**，但从风格和排版看，可能是经典教材如：\n  - *Tom M. Apostol, \"Introduction to Analytic Number Theory\"*\n  - 或 *H. M. Edwards, \"Riemann's Zeta Function\"*\n  - 或 *A. Ivić, \"The Riemann Zeta-Function\"*\n\n---\n\n### 🧮 核心内容解析：\n\n#### 1. ζ函数的欧拉乘积公式与对数展开：\n\n从欧拉乘积公式出发：\n\n\\[\n\\zeta(s) = \\prod_p \\frac{1}{1 - p^{-s}}, \\quad \\text{Re}(s) > 1\n\\]\n\n取对数后得到：\n\n\\[\n\\log \\zeta(s) = \\sum_p \\log\\left(\\frac{1}{1 - p^{-s}}\\right) = \\sum_{p,m} \\frac{p^{-ms}}{m}\n\\]\n\n→ 这是将ζ函数的对数展开为关于素数幂的狄利克雷级数。\n\n#### 2. 系数 \\( c_n \\) 的定义：\n\n定义序列 \\( c_n \\)：\n\n\\[\nc_n = \n\\begin{cases}\n\\frac{1}{m}, & \\text{if } n = p^m \\text{ for some prime } p \\text{ and integer } m \\geq 1 \\\\\n0, & \\text{otherwise}\n\\end{cases}\n\\]\n\n于是：\n\n\\[\n\\log \\zeta(s) = \\sum_{n=1}^\\infty c_n n^{-s}\n\\]\n\n→ 这是 ζ 函数对数的**狄利克雷级数表示**，在解析数论中非常重要。\n\n#### 3. 引理 1.4（Lemma 1.4）：\n\n> 若 \\( \\theta \\in \\mathbb{R} \\)，则 \\( 3 + 4\\cos\\theta + \\cos 2\\theta \\geq 0 \\)\n\n证明很简单：\n\n\\[\n3 + 4\\cos\\theta + \\cos 2\\theta = 2(1 + \\cos\\theta)^2 \\geq 0\n\\]\n\n→ 这个不等式是证明**素数定理**的关键技巧之一，用于控制 ζ 函数在临界线附近的震荡行为。\n\n#### 4. 推论 1.5（Corollary 1.5）：\n\n> 若 \\( \\sigma > 1 \\) 且 \\( t \\in \\mathbb{R} \\)，则\n\n\\[\n\\log |\\zeta^3(\\sigma)\\zeta^4(\\sigma + it)\\zeta(\\sigma + 2it)| \\geq 0\n\\]\n\n这个推论是**经典技巧**，用于证明 ζ 函数在直线 Re(s)=1 上没有零点（从而推出素数定理）。\n\n**证明思路简述**：\n\n利用前面得到的展开式：\n\n\\[\n\\log \\zeta(s) = \\sum c_n n^{-s}\n\\]\n\n代入 \\( s = \\sigma, \\sigma+it, \\sigma+2it \\)，并取实部，得到：\n\n\\[\n\\log |\\zeta^3(\\sigma)\\zeta^4(\\sigma + it)\\zeta(\\sigma + 2it)| = \\sum c_n n^{-\\sigma} (3 + 4\\cos(t\\log n) + \\cos(2t\\log n))\n\\]\n\n令 \\( \\theta_n = t \\log n \\)，则括号内就是引理1.4中的表达式 ≥ 0，且 \\( c_n \\geq 0 \\)，所以整个和 ≥ 0。\n\n→ 因此原式对数 ≥ 0 ⇒ 原式 ≥ 1。\n\n---\n\n### 🎯 数学意义：\n\n这个推导是**证明素数定理的标准步骤之一**。通过构造这样一个非负组合，可以推出：\n\n> ζ(s) 在直线 Re(s)","refusal":null,"annotations":null,"audio":null,"function_call":null,"tool_calls":[],"reasoning":" a\n\n"},"logprobs":null,"finish_reason":"length","stop_reason":null,"token_ids":null}],"service_tier":null,"system_fingerprint":null,"usage":{"prompt_tokens":3671,"total_tokens":4671,"completion_tokens":1000,"prompt_tokens_details":null,"completion_tokens_details":{"reasoning_tokens":0,"audio_tokens":null,"accepted_prediction_tokens":null,"rejected_prediction_tokens":null}},"prompt_logprobs":null,"prompt_token_ids":null,"kv_transfer_params":null}(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 wenxuan]# curl http://7.150.12.205:19800/v1/chat/completions -H "Content-Type: application/json" -d '{
+  "messages":[{
+    "role":"user",
+    "content":[
+      {"type": "image_url", "image_url": {"url": "file:///data/wenxuan/book_en_6.Complex.Analysis.-.Elias.M..Stein_page_205.png"}},
+      {"type": "text", "text": "这是什么"}
+    ]
+  }],
+  "model":"'${MODEL}'",
+  "temperature":1.0,
+  "top_p":1.0,
+  "top_k":40,
+  "min_p":0.0,
+  "presence_penalty":2.0,
+  "repetition_penalty":1.0,
+  "max_completion_tokens":1000
+}'
+{"id":"chatcmpl-32383363396237352d396332652d3439","object":"chat.completion","created":1782290419,"model":"qwen3.5","choices":[{"index":0,"message":{"role":"assistant","content":null,"refusal":null,"annotations":null,"audio":null,"function_call":null,"tool_calls":[],"reasoning":" (1)\n\n[1] \t\"THE ZETA FUNCTION AND PRIME NUMBER THEOREM\""},"logprobs":null,"finish_reason":"stop","stop_reason":null,"token_ids":null}],"service_tier":null,"system_fingerprint":null,"usage":{"prompt_tokens":3671,"total_tokens":3694,"completion_tokens":23,"prompt_tokens_details":null,"completion_tokens_details":{"reasoning_tokens":0,"audio_tokens":null,"accepted_prediction_tokens":null,"rejected_prediction_tokens":null}},"prompt_logprobs":null,"prompt_token_ids":null,"kv_transfer_params":null}(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 wenxuan]# 
