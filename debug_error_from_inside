@@ -1,2 +1,294 @@
-SP=/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm
-grep -rnE "use_data_parallel|run_dp_sharded" $SP/model_executor/
+(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 wenxuan]# SP=/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm
+(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 wenxuan]# grep -rnE "use_data_parallel|run_dp_sharded" $SP/model_executor/
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/lfm2_siglip2.py:29:    is_vit_use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/lfm2_siglip2.py:178:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/lfm2_siglip2.py:179:        tp_size = 1 if use_data_parallel else get_tensor_model_parallel_world_size()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/lfm2_siglip2.py:189:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/lfm2_siglip2.py:196:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/lfm2_siglip2.py:249:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/lfm2_siglip2.py:255:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/lfm2_siglip2.py:262:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/interns1_pro.py:573:        self.use_data_parallel = multimodal_config.mm_encoder_tp_mode == "data"
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/internvl.py:565:        self.use_data_parallel = multimodal_config.mm_encoder_tp_mode == "data"
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/opencua.py:234:        self.use_data_parallel = multimodal_config.mm_encoder_tp_mode == "data"
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/kimi_k25.py:329:        self.use_data_parallel = (
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/kimi_k25.py:347:                use_data_parallel=self.use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/kimi_k25.py:416:            use_data_parallel=self.use_data_parallel,
+Binary file /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/__pycache__/lfm2_vl.cpython-311.pyc matches
+Binary file /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/__pycache__/qwen3_vl.cpython-311.pyc matches
+Binary file /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/__pycache__/step3_vl.cpython-311.pyc matches
+Binary file /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/__pycache__/moonvit.cpython-311.pyc matches
+Binary file /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/__pycache__/keye.cpython-311.pyc matches
+Binary file /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/__pycache__/step_vl.cpython-311.pyc matches
+Binary file /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/__pycache__/clip.cpython-311.pyc matches
+Binary file /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/__pycache__/dots_ocr.cpython-311.pyc matches
+Binary file /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/__pycache__/kimi_k25.cpython-311.pyc matches
+Binary file /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/__pycache__/qwen3_5.cpython-311.pyc matches
+Binary file /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/__pycache__/minicpmv.cpython-311.pyc matches
+Binary file /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/__pycache__/interns1_pro.cpython-311.pyc matches
+Binary file /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/__pycache__/intern_vit.cpython-311.pyc matches
+Binary file /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/__pycache__/siglip2navit.cpython-311.pyc matches
+Binary file /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/__pycache__/pixtral.cpython-311.pyc matches
+Binary file /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/__pycache__/isaac.cpython-311.pyc matches
+Binary file /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/__pycache__/qwen2_vl.cpython-311.pyc matches
+Binary file /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/__pycache__/mllama4.cpython-311.pyc matches
+Binary file /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/__pycache__/idefics2_vision_model.cpython-311.pyc matches
+Binary file /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/__pycache__/kimi_vl.cpython-311.pyc matches
+Binary file /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/__pycache__/hunyuan_vision.cpython-311.pyc matches
+Binary file /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/__pycache__/eagle2_5_vl.cpython-311.pyc matches
+Binary file /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/__pycache__/lfm2_siglip2.cpython-311.pyc matches
+Binary file /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/__pycache__/glm_ocr.cpython-311.pyc matches
+Binary file /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/__pycache__/siglip.cpython-311.pyc matches
+Binary file /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/__pycache__/qwen2_5_vl.cpython-311.pyc matches
+Binary file /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/__pycache__/vision.cpython-311.pyc matches
+Binary file /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/__pycache__/opencua.cpython-311.pyc matches
+Binary file /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/__pycache__/kimi_k25_vit.cpython-311.pyc matches
+Binary file /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/__pycache__/internvl.cpython-311.pyc matches
+Binary file /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/__pycache__/qwen3_vl_moe.cpython-311.pyc matches
+Binary file /home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/__pycache__/glm4_1v.cpython-311.pyc matches
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/step3_vl.py:56:from .vision import is_vit_use_data_parallel, run_dp_sharded_vision_model
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/step3_vl.py:307:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/step3_vl.py:308:        tp_size = 1 if use_data_parallel else get_tensor_model_parallel_world_size()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/step3_vl.py:321:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/step3_vl.py:329:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/step3_vl.py:369:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/step3_vl.py:376:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/step3_vl.py:384:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/step3_vl.py:464:        self.use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/step3_vl.py:478:        if self.use_data_parallel:
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/step3_vl.py:479:            hidden_states = run_dp_sharded_vision_model(hidden_states, self.transformer)
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/step3_vl.py:514:        self.use_data_parallel = multimodal_config.mm_encoder_tp_mode == "data"
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/kimi_k25_vit.py:34:    is_vit_use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/kimi_k25_vit.py:35:    run_dp_sharded_mrope_vision_model,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/kimi_k25_vit.py:310:        use_data_parallel: bool = False,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/kimi_k25_vit.py:314:        self.use_data_parallel = use_data_parallel
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/kimi_k25_vit.py:321:            disable_tp=self.use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/kimi_k25_vit.py:329:            disable_tp=self.use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/kimi_k25_vit.py:355:        self.use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/kimi_k25_vit.py:361:            1 if self.use_data_parallel else get_tensor_model_parallel_world_size()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/kimi_k25_vit.py:372:            use_data_parallel=self.use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/kimi_k25_vit.py:382:            disable_tp=self.use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/kimi_k25_vit.py:390:            disable_tp=self.use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/kimi_k25_vit.py:562:        self.config = config  # Required for run_dp_sharded_mrope_vision_model
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/kimi_k25_vit.py:633:    use_data_parallel: bool,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/kimi_k25_vit.py:640:    if use_data_parallel:
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/kimi_k25_vit.py:642:        vt_outputs = run_dp_sharded_mrope_vision_model(
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/kimi_k25_vit.py:660:        use_data_parallel: bool = False,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/kimi_k25_vit.py:665:        self.use_data_parallel = use_data_parallel
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/step_vl.py:27:from .vision import is_vit_use_data_parallel, run_dp_sharded_vision_model
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/step_vl.py:156:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/step_vl.py:163:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/step_vl.py:172:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/step_vl.py:199:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/step_vl.py:200:        tp_size = 1 if use_data_parallel else get_tensor_model_parallel_world_size()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/step_vl.py:213:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/step_vl.py:221:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/step_vl.py:504:        self.use_data_parallel = multimodal_config.mm_encoder_tp_mode == "data"
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/step_vl.py:520:                disable_tp=self.use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/step_vl.py:539:        if self.use_data_parallel:
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/step_vl.py:540:            return run_dp_sharded_vision_model(input_tensor, self.vision_model)
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/moonvit.py:64:from vllm.model_executor.models.vision import is_vit_use_data_parallel
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/moonvit.py:314:        self.use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/moonvit.py:320:            disable_tp=self.use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/moonvit.py:327:            disable_tp=self.use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/moonvit.py:350:        self.use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/moonvit.py:356:            1 if self.use_data_parallel else get_tensor_model_parallel_world_size()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/moonvit.py:374:            disable_tp=self.use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/moonvit.py:381:            disable_tp=self.use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/isaac.py:75:from .vision import is_vit_use_data_parallel
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/isaac.py:488:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/isaac.py:491:            if use_data_parallel
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/isaac.py:510:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/isaac.py:517:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/glm_ocr.py:79:    is_vit_use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/glm_ocr.py:100:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/glm_ocr.py:102:            1 if use_data_parallel else get_tensor_model_parallel_world_size()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/glm_ocr.py:105:            0 if use_data_parallel else parallel_state.get_tensor_model_parallel_rank()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/glm_ocr.py:128:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/glm_ocr.py:136:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/clip.py:65:    is_vit_use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/clip.py:377:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/clip.py:384:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/clip.py:392:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/clip.py:396:            1 if use_data_parallel else get_tensor_model_parallel_world_size()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/clip.py:439:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/clip.py:448:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/clip.py:456:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/vision.py:127:def is_vit_use_data_parallel():
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/vision.py:277:def run_dp_sharded_vision_model(
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/vision.py:379:def run_dp_sharded_mrope_vision_model(
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen3_vl_moe.py:412:        self.use_data_parallel = multimodal_config.mm_encoder_tp_mode == "data"
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/intern_vit.py:41:from .vision import is_vit_use_data_parallel, run_dp_sharded_vision_model
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/intern_vit.py:169:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/intern_vit.py:172:        tp_size = 1 if use_data_parallel else get_tensor_model_parallel_world_size()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/intern_vit.py:173:        use_data_parallel = (
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/intern_vit.py:174:            use_data_parallel or (self.num_heads + num_dummy_heads) % tp_size != 0
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/intern_vit.py:176:        self.tp_size = 1 if use_data_parallel else tp_size
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/intern_vit.py:177:        self.tp_rank = 0 if use_data_parallel else get_tensor_model_parallel_rank()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/intern_vit.py:193:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/intern_vit.py:215:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/intern_vit.py:261:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/intern_vit.py:268:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/intern_vit.py:276:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/intern_vit.py:410:        self.use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/intern_vit.py:440:        if self.use_data_parallel:
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/intern_vit.py:441:            encoder_outputs = run_dp_sharded_vision_model(hidden_states, self.encoder)
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/kimi_vl.py:84:from .vision import is_vit_use_data_parallel, run_dp_sharded_mrope_vision_model
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/kimi_vl.py:101:        self.use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/kimi_vl.py:314:        self.use_data_parallel = (
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/kimi_vl.py:364:        if self.use_data_parallel:
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/kimi_vl.py:365:            return run_dp_sharded_mrope_vision_model(
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/siglip2navit.py:32:from .vision import is_vit_use_data_parallel
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/siglip2navit.py:198:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/siglip2navit.py:205:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/siglip2navit.py:212:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/siglip2navit.py:216:            1 if use_data_parallel else get_tensor_model_parallel_world_size()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/siglip2navit.py:288:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/siglip2navit.py:295:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/siglip2navit.py:302:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/dots_ocr.py:63:from .vision import is_vit_use_data_parallel, run_dp_sharded_mrope_vision_model
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/dots_ocr.py:187:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/dots_ocr.py:202:                disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/dots_ocr.py:211:                disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/dots_ocr.py:235:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/dots_ocr.py:239:            1 if use_data_parallel else get_tensor_model_parallel_world_size()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/dots_ocr.py:241:        self.tp_rank = 0 if use_data_parallel else get_tensor_model_parallel_rank()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/dots_ocr.py:254:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/dots_ocr.py:262:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/dots_ocr.py:332:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/dots_ocr.py:340:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/dots_ocr.py:348:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/dots_ocr.py:657:        self.use_data_parallel = multimodal_config.mm_encoder_tp_mode == "data"
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/dots_ocr.py:719:            if self.use_data_parallel:
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/dots_ocr.py:720:                return run_dp_sharded_mrope_vision_model(
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/pixtral.py:84:    is_vit_use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/pixtral.py:1007:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/pixtral.py:1016:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/pixtral.py:1024:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/pixtral.py:1051:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/pixtral.py:1059:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/pixtral.py:1067:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/pixtral.py:1071:            1 if use_data_parallel else get_tensor_model_parallel_world_size()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen3_vl.py:138:    is_vit_use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen3_vl.py:139:    run_dp_sharded_mrope_vision_model,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen3_vl.py:189:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen3_vl.py:197:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen3_vl.py:206:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen3_vl.py:281:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen3_vl.py:297:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen3_vl.py:306:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen3_vl.py:344:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen3_vl.py:347:            if use_data_parallel
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen3_vl.py:1478:        self.use_data_parallel = multimodal_config.mm_encoder_tp_mode == "data"
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen3_vl.py:1813:            if self.use_data_parallel:
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen3_vl.py:1814:                return run_dp_sharded_mrope_vision_model(
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen3_vl.py:1837:            if self.use_data_parallel:
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen3_vl.py:1839:                return run_dp_sharded_mrope_vision_model(
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/idefics2_vision_model.py:43:from .vision import is_vit_use_data_parallel, run_dp_sharded_vision_model
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/idefics2_vision_model.py:132:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/idefics2_vision_model.py:145:        tp_size = 1 if use_data_parallel else get_tensor_model_parallel_world_size()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/idefics2_vision_model.py:155:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/idefics2_vision_model.py:163:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/idefics2_vision_model.py:226:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/idefics2_vision_model.py:233:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/idefics2_vision_model.py:241:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/idefics2_vision_model.py:369:        self.use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/idefics2_vision_model.py:448:        if self.use_data_parallel:
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/idefics2_vision_model.py:449:            encoder_outputs = run_dp_sharded_vision_model(hidden_states, self.encoder)
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/idefics2_vision_model.py:482:                if weight_name not in name or self.use_data_parallel:
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/eagle2_5_vl.py:156:        self.use_data_parallel = multimodal_config.mm_encoder_tp_mode == "data"
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/minicpmv.py:1020:        self.use_data_parallel = multimodal_config.mm_encoder_tp_mode == "data"
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/siglip.py:71:    is_vit_use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/siglip.py:382:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/siglip.py:389:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/siglip.py:397:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/siglip.py:401:            1 if use_data_parallel else get_tensor_model_parallel_world_size()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/siglip.py:443:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/siglip.py:461:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/siglip.py:468:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/mllama4.py:82:from .vision import is_vit_use_data_parallel, run_dp_sharded_vision_model
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/mllama4.py:129:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/mllama4.py:136:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/mllama4.py:144:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/mllama4.py:242:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/mllama4.py:244:            1 if use_data_parallel else get_tensor_model_parallel_world_size()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/mllama4.py:263:        if use_data_parallel:
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/mllama4.py:437:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/mllama4.py:445:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/mllama4.py:751:        self.use_data_parallel = multimodal_config.mm_encoder_tp_mode == "data"
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/mllama4.py:852:        if self.use_data_parallel:
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/mllama4.py:853:            vision_embeddings_flat = run_dp_sharded_vision_model(
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/mllama4.py:1049:        if self.use_data_parallel:
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/mllama4.py:1055:                if weight_name not in name or self.use_data_parallel:
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen3_5.py:593:        self.use_data_parallel = multimodal_config.mm_encoder_tp_mode == "data"
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen3_5.py:817:        self.use_data_parallel = multimodal_config.mm_encoder_tp_mode == "data"
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/lfm2_vl.py:63:from .vision import is_vit_use_data_parallel
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/lfm2_vl.py:483:        self.use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/lfm2_vl.py:649:        self.use_data_parallel = multimodal_config.mm_encoder_tp_mode == "data"
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_5_vl.py:114:    is_vit_use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_5_vl.py:115:    run_dp_sharded_mrope_vision_model,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_5_vl.py:282:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_5_vl.py:289:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_5_vl.py:298:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_5_vl.py:320:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_5_vl.py:323:            if use_data_parallel
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_5_vl.py:342:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_5_vl.py:350:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_5_vl.py:539:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_5_vl.py:553:                disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_5_vl.py:563:                disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_5_vl.py:1125:        self.use_data_parallel = multimodal_config.mm_encoder_tp_mode == "data"
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_5_vl.py:1215:            if self.use_data_parallel:
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_5_vl.py:1216:                return run_dp_sharded_mrope_vision_model(
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_5_vl.py:1269:            if self.use_data_parallel:
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_5_vl.py:1270:                return run_dp_sharded_mrope_vision_model(
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/hunyuan_vision.py:102:from .vision import is_vit_use_data_parallel
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/hunyuan_vision.py:169:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/hunyuan_vision.py:176:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/hunyuan_vision.py:184:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/hunyuan_vision.py:205:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/hunyuan_vision.py:208:            if use_data_parallel
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/hunyuan_vision.py:226:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/hunyuan_vision.py:234:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/hunyuan_vision.py:954:            # TODO: use_data_parallel (split image_embeds in visual)
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/glm4_1v.py:116:    is_vit_use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/glm4_1v.py:117:    run_dp_sharded_mrope_vision_model,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/glm4_1v.py:209:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/glm4_1v.py:216:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/glm4_1v.py:224:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/glm4_1v.py:267:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/glm4_1v.py:269:            1 if use_data_parallel else get_tensor_model_parallel_world_size()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/glm4_1v.py:272:            0 if use_data_parallel else parallel_state.get_tensor_model_parallel_rank()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/glm4_1v.py:292:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/glm4_1v.py:300:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/glm4_1v.py:457:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/glm4_1v.py:466:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/glm4_1v.py:475:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/glm4_1v.py:483:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/glm4_1v.py:1427:        self.use_data_parallel = multimodal_config.mm_encoder_tp_mode == "data"
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/glm4_1v.py:1515:            if self.use_data_parallel:
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/glm4_1v.py:1516:                return run_dp_sharded_mrope_vision_model(
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/glm4_1v.py:1538:            if self.use_data_parallel:
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/glm4_1v.py:1539:                return run_dp_sharded_mrope_vision_model(
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/keye.py:82:from .vision import is_vit_use_data_parallel
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/keye.py:368:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/keye.py:369:        tp_size = 1 if use_data_parallel else get_tensor_model_parallel_world_size()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_vl.py:108:    is_vit_use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_vl.py:109:    run_dp_sharded_mrope_vision_model,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_vl.py:253:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_vl.py:259:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_vl.py:267:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_vl.py:288:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_vl.py:291:            if use_data_parallel
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_vl.py:307:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_vl.py:314:            disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_vl.py:486:        use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_vl.py:499:                    disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_vl.py:508:                    disable_tp=use_data_parallel,
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_vl.py:544:        self.use_data_parallel = is_vit_use_data_parallel()
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_vl.py:1238:        self.use_data_parallel = multimodal_config.mm_encoder_tp_mode == "data"
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_vl.py:1320:            if self.use_data_parallel:
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_vl.py:1321:                return run_dp_sharded_mrope_vision_model(
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_vl.py:1342:            if self.use_data_parallel:
+/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages/vllm/model_executor/models/qwen2_vl.py:1343:                return run_dp_sharded_mrope_vision_model(
+(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 wenxuan]# 
