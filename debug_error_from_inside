@@ -1,3 +1,6 @@
-根因：worker 端的多模态后移做了 TP 卡间图像负载均衡（direct encoder）。0.19 的 Qwen3.5-VL 在视觉编码 embed_multimodal 内部会走 run_dp_sharded——一个要求所有 TP 卡都参与的跨卡集合通信。单图时只有 1 张卡分到图、其余 3 张空卡跳过这一步，参与方对不齐 → 死锁。（0.18 能跑是因为旧版屏蔽该路径的开关生效；0.19 重构后开关失效。）
-
-修复：_encode_local_images 里不再调用会触发 run_dp_sharded 的 embed_multimodal，改为直接调用复制版视觉模型 model.visual 做本地编码（等价于框架的非数据并行分支）。编码步骤从此无任何跨卡通信，空卡跳过也无害；跨卡只保留我们自己那个所有卡都参与的对称 all-gather。改动仅一个函数。
+我觉得最有前途的落地顺序
+先做 MMSpec-style 小基准：拿 Qwen3.5 多模态跑 100-300 条样本，分图片问答、图表、OCR、多轮、长回答，记录 MTP accept rate。
+做 Adaptive MTP：根据视觉 token attention mass、image token span、任务类型或者输出阶段，动态调 num_speculative_tokens。
+如果 P 侧 TTFT 是瓶颈，再做 ASAP 的轻量版：P 侧 length-aware batching + dual-batch interleaving。
+如果你能碰 AscendC/CANN，再挑战 Attention-MoE disaggregation + async dispatch/combine + MoE super kernel。
+FP8 量化是另一个正交方向，这两篇不直接解决 FP8，但它们能告诉你：FP8 之外，系统调度和 speculative 策略仍然有空间。
