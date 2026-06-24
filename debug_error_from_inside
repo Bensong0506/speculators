@@ -1,2 +1,13 @@
-grep -rn "use_data_parallel\|run_dp_sharded" \
-  /home/ma-user/AscendCloud/AscendCloud-LLM/llm_inference/ascend_vllm/vllm-ascend-v0.19.1rc1/vllm_ascend/
+order, counts, loads = get_load_balance_assignment(load_sizes, tp_size)
+order = [int(x) for x in list(order)]
+counts = [int(x) for x in list(counts)]
+loads = [int(x) for x in list(loads)]
+
+# 有空 rank 会让 data 模式的 embed_multimodal 跨卡同步发散 → 退回 slow
+if any(c == 0 for c in counts):
+    if DEBUG:
+        print(f"[P3v4-direct] rank={tp_rank} empty-rank counts={counts}, "
+              f"fallback slow (n_images={n_images}, tp={tp_size})", flush=True)
+    return _phase3v3_slow_path(
+        self, image_features, per_feature_path, per_feature_grid, tp_rank,
+    )
