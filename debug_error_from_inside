@@ -1,15 +1,92 @@
-# 0) 先验图片路径真能解析(决定性):
-head -c 400 $PWD/data/allava/allava_qwen35_distill_100k.jsonl    # 看 image 路径是 /home 还是 /data
-#   若是 /data 而你在 /home:  sed -i 's#/data/wenxuan#/home/wenxuan#g' $PWD/data/allava/allava_qwen35_distill_100k.jsonl
-ls $(grep -o '/home/wenxuan/[^"]*\.\(jpg\|jpeg\|png\)' $PWD/data/allava/allava_qwen35_distill_100k.jsonl | head -1)  # 这张图真存在?
-
-# 1) SMOKE 50 + 强制重建缓存 + wandb:
-ENABLE_DOMINO=1 DOMINO_LOSS_DECAY_GAMMA=4 BLOCK_SIZE=8 \
-NO_RESUME_FROM_CHECKPOINT=1 FORCE_PREPROCESS=1 OUTPUT_DIR=$PWD/output/dflash_domino_smoke \
-LOGGER=wandb WANDB_BASE_URL=http://10.155.156.175:38080 WANDB_PROJECT=speculators RUN_NAME=domino_smoke \
-FINETUNE_FROM=$PWD/output/<你最好的 dflash run>/checkpoints/checkpoint_best \
-MODEL=/home/wenxuan/Qwen3.5-9B \
-USE_ALLAVA=0 DATASET=$PWD/data/allava/allava_qwen35_distill_100k.jsonl MEDIA_ROOT=/home/wenxuan/ALLaVA-4V \
-VLLM_GPUS=0 VLLM_TP=1 VLLM_DP=1 TRAIN_GPUS=4,5,6,7 NUM_TRAIN_GPUS=4 \
-MAX_SAMPLES=50 EPOCHS=1 \
-bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
+                    train/domino_base_acc=0.354, train/domino_final_acc=0.344, epoch=0, lr=1.00e-04, global_step=0                   
+/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
+  result = _VF.gru(
+/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
+  result = _VF.gru(
+/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
+  result = _VF.gru(
+/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
+  result = _VF.gru(
+[02:36:16] INFO     train/domino_lambda_base=0.750, train/loss=0.613, train/full_acc=0.599,                            trainer.py:247
+                    train/position_1_acc=0.900, train/position_2_acc=0.768, train/position_3_acc=0.654,                              
+                    train/position_4_acc=0.574, train/position_5_acc=0.498, train/position_6_acc=0.442,                              
+                    train/position_7_acc=0.353, train/domino_final_loss=1.148, train/domino_base_loss=1.070,                         
+                    train/domino_base_acc=0.357, train/domino_final_acc=0.342, epoch=0, lr=7.50e-05, global_step=1                   
+/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
+  result = _VF.gru(
+/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
+  result = _VF.gru(
+/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
+  result = _VF.gru(
+/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
+  result = _VF.gru(
+[02:36:17] INFO     train/domino_lambda_base=0.500, train/loss=0.496, train/full_acc=0.672,                            trainer.py:247
+                    train/position_1_acc=0.922, train/position_2_acc=0.826, train/position_3_acc=0.742,                              
+                    train/position_4_acc=0.660, train/position_5_acc=0.578, train/position_6_acc=0.513,                              
+                    train/position_7_acc=0.459, train/domino_final_loss=0.930, train/domino_base_loss=0.863,                         
+                    train/domino_base_acc=0.397, train/domino_final_acc=0.387, epoch=0, lr=5.00e-05, global_step=2                   
+/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
+  result = _VF.gru(
+/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
+  result = _VF.gru(
+/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
+  result = _VF.gru(
+/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
+  result = _VF.gru(
+[02:36:18] INFO     train/domino_lambda_base=0.250, train/loss=0.512, train/full_acc=0.659,                            trainer.py:247
+                    train/position_1_acc=0.914, train/position_2_acc=0.801, train/position_3_acc=0.719,                              
+                    train/position_4_acc=0.642, train/position_5_acc=0.585, train/position_6_acc=0.507,                              
+                    train/position_7_acc=0.443, train/domino_final_loss=0.961, train/domino_base_loss=0.887,                         
+                    train/domino_base_acc=0.394, train/domino_final_acc=0.376, epoch=0, lr=2.50e-05, global_step=3                   
+Epoch 0 100% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4/4  [ 0:00:13 < 0:00:00 , 1 it/s ]
+           INFO     Training epoch 1/1 completed                                                                       trainer.py:358
+           INFO     Saving checkpoint to /home/wenxuan/speculators/output/dflash_domino_smoke_ft/checkpoints/0         trainer.py:322
+Writing model shards: 100%|██████████| 1/1 [00:05<00:00,  5.37s/it]
+[02:36:42] INFO     Checkpoint saved to /home/wenxuan/speculators/output/dflash_domino_smoke_ft/checkpoints/0          trainer.py:326
+           INFO     Validation epoch 1/1 started                                                                       trainer.py:373
+/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
+  result = _VF.gru(
+/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
+  result = _VF.gru(
+/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
+  result = _VF.gru(
+/usr/local/lib/python3.12/dist-packages/torch/nn/modules/rnn.py:1449: UserWarning: RNN module weights are not part of single contiguous chunk of memory. This means they need to be compacted at every call, possibly greatly increasing memory usage. To compact weights again call flatten_parameters(). (Triggered internally at /pytorch/aten/src/ATen/native/cudnn/RNN.cpp:1479.)
+  result = _VF.gru(
+Epoch 0 100% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1/1  [ 0:00:03 < 0:00:00 , ? it/s ]
+[02:36:46] INFO     val/domino_lambda_base_epoch=0.00e+00, val/loss_epoch=0.574, val/full_acc_epoch=0.629,             trainer.py:304
+                    val/position_1_acc_epoch=0.901, val/position_2_acc_epoch=0.793, val/position_3_acc_epoch=0.709,                  
+                    val/position_4_acc_epoch=0.606, val/position_5_acc_epoch=0.525, val/position_6_acc_epoch=0.460,                  
+                    val/position_7_acc_epoch=0.405, val/domino_final_loss_epoch=1.078,                                               
+                    val/domino_base_loss_epoch=1.008, val/domino_base_acc_epoch=0.162,                                               
+                    val/domino_final_acc_epoch=0.157, epoch=0                                                                        
+           INFO     Validation epoch 1/1 completed                                                                     trainer.py:375
+           INFO     Updated checkpoint_best -> 0 (loss_epoch=0.574219)                                                 trainer.py:346
+[02:36:46] INFO     Destroyed distributed with local_rank=1, world_size=4                                                 utils.py:54
+[02:36:46] INFO     Destroyed distributed with local_rank=2, world_size=4                                                 utils.py:54
+[02:36:46] INFO     Destroyed distributed with local_rank=3, world_size=4                                                 utils.py:54
+           INFO     Destroyed distributed with local_rank=0, world_size=4                                                 utils.py:54
+wandb: 
+wandb: 🚀 View run domino_smoke at: http://10.155.156.175:38080/aigc/speculators/runs/iabjzqlh
+Done. Checkpoints saved to /home/wenxuan/speculators/output/dflash_domino_smoke_ft/checkpoints/
+Stopping vLLM server...
+335608) INFO:     Application startup complete.
+(ApiServer_0 pid=335605) INFO:     Application startup complete.
+/usr/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 4 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+/usr/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 8 leaked shared_memory objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+:05 [jit_monitor.py:103] Triton kernel JIT compilation during inference: _triton_mrope_forward. This causes a latency spike; consider extending warmup to cover this shape/config.
+INFO 06-25 02:36:50 [serve.py:369] Waiting up to 0 seconds for processes to exit
+(EngineCore_DP1 pid=335602) INFO 06-25 02:36:50 [core.py:1266] Shutdown initiated (timeout=0)
+(EngineCore_DP1 pid=335602) INFO 06-25 02:36:50 [core.py:1289] Shutdown complete
+(EngineCore_DP2 pid=335603) INFO 06-25 02:36:50 [core.py:1266] Shutdown initiated (timeout=0)
+(EngineCore_DP2 pid=335603) INFO 06-25 02:36:50 [core.py:1289] Shutdown complete
+(Worker pid=337228) INFO 06-25 02:36:50 [multiproc_executor.py:872] WorkerProc shutting down.
+(Worker pid=337225) INFO 06-25 02:36:50 [multiproc_executor.py:872] WorkerProc shutting down.
+(EngineCore_DP0 pid=335601) INFO 06-25 02:36:50 [core.py:1266] Shutdown initiated (timeout=0)
+(EngineCore_DP0 pid=335601) INFO 06-25 02:36:50 [core.py:1289] Shutdown complete
+(Worker pid=337223) INFO 06-25 02:36:50 [multiproc_executor.py:775] Parent process exited, terminating worker queues
+(EngineCore_DP3 pid=335604) INFO 06-25 02:36:50 [core.py:1266] Shutdown initiated (timeout=0)
+(EngineCore_DP3 pid=335604) INFO 06-25 02:36:50 [core.py:1289] Shutdown complete
+(Worker pid=337223) INFO 06-25 02:36:50 [multiproc_executor.py:872] WorkerProc shutting down.
+(Worker pid=337224) INFO 06-25 02:36:50 [multiproc_executor.py:872] WorkerProc shutting down.
