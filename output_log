@@ -1,10 +1,294 @@
-python -c "from mooncake.engine import TransferEngine as T; print([m for m in dir(T) if any(k in m.lower() for k in ('transfer','read','write','register'))])"
+(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 kv_p2p]# python -c "from mooncake.engine import TransferEngine as T; print([m for m in dir(T) if any(k in m.lower() for k in ('transfer','read','write','register'))])"
+['TransferOpcode', 'batch_register_memory', 'batch_transfer_async', 'batch_transfer_async_read', 'batch_transfer_async_write', 'batch_transfer_sync', 'batch_transfer_sync_read', 'batch_transfer_sync_write', 'batch_unregister_memory', 'get_batch_transfer_status', 'read_bytes_from_buffer', 'register_memory', 'transfer_check_status', 'transfer_submit_write', 'transfer_sync', 'transfer_sync_read', 'transfer_sync_write', 'unregister_memory', 'write_bytes_to_buffer']
+corrupted size vs. prev_size
+Aborted (core dumped)
+(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 kv_p2p]# 
+(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 kv_p2p]# F=/home/ma-user/AscendCloud/AscendCloud-LLM/llm_inference/ascend_vllm/ascend_vllm/distributed/kv_transfer/kv_p2p/mooncake_layerwise_prefill_then_decode_connector.py
+(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 kv_p2p]# 
+(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 kv_p2p]# sed -n '1,30p'      $F   # ① global_te 从哪来的（import/定义）
+# SPDX-License-Identifier: Apache-2.0
+import contextlib
+import copy
+import logging
+import math
+import os
+import queue
+import random
+import sys
+import threading
+import time
+from collections import defaultdict, deque
+from collections.abc import Callable, Iterator
+from concurrent.futures import Future, ThreadPoolExecutor
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any
 
-F=/home/ma-user/AscendCloud/AscendCloud-LLM/llm_inference/ascend_vllm/ascend_vllm/distributed/kv_transfer/kv_p2p/mooncake_layerwise_prefill_then_decode_connector.py
+import msgspec
+import torch
+import torch_npu
+import zmq
+import httpx
+from mooncake.engine import TransferEngine  # type: ignore
+from vllm.config import VllmConfig
+from vllm.distributed import get_pcp_group
+from vllm.distributed.kv_transfer.kv_connector.v1.base import (
+    KVConnectorBase_V1,
+    KVConnectorMetadata,
+    KVConnectorRole,
+    SupportsHMA,
+(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 kv_p2p]# sed -n '1695,1720p' $F   # ② 引擎获取：get_transfer_engine + get_rpc_port
+        self.use_attn_mamba_hybrid = False
+        if self.use_mla:
+            self.total_num_kv_heads = 1
+        else:
+            self.total_num_kv_heads = self.vllm_config.model_config.get_total_num_kv_heads()
 
-sed -n '1,30p'      $F   # ① global_te 从哪来的（import/定义）
-sed -n '1695,1720p' $F   # ② 引擎获取：get_transfer_engine + get_rpc_port
-sed -n '1830,1850p' $F   # ③ register_memory 上下文
-sed -n '1940,1975p' $F   # ④ register_buffer + te_rpc_port 怎么发给对端
-sed -n '700,795p'   $F   # ⑤ handle_transfer + batch_transfer_sync_write（搬数据本体）
-sed -n '2620,2690p' $F   # ⑥ session/link 怎么建（"create link to device" 那段）+ 收对端 te_rpc_port
+        # Handshake base port
+        self.side_channel_port = (
+            vllm_config.kv_transfer_config.kv_port
+            + vllm_config.parallel_config.data_parallel_rank * vllm_config.parallel_config.tensor_parallel_size
+        )
+        self.handshake_port = self.side_channel_port + self.tp_rank
+        self.sockets: dict = {}
+        logger.info("Initializing Mooncake work %s", engine_id)
+        self.engine = global_te.get_transfer_engine(self.side_channel_host, device_name=None)
+        self.te_rpc_port = self.engine.get_rpc_port()
+
+        # Background thread for sending or receiving KV caches.
+        self.kv_recv_layer_thread: KVCacheRecvingLayerThread | None = None
+        self.kv_send_layer_thread: KVCacheSendingLayerThread | None = None
+
+        self.block_size: list[int] = [spec.block_size for spec in self.kv_cache_specs]
+        self.kernel_block_size_scale: list[int] = [1 for _ in range(self.num_kv_cache_groups)]
+        self.layer_metadata: dict[str, LayerMetadata] = {}
+        self.attn_resharding_group_idx = set[int]()
+
+(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 kv_p2p]# sed -n '1830,1850p' $F   # ③ register_memory 上下文
+                k_dtype = first_k_cache.dtype
+                v_dtype = first_v_cache.dtype
+            self.k_buffer = torch.zeros(first_k_cache.numel() + alignment, dtype=k_dtype, device=first_k_cache.device)
+            self.k_buffer = align_memory(self.k_buffer, alignment)[: first_k_cache.numel()].view(
+                -1, first_k_cache.shape[-1]
+            )
+            self.v_buffer = torch.zeros(first_v_cache.numel() + alignment, dtype=v_dtype, device=first_k_cache.device)
+            self.v_buffer = align_memory(self.v_buffer, alignment)[: first_v_cache.numel()].view(
+                -1, first_v_cache.shape[-1]
+            )
+        for tensor in (self.k_buffer, self.v_buffer):
+            if tensor.data_ptr() % alignment != 0:
+                raise RuntimeError("The address of the registered kv cache should be aligned to 2M")
+            ret_value = self.engine.register_memory(tensor.data_ptr(), tensor.numel() * tensor.element_size())
+            logger.info("Register memory buffer for transfer, buffer size:%s", tensor.numel() * tensor.element_size())
+            if ret_value != 0:
+                raise RuntimeError("Mooncake memory registration failed. ")
+
+    def get_kv_caches_type(self, layer2group_ids):
+        use_mamba, use_attn = False, False
+        conv_total_padding_size = 0
+(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 kv_p2p]# sed -n '1940,1975p' $F   # ④ register_buffer + te_rpc_port 怎么发给对端
+                kv_cache_tuple = [kv_cache_tuple]
+            layer_kv_group_id = layer2group_ids[layer_name]
+            layer_kv_cache_spec = kv_cache_groups[layer_kv_group_id].kv_cache_spec
+            if isinstance(layer_kv_cache_spec, UniformTypeKVCacheSpecs):
+                layer_kv_cache_spec = layer_kv_cache_spec.kv_cache_specs[layer_name]
+            if (
+                (self.pd_head_ratio > 1 and (isinstance(layer_kv_cache_spec, (FullAttentionSpec, SlidingWindowSpec))))
+                or self.enable_kv_quant
+                or self.enable_c8_quant
+            ):
+                self.attn_resharding_group_idx.add(layer_kv_group_id)
+                if use_kv_buffer is False:
+                    use_kv_buffer = True
+                    kv_buffer = kv_cache_tuple
+            self.get_single_layer_meta(layer_name, kv_cache_tuple, layer2group_ids, layer_kv_group_id, ptrs, lengths)
+
+        if self.use_attn_mamba_hybrid:
+            self.handle_attn_mamba_hybrid(conv_total_padding_size, ptrs, lengths)
+
+        global_te.register_buffer(ptrs, lengths)
+        if use_kv_buffer:
+            self.create_kv_buffer(kv_buffer)
+
+        self.create_layer_index_to_name(kv_caches)
+
+        # After KV Caches registered, start the sending or receiving thread.
+        metadata = MooncakeAgentMetadata(
+            te_rpc_port=self.te_rpc_port,
+            layer_metadata=self.layer_metadata,
+        )
+        if self.vllm_config.kv_transfer_config.is_kv_producer:
+            self.create_kv_send_layer_thread()
+
+        if self.vllm_config.kv_transfer_config.is_kv_consumer:
+            self.create_kv_recv_layer_thread(metadata)
+
+(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 kv_p2p]# sed -n '700,795p'   $F   # ⑤ handle_transfer + batch_transfer_sync_write（搬数 据本体）
+                            + block_len * ((self.tp_rank // self.num_head_replica) % self.pd_head_ratio)
+                        )
+                        src_list.append(src)
+                        dst_list.append(dst)
+                        length_list.append(block_len)
+        return (src_list, dst_list, length_list)
+
+    def handle_pd_head_ratio(self, key, value):
+        with npu_stream_switch(self.resharding_stream):
+            key = key.view(-1, key.shape[-1])  # type:ignore
+            value = value.view(-1, key.shape[-1])  # type:ignore
+            self.k_buffer[: key.shape[0]].copy_(key)  # [:4, 128] ->
+            self.v_buffer[: value.shape[0]].copy_(value)
+
+    def handle_quant_cache(self, send_task):
+        with npu_stream_switch(self.resharding_stream):
+            key_quant = send_task.k_quant_cache
+            key_quant = key_quant.view(-1, key_quant.shape[-1])  # type:ignore
+            self.k_buffer[: key_quant.shape[0]].copy_(key_quant)
+            value_quant = send_task.v_quant_cache
+            value_quant = value_quant.view(-1, value_quant.shape[-1])  # type:ignore
+            self.v_buffer[: value_quant.shape[0]].copy_(value_quant)
+
+    def handle_transfer(self, send_task, session_id, transfer_meta):
+        if len(transfer_meta.src) <= 0:
+            return
+        req_start_time = time.perf_counter()
+        ret = self.engine.batch_transfer_sync_write(
+            session_id, transfer_meta.src, transfer_meta.dst, transfer_meta.length
+        )
+        if ret < 0:
+            for req_id in transfer_meta.req_ids:
+                req_meta = send_task.send_request[req_id]
+                req_meta.req_failed = True
+                self.params_recv_thread.set_request_failed(get_external_request_id(req_id))
+            logger.error(
+                f"Mooncake transfer failed for send requests {transfer_meta.req_ids} "
+                f"kv cache to {session_id}, ret: {ret}"
+            )
+        else:
+            req_end_time = time.perf_counter()
+            total_transfer_size = sum(transfer_meta.length) / 1024
+            req_transfer_elapsed = (req_end_time - req_start_time) * 1000
+            logger.debug(
+                "Layer%d KV cache transfer task %dKB to remote_session_id [%s] took %.3f ms.",
+                send_task.layer_idx,
+                total_transfer_size,
+                session_id,
+                req_transfer_elapsed,
+            )
+
+    def _transfer_kv_cache(self, send_task: SendTask):
+        layer_name = send_task.layer_name
+        layer_group_idx = self.layer_metadata[layer_name].tensor_group_idx[0]
+        key = send_task.k_cache
+        value = send_task.v_cache
+        if self.pd_head_ratio > 1 and key is not None and value is not None:
+            self.handle_pd_head_ratio(key, value)
+        if send_task.k_quant_cache is not None:
+            self.handle_quant_cache(send_task)
+
+        # Merge transmission tasks of the same session
+        session_meta: dict[str, TransferMeta] = {}
+        for req_id, req_meta in send_task.send_request.items():
+            if req_meta.req_failed:
+                # 如果请求失败，则跳过kv cache transfer
+                continue
+            session_id = f"{req_meta.remote_host}:{req_meta.remote_te_rpc_port}"
+            if session_id not in session_meta:
+                session_meta[session_id] = TransferMeta(src=[], dst=[], length=[], req_ids=[])
+
+            (src_list, dst_list, length_list) = self.get_transfer_meta(send_task, req_id, req_meta, layer_group_idx)
+
+            session_meta[session_id].src.extend(src_list)
+            session_meta[session_id].dst.extend(dst_list)
+            session_meta[session_id].length.extend(length_list)
+            session_meta[session_id].req_ids.append(req_id)
+
+        if send_task.k_quant_cache is not None:
+            self.resharding_stream.synchronize()
+        elif self.pd_head_ratio == 1:
+            """
+            Note: Due to a bug in ADXL, calling current_event.synchronize() may occasionally hang.
+            This issue will be fixed in CANN version 8.5.rc1.
+            You can manually build the master branch of the project at https://gitcode.com/cann/hixl
+            to resolve this issue before the 8.5.RC1 release.
+            """
+            send_task.wait_event.synchronize()  # type:ignore
+        elif self.pd_head_ratio > 1:
+            self.resharding_stream.synchronize()
+
+        for session_id, transfer_meta in session_meta.items():
+            self.handle_transfer(send_task, session_id, transfer_meta)
+
+        # 发送最终done或failed signal
+        if send_task.layer_idx == (self.total_layers - 1):
+(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 kv_p2p]# sed -n '2620,2690p' $F   # ⑥ session/link 怎么建（"create link to device" 那段 ）+ 收对端 te_rpc_port
+            sock.setsockopt(
+                zmq.SNDTIMEO,  # type: ignore
+                int(self.timeout * 1000),
+            )
+            self.remote_poller.register(sock, zmq.POLLIN)  # type: ignore
+            return sock
+
+    def update_decoder_info(self, req_id, req_meta: ReqMeta):
+        if (
+            req_meta.remote_engine_id not in self.remote_layer_metadata
+            or req_meta.remote_port not in self.remote_layer_metadata[req_meta.remote_engine_id]
+        ):
+            try:
+                encoded_data = self.encoder.encode((GET_META_MSG, req_id))
+                sock = self._get_remote_socket(req_meta.remote_host, req_meta.remote_port)
+                path = f"{req_meta.remote_host}:{req_meta.remote_port}"
+                ensure_zmq_send(sock, encoded_data, path)
+                metadata_bytes = ensure_zmq_recv(sock, self.remote_poller, path)
+                agent_meta: MooncakeAgentMetadata = self.decoder.decode(metadata_bytes)
+            except Exception as e:
+                logger.error(
+                    "Query to port and kv base addr for request %s from %s:%s fail with error: %s",
+                    req_id,
+                    req_meta.remote_host,
+                    req_meta.remote_port,
+                    e,
+                )
+                raise e
+            if req_meta.remote_engine_id == self.engine_id:
+                raise RuntimeError(
+                    f"Conflict engine id {req_meta.remote_engine_id} with local engine id {self.local_engine_id}."
+                )
+            self.remote_layer_metadata[req_meta.remote_engine_id][req_meta.remote_port] = agent_meta.layer_metadata
+            self.remote_te_port[req_meta.remote_engine_id][req_meta.remote_port] = agent_meta.te_rpc_port
+            logger.debug(
+                "Query to port and kv base addr for request %s from %s:%s success "
+                "agent_meta.layer_metadata=%r agent_meta.te_rpc_port=%r",
+                req_id,
+                req_meta.remote_host,
+                req_meta.remote_port,
+                agent_meta.layer_metadata,
+                agent_meta.te_rpc_port,
+            )
+            if self.pd_head_ratio > 1:
+                # for tp inequal, pre-create link to prevent alltoall out of memory
+                session_id = f"{req_meta.remote_host}:{agent_meta.te_rpc_port}"
+                first_layer_name = next(iter(self.layer_metadata.keys()))
+                ret = self.engine.batch_transfer_sync_write(
+                    session_id,
+                    [self.layer_metadata[first_layer_name].kv_caches_base_addr[0]],
+                    [agent_meta.layer_metadata[first_layer_name].kv_caches_base_addr[0]],
+                    [128],
+                )
+                if ret < 0:
+                    logger.error("Mooncake transfer failed to create link to device %s", session_id)
+        req_meta.remote_te_rpc_port = self.remote_te_port[req_meta.remote_engine_id][req_meta.remote_port]
+        req_meta.remote_layer_metadata = self.remote_layer_metadata[req_meta.remote_engine_id][req_meta.remote_port]
+        return req_meta
+
+    def send_token_and_done_or_failed_signal(self, req_id, req_meta, group_idx, success=True):
+        if not success:
+            self.send_failed_signal(req_id, req_meta, group_idx)
+            return
+        if REUSE_PREFILLED_TOKENS:
+            self.get_send_done_req(req_id, req_meta, group_idx)
+            return
+        self.send_done_send_signal(req_id, req_meta, group_idx)
+
+    def get_send_done_req(self, req_id, req_meta, group_idx):
+        if self.tp_rank != 0:
+            self.send_done_send_signal(req_id, req_meta, group_idx)
+(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 kv_p2p]# 
