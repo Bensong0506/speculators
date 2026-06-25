@@ -1,4 +1,5 @@
-python -c "from mooncake.store import MooncakeDistributedStore; print('store OK')" 2>&1 | tail -1
-pip show mooncake-transfer-engine 2>/dev/null | grep -E "Name|Version"
-ps -ef | grep -iE "mooncake.*(master|store)" | grep -v grep
-env | grep -iE "MOONCAKE|MC_STORE"
+(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 wenxuan]# python -c "from mooncake.store import MooncakeDistributedStore; print('store OK')" 2>&1 | tail -1
+.corrupted size vs. prev_size
+(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 wenxuan]# pip show mooncake-transfer-engine 2>/dev/null | grep -E "Name|Version"
+(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 wenxuan]# ps -ef | grep -iE "mooncake.*(master|store)" | grep -v grep
+(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 wenxuan]# env | grep -iE "MOONCAKE|MC_STORE".
