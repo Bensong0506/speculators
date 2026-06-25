@@ -1,8 +1,53 @@
-# 整个 kv_transfer 目录结构（看有没有单独的 engine 包装类）
-ls -R $KV
+(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 kv_p2p]# # 整个 kv_transfer 目录结构（看有没有单独的 engine 包装类）
+(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 kv_p2p]# ls -R $KV
+.:
+mooncake_layerwise_prefill_then_decode_connector.py  __pycache__
 
-# 找 engine 的导入、初始化、注册、传输调用
-grep -rnE "import mooncake|from mooncake|TransferEngine|ascend_transport|ascend_direct" $KV
-grep -rnE "def initialize|\.initialize\(|register_memory|register_buffer|register\(" $KV
-grep -rnE "transfer_sync|transfer_async|batch_transfer|\.read\(|\.write\(|TransferOpcode|OpCode|READ|WRITE" $KV
-grep -rnE "local_hostname|get_local_ip|host_name|session_id|segment|rpc_port|device_name|protocol" $KV
+./__pycache__:
+mooncake_layerwise_prefill_then_decode_connector.cpython-311.pyc
+(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 kv_p2p]# 
+(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 kv_p2p]# # 找 engine 的导入、初始化、注册、传输调用
+(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 kv_p2p]# grep -rnE "import mooncake|from mooncake|TransferEngine|ascend_transport|ascend_direct" $KV
+mooncake_layerwise_prefill_then_decode_connector.py:23:from mooncake.engine import TransferEngine  # type: ignore
+mooncake_layerwise_prefill_then_decode_connector.py:170:        engine: TransferEngine,
+mooncake_layerwise_prefill_then_decode_connector.py:1672:        if TransferEngine is None:
+Binary file __pycache__/mooncake_layerwise_prefill_then_decode_connector.cpython-311.pyc matches
+(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 kv_p2p]# grep -rnE "def initialize|\.initialize\(|register_memory|register_buffer|register\(" $KV
+mooncake_layerwise_prefill_then_decode_connector.py:1843:            ret_value = self.engine.register_memory(tensor.data_ptr(), tensor.numel() * tensor.element_size())
+mooncake_layerwise_prefill_then_decode_connector.py:1959:        global_te.register_buffer(ptrs, lengths)
+mooncake_layerwise_prefill_then_decode_connector.py:2624:            self.remote_poller.register(sock, zmq.POLLIN)  # type: ignore
+Binary file __pycache__/mooncake_layerwise_prefill_then_decode_connector.cpython-311.pyc matches
+(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 kv_p2p]# grep -rnE "transfer_sync|transfer_async|batch_transfer|\.read\(|\.write\(|TransferOpcode|OpCode|READ|WRITE" $KV
+mooncake_layerwise_prefill_then_decode_connector.py:727:        ret = self.engine.batch_transfer_sync_write(
+mooncake_layerwise_prefill_then_decode_connector.py:2667:                ret = self.engine.batch_transfer_sync_write(
+Binary file __pycache__/mooncake_layerwise_prefill_then_decode_connector.cpython-311.pyc matches
+(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 kv_p2p]# grep -rnE "local_hostname|get_local_ip|host_name|session_id|segment|rpc_port|device_name|protocol" $KV
+mooncake_layerwise_prefill_then_decode_connector.py:116:    remote_te_rpc_port: int | None
+mooncake_layerwise_prefill_then_decode_connector.py:540:        request.remote_te_rpc_port = copied_kv_transfer_params.get("remote_te_rpc_port")
+mooncake_layerwise_prefill_then_decode_connector.py:723:    def handle_transfer(self, send_task, session_id, transfer_meta):
+mooncake_layerwise_prefill_then_decode_connector.py:728:            session_id, transfer_meta.src, transfer_meta.dst, transfer_meta.length
+mooncake_layerwise_prefill_then_decode_connector.py:737:                f"kv cache to {session_id}, ret: {ret}"
+mooncake_layerwise_prefill_then_decode_connector.py:744:                "Layer%d KV cache transfer task %dKB to remote_session_id [%s] took %.3f ms.",
+mooncake_layerwise_prefill_then_decode_connector.py:747:                session_id,
+mooncake_layerwise_prefill_then_decode_connector.py:767:            session_id = f"{req_meta.remote_host}:{req_meta.remote_te_rpc_port}"
+mooncake_layerwise_prefill_then_decode_connector.py:768:            if session_id not in session_meta:
+mooncake_layerwise_prefill_then_decode_connector.py:769:                session_meta[session_id] = TransferMeta(src=[], dst=[], length=[], req_ids=[])
+mooncake_layerwise_prefill_then_decode_connector.py:773:            session_meta[session_id].src.extend(src_list)
+mooncake_layerwise_prefill_then_decode_connector.py:774:            session_meta[session_id].dst.extend(dst_list)
+mooncake_layerwise_prefill_then_decode_connector.py:775:            session_meta[session_id].length.extend(length_list)
+mooncake_layerwise_prefill_then_decode_connector.py:776:            session_meta[session_id].req_ids.append(req_id)
+mooncake_layerwise_prefill_then_decode_connector.py:791:        for session_id, transfer_meta in session_meta.items():
+mooncake_layerwise_prefill_then_decode_connector.py:792:            self.handle_transfer(send_task, session_id, transfer_meta)
+mooncake_layerwise_prefill_then_decode_connector.py:1127:            remote_te_rpc_port=kv_transfer_params.get("remote_te_rpc_port"),
+mooncake_layerwise_prefill_then_decode_connector.py:1709:        self.engine = global_te.get_transfer_engine(self.side_channel_host, device_name=None)
+mooncake_layerwise_prefill_then_decode_connector.py:1710:        self.te_rpc_port = self.engine.get_rpc_port()
+mooncake_layerwise_prefill_then_decode_connector.py:1967:            te_rpc_port=self.te_rpc_port,
+mooncake_layerwise_prefill_then_decode_connector.py:2653:            self.remote_te_port[req_meta.remote_engine_id][req_meta.remote_port] = agent_meta.te_rpc_port
+mooncake_layerwise_prefill_then_decode_connector.py:2656:                "agent_meta.layer_metadata=%r agent_meta.te_rpc_port=%r",
+mooncake_layerwise_prefill_then_decode_connector.py:2661:                agent_meta.te_rpc_port,
+mooncake_layerwise_prefill_then_decode_connector.py:2665:                session_id = f"{req_meta.remote_host}:{agent_meta.te_rpc_port}"
+mooncake_layerwise_prefill_then_decode_connector.py:2668:                    session_id,
+mooncake_layerwise_prefill_then_decode_connector.py:2674:                    logger.error("Mooncake transfer failed to create link to device %s", session_id)
+mooncake_layerwise_prefill_then_decode_connector.py:2675:        req_meta.remote_te_rpc_port = self.remote_te_port[req_meta.remote_engine_id][req_meta.remote_port]
+Binary file __pycache__/mooncake_layerwise_prefill_then_decode_connector.cpython-311.pyc matches
+(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 kv_p2p]# 
