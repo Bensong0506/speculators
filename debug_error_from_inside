@@ -1,6 +1,2 @@
-我觉得最有前途的落地顺序
-先做 MMSpec-style 小基准：拿 Qwen3.5 多模态跑 100-300 条样本，分图片问答、图表、OCR、多轮、长回答，记录 MTP accept rate。
-做 Adaptive MTP：根据视觉 token attention mass、image token span、任务类型或者输出阶段，动态调 num_speculative_tokens。
-如果 P 侧 TTFT 是瓶颈，再做 ASAP 的轻量版：P 侧 length-aware batching + dual-batch interleaving。
-如果你能碰 AscendC/CANN，再挑战 Attention-MoE disaggregation + async dispatch/combine + MoE super kernel。
-FP8 量化是另一个正交方向，这两篇不直接解决 FP8，但它们能告诉你：FP8 之外，系统调度和 speculative 策略仍然有空间。
+grep -oE '"(prefix_gru|embed_proj)[^"]*"' \
+  $PWD/output/dflash_domino_100k/checkpoints/checkpoint_best/model.safetensors.index.json | sort -u
