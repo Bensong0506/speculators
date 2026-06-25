@@ -1,1 +1,15 @@
-grep -iE 'Resolved training limits|samples|dataset|val|examples' run_logs/<那次>.log | head
+# 0) 先验图片路径真能解析(决定性):
+head -c 400 $PWD/data/allava/allava_qwen35_distill_100k.jsonl    # 看 image 路径是 /home 还是 /data
+#   若是 /data 而你在 /home:  sed -i 's#/data/wenxuan#/home/wenxuan#g' $PWD/data/allava/allava_qwen35_distill_100k.jsonl
+ls $(grep -o '/home/wenxuan/[^"]*\.\(jpg\|jpeg\|png\)' $PWD/data/allava/allava_qwen35_distill_100k.jsonl | head -1)  # 这张图真存在?
+
+# 1) SMOKE 50 + 强制重建缓存 + wandb:
+ENABLE_DOMINO=1 DOMINO_LOSS_DECAY_GAMMA=4 BLOCK_SIZE=8 \
+NO_RESUME_FROM_CHECKPOINT=1 FORCE_PREPROCESS=1 OUTPUT_DIR=$PWD/output/dflash_domino_smoke \
+LOGGER=wandb WANDB_BASE_URL=http://10.155.156.175:38080 WANDB_PROJECT=speculators RUN_NAME=domino_smoke \
+FINETUNE_FROM=$PWD/output/<你最好的 dflash run>/checkpoints/checkpoint_best \
+MODEL=/home/wenxuan/Qwen3.5-9B \
+USE_ALLAVA=0 DATASET=$PWD/data/allava/allava_qwen35_distill_100k.jsonl MEDIA_ROOT=/home/wenxuan/ALLaVA-4V \
+VLLM_GPUS=0 VLLM_TP=1 VLLM_DP=1 TRAIN_GPUS=4,5,6,7 NUM_TRAIN_GPUS=4 \
+MAX_SAMPLES=50 EPOCHS=1 \
+bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
