@@ -1,5 +1,8 @@
-(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 wenxuan]# python -c "from mooncake.store import MooncakeDistributedStore; print('store OK')" 2>&1 | tail -1
-.corrupted size vs. prev_size
-(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 wenxuan]# pip show mooncake-transfer-engine 2>/dev/null | grep -E "Name|Version"
-(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 wenxuan]# ps -ef | grep -iE "mooncake.*(master|store)" | grep -v grep
-(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 wenxuan]# env | grep -iE "MOONCAKE|MC_STORE".
+# 整个 kv_transfer 目录结构（看有没有单独的 engine 包装类）
+ls -R $KV
+
+# 找 engine 的导入、初始化、注册、传输调用
+grep -rnE "import mooncake|from mooncake|TransferEngine|ascend_transport|ascend_direct" $KV
+grep -rnE "def initialize|\.initialize\(|register_memory|register_buffer|register\(" $KV
+grep -rnE "transfer_sync|transfer_async|batch_transfer|\.read\(|\.write\(|TransferOpcode|OpCode|READ|WRITE" $KV
+grep -rnE "local_hostname|get_local_ip|host_name|session_id|segment|rpc_port|device_name|protocol" $KV
