@@ -14,6 +14,16 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$REPO_ROOT"
 
+# Kill any stale vLLM server from a prior run holding port 8000 / GPUs 0-3.
+# (Online training starts its OWN vLLM hidden-state server; a leftover one makes
+#  the health check pass against the zombie, then every request -> Connection error
+#  -> all-zero metrics. This is the "跑前 pkill -f vllm" rule.) Disable: KILL_STALE_VLLM=0
+if [ "${KILL_STALE_VLLM:-1}" = "1" ]; then
+    pkill -f 'launch_vllm' 2>/dev/null || true
+    pkill -f 'vllm' 2>/dev/null || true
+    sleep 5
+fi
+
 STAMP="$(date +%Y%m%d_%H%M%S)"
 RUN_NAME="${RUN_NAME:-domino_100k_${STAMP}}"
 NOHUP_LOG_DIR="${NOHUP_LOG_DIR:-$REPO_ROOT/run_logs}"
