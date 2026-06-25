@@ -1,2 +1,1 @@
-grep -oE '"(prefix_gru|embed_proj)[^"]*"' \
-  $PWD/output/dflash_domino_100k/checkpoints/checkpoint_best/model.safetensors.index.json | sort -u
+{"domino_lambda_base_epoch": 0.0, "loss_epoch": 0.0, "full_acc_epoch": 0.0, "position_1_acc_epoch": 0.0, "position_2_acc_epoch": 0.0, "position_3_acc_epoch": 0.0, "position_4_acc_epoch": 0.0, "position_5_acc_epoch": 0.0, "position_6_acc_epoch": 0.0, "position_7_acc_epoch": 0.0, "domino_final_loss_epoch": 0.0, "domino_base_loss_epoch": 0.0, "domino_base_acc_epoch": 0.0, "domino_final_acc_epoch": 0.0}
