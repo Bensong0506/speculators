@@ -1,2 +1,264 @@
-root@devserver-bms-af631bb3:/home/wenxuan/speculators# bash examples/train/nohup_dflash_domino_100k.sh 
-examples/train/nohup_dflash_domino_100k.sh: line 25: FINETUNE_FROM: set FINETUNE_FROM=/home/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_distilled_10k_continue_dflash/dflash_ce_fp32_lr3e5_100k_0612_0831/checkpoints/checkpoint_best
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 32286: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 6883: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 8001: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 70934: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 61677: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 14799: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 39818: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 37865: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 6414: Connection error.
+  warnings.warn(
+[03:15:57] ERROR    Request timed out after 4 attempts: Connection error.                                           vllm_client.py:48
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 87145: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 19650: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 65115: Connection error.
+  warnings.warn(
+[03:15:57] ERROR    Request timed out after 4 attempts: Connection error.                                           vllm_client.py:48
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 34788: Connection error.
+  warnings.warn(
+           WARNING  Request aborted (attempt 1/4): Connection error.. Retrying in 2s...                             vllm_client.py:40
+[03:15:57] WARNING  Request aborted (attempt 2/4): Connection error.. Retrying in 4s...                             vllm_client.py:40
+[03:15:58] WARNING  Request aborted (attempt 2/4): Connection error.. Retrying in 4s...                             vllm_client.py:40
+[03:15:58] ERROR    Request timed out after 4 attempts: Connection error.                                           vllm_client.py:48
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 7953: Connection error.
+  warnings.warn(
+[03:15:58] WARNING  Request aborted (attempt 2/4): Connection error.. Retrying in 4s...                             vllm_client.py:40
+[03:15:58] WARNING  Request aborted (attempt 1/4): Connection error.. Retrying in 2s...                             vllm_client.py:40
+[03:15:58] WARNING  Request aborted (attempt 2/4): Connection error.. Retrying in 4s...                             vllm_client.py:40
+[03:15:58] WARNING  Request aborted (attempt 2/4): Connection error.. Retrying in 4s...                             vllm_client.py:40
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 74481: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 58088: Connection error.
+  warnings.warn(
+[03:15:59] ERROR    Request timed out after 4 attempts: Connection error.                                           vllm_client.py:48
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 22438: Connection error.
+  warnings.warn(
+[03:15:59] WARNING  Request aborted (attempt 2/4): Connection error.. Retrying in 4s...                             vllm_client.py:40
+[03:16:00] WARNING  Request aborted (attempt 2/4): Connection error.. Retrying in 4s...                             vllm_client.py:40
+[03:16:01] ERROR    Request timed out after 4 attempts: Connection error.                                           vllm_client.py:48
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 52691: Connection error.
+  warnings.warn(
+           WARNING  Request aborted (attempt 1/4): Connection error.. Retrying in 2s...                             vllm_client.py:40
+[03:16:01] WARNING  Request aborted (attempt 3/4): Connection error.. Retrying in 8s...                             vllm_client.py:40
+[03:16:02] WARNING  Request aborted (attempt 3/4): Connection error.. Retrying in 8s...                             vllm_client.py:40
+[03:16:02] WARNING  Request aborted (attempt 3/4): Connection error.. Retrying in 8s...                             vllm_client.py:40
+[03:16:02] WARNING  Request aborted (attempt 3/4): Connection error.. Retrying in 8s...                             vllm_client.py:40
+[03:16:02] WARNING  Request aborted (attempt 3/4): Connection error.. Retrying in 8s...                             vllm_client.py:40
+[03:16:03] WARNING  Request aborted (attempt 2/4): Connection error.. Retrying in 4s...                             vllm_client.py:40
+[03:16:03] WARNING  Request aborted (attempt 3/4): Connection error.. Retrying in 8s...                             vllm_client.py:40
+[03:16:04] WARNING  Request aborted (attempt 3/4): Connection error.. Retrying in 8s...                             vllm_client.py:40
+[03:16:07] WARNING  Request aborted (attempt 3/4): Connection error.. Retrying in 8s...                             vllm_client.py:40
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 15227: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 44372: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 15732: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 56031: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 42251: Connection error.
+  warnings.warn(
+[03:16:10] ERROR    Request timed out after 4 attempts: Connection error.                                           vllm_client.py:48
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 33453: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 23237: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 2408: Connection error.
+  warnings.warn(
+[03:16:10] ERROR    Request timed out after 4 attempts: Connection error.                                           vllm_client.py:48
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 15932: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 34606: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 13213: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 33665: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 83556: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 83940: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 59847: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 72591: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 14809: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 8170: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 22644: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 17561: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 36544: Connection error.
+  warnings.warn(
+[03:16:10] ERROR    Request timed out after 4 attempts: Connection error.                                           vllm_client.py:48
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 46595: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 23195: Connection error.
+  warnings.warn(
+           WARNING  Request aborted (attempt 1/4): Connection error.. Retrying in 2s...                             vllm_client.py:40
+           WARNING  Request aborted (attempt 1/4): Connection error.. Retrying in 2s...                             vllm_client.py:40
+           WARNING  Request aborted (attempt 1/4): Connection error.. Retrying in 2s...                             vllm_client.py:40
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 55505: Connection error.
+  warnings.warn(
+[03:16:10] ERROR    Request timed out after 4 attempts: Connection error.                                           vllm_client.py:48
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 363: Connection error.
+  warnings.warn(
+[03:16:10] ERROR    Request timed out after 4 attempts: Connection error.                                           vllm_client.py:48
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 85526: Connection error.
+  warnings.warn(
+           WARNING  Request aborted (attempt 1/4): Connection error.. Retrying in 2s...                             vllm_client.py:40
+[03:16:10] INFO     train/domino_lambda_base=0.999, train/loss=0.00e+00, train/full_acc=0.00e+00,                      trainer.py:247
+                    train/position_1_acc=0.00e+00, train/position_2_acc=0.00e+00, train/position_3_acc=0.00e+00,                     
+                    train/position_4_acc=0.00e+00, train/position_5_acc=0.00e+00, train/position_6_acc=0.00e+00,                     
+                    train/position_7_acc=0.00e+00, train/domino_final_loss=0.00e+00, train/domino_base_loss=0.00e+00,                
+                    train/domino_base_acc=0.00e+00, train/domino_final_acc=0.00e+00, epoch=0, lr=6.03e-06,                           
+                    global_step=49                                                                                                   
+[03:16:10] WARNING  Request aborted (attempt 1/4): Connection error.. Retrying in 2s...                             vllm_client.py:40
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 45715: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 10415: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 23762: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 2611: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 8665: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 85438: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 71088: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 9831: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 41525: Connection error.
+  warnings.warn(
+[03:16:11] INFO     train/domino_lambda_base=0.999, train/loss=0.00e+00, train/full_acc=0.00e+00,                      trainer.py:247
+                    train/position_1_acc=0.00e+00, train/position_2_acc=0.00e+00, train/position_3_acc=0.00e+00,                     
+                    train/position_4_acc=0.00e+00, train/position_5_acc=0.00e+00, train/position_6_acc=0.00e+00,                     
+                    train/position_7_acc=0.00e+00, train/domino_final_loss=0.00e+00, train/domino_base_loss=0.00e+00,                
+                    train/domino_base_acc=0.00e+00, train/domino_final_acc=0.00e+00, epoch=0, lr=6.16e-06,                           
+                    global_step=50                                                                                                   
+           INFO     train/domino_lambda_base=0.999, train/loss=0.113, train/full_acc=0.679,                            trainer.py:247
+                    train/position_1_acc=0.930, train/position_2_acc=0.837, train/position_3_acc=0.741,                              
+                    train/position_4_acc=0.685, train/position_5_acc=0.578, train/position_6_acc=0.530,                              
+                    train/position_7_acc=0.450, train/domino_final_loss=0.211, train/domino_base_loss=0.193,                         
+                    train/domino_base_acc=0.351, train/domino_final_acc=0.340, epoch=0, lr=6.28e-06, global_step=51                  
+[03:16:11] WARNING  Request aborted (attempt 1/4): Connection error.. Retrying in 2s...                             vllm_client.py:40
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 85032: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 76912: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 66434: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 68967: Connection error.
+  warnings.warn(
+[03:16:12] ERROR    Request timed out after 4 attempts: Connection error.                                           vllm_client.py:48
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 51437: Connection error.
+  warnings.warn(
+           WARNING  Request aborted (attempt 1/4): Connection error.. Retrying in 2s...                             vllm_client.py:40
+[03:16:12] WARNING  Request aborted (attempt 2/4): Connection error.. Retrying in 4s...                             vllm_client.py:40
+[03:16:12] ERROR    Request timed out after 4 attempts: Connection error.                                           vllm_client.py:48
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 39315: Connection error.
+  warnings.warn(
+           WARNING  Request aborted (attempt 1/4): Connection error.. Retrying in 2s...                             vllm_client.py:40
+[03:16:12] WARNING  Request aborted (attempt 2/4): Connection error.. Retrying in 4s...                             vllm_client.py:40
+[03:16:12] WARNING  Request aborted (attempt 2/4): Connection error.. Retrying in 4s...                             vllm_client.py:40
+[03:16:12] INFO     train/domino_lambda_base=0.999, train/loss=0.00e+00, train/full_acc=0.00e+00,                      trainer.py:247
+                    train/position_1_acc=0.00e+00, train/position_2_acc=0.00e+00, train/position_3_acc=0.00e+00,                     
+                    train/position_4_acc=0.00e+00, train/position_5_acc=0.00e+00, train/position_6_acc=0.00e+00,                     
+                    train/position_7_acc=0.00e+00, train/domino_final_loss=0.00e+00, train/domino_base_loss=0.00e+00,                
+                    train/domino_base_acc=0.00e+00, train/domino_final_acc=0.00e+00, epoch=0, lr=6.40e-06,                           
+                    global_step=52                                                                                                   
+[03:16:12] WARNING  Request aborted (attempt 2/4): Connection error.. Retrying in 4s...                             vllm_client.py:40
+           INFO     train/domino_lambda_base=0.999, train/loss=0.00e+00, train/full_acc=0.00e+00,                      trainer.py:247
+                    train/position_1_acc=0.00e+00, train/position_2_acc=0.00e+00, train/position_3_acc=0.00e+00,                     
+                    train/position_4_acc=0.00e+00, train/position_5_acc=0.00e+00, train/position_6_acc=0.00e+00,                     
+                    train/position_7_acc=0.00e+00, train/domino_final_loss=0.00e+00, train/domino_base_loss=0.00e+00,                
+                    train/domino_base_acc=0.00e+00, train/domino_final_acc=0.00e+00, epoch=0, lr=6.53e-06,                           
+                    global_step=53                                                                                                   
+[03:16:12] WARNING  Request aborted (attempt 1/4): Connection error.. Retrying in 2s...                             vllm_client.py:40
+[03:16:12] WARNING  Request aborted (attempt 2/4): Connection error.. Retrying in 4s...                             vllm_client.py:40
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 14340: Connection error.
+  warnings.warn(
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 64009: Connection error.
+  warnings.warn(
+[03:16:13] INFO     train/domino_lambda_base=0.999, train/loss=0.00e+00, train/full_acc=0.00e+00,                      trainer.py:247
+                    train/position_1_acc=0.00e+00, train/position_2_acc=0.00e+00, train/position_3_acc=0.00e+00,                     
+                    train/position_4_acc=0.00e+00, train/position_5_acc=0.00e+00, train/position_6_acc=0.00e+00,                     
+                    train/position_7_acc=0.00e+00, train/domino_final_loss=0.00e+00, train/domino_base_loss=0.00e+00,                
+                    train/domino_base_acc=0.00e+00, train/domino_final_acc=0.00e+00, epoch=0, lr=6.65e-06,                           
+                    global_step=54                                                                                                   
+[03:16:13] WARNING  Request aborted (attempt 1/4): Connection error.. Retrying in 2s...                             vllm_client.py:40
+           INFO     train/domino_lambda_base=0.999, train/loss=0.154, train/full_acc=0.601,                            trainer.py:247
+                    train/position_1_acc=0.912, train/position_2_acc=0.765, train/position_3_acc=0.664,                              
+                    train/position_4_acc=0.567, train/position_5_acc=0.511, train/position_6_acc=0.423,                              
+                    train/position_7_acc=0.358, train/domino_final_loss=0.289, train/domino_base_loss=0.271,                         
+                    train/domino_base_acc=0.309, train/domino_final_acc=0.302, epoch=0, lr=6.77e-06, global_step=55                  
+[03:16:13] WARNING  Request aborted (attempt 2/4): Connection error.. Retrying in 4s...                             vllm_client.py:40
+[03:16:14] WARNING  Request aborted (attempt 2/4): Connection error.. Retrying in 4s...                             vllm_client.py:40
+[03:16:14] WARNING  Request aborted (attempt 2/4): Connection error.. Retrying in 4s...                             vllm_client.py:40
+[03:16:14] INFO     train/domino_lambda_base=0.999, train/loss=0.00e+00, train/full_acc=0.00e+00,                      trainer.py:247
+                    train/position_1_acc=0.00e+00, train/position_2_acc=0.00e+00, train/position_3_acc=0.00e+00,                     
+                    train/position_4_acc=0.00e+00, train/position_5_acc=0.00e+00, train/position_6_acc=0.00e+00,                     
+                    train/position_7_acc=0.00e+00, train/domino_final_loss=0.00e+00, train/domino_base_loss=0.00e+00,                
+                    train/domino_base_acc=0.00e+00, train/domino_final_acc=0.00e+00, epoch=0, lr=6.90e-06,                           
+                    global_step=56                                                                                                   
+[03:16:14] WARNING  Request aborted (attempt 1/4): Connection error.. Retrying in 2s...                             vllm_client.py:40
+           INFO     train/domino_lambda_base=0.999, train/loss=0.00e+00, train/full_acc=0.00e+00,                      trainer.py:247
+                    train/position_1_acc=0.00e+00, train/position_2_acc=0.00e+00, train/position_3_acc=0.00e+00,                     
+                    train/position_4_acc=0.00e+00, train/position_5_acc=0.00e+00, train/position_6_acc=0.00e+00,                     
+                    train/position_7_acc=0.00e+00, train/domino_final_loss=0.00e+00, train/domino_base_loss=0.00e+00,                
+                    train/domino_base_acc=0.00e+00, train/domino_final_acc=0.00e+00, epoch=0, lr=7.02e-06,                           
+                    global_step=57                                                                                                   
+[03:16:14] WARNING  Request aborted (attempt 2/4): Connection error.. Retrying in 4s...                             vllm_client.py:40
+[03:16:15] INFO     train/domino_lambda_base=0.999, train/loss=0.00e+00, train/full_acc=0.00e+00,                      trainer.py:247
+                    train/position_1_acc=0.00e+00, train/position_2_acc=0.00e+00, train/position_3_acc=0.00e+00,                     
+                    train/position_4_acc=0.00e+00, train/position_5_acc=0.00e+00, train/position_6_acc=0.00e+00,                     
+                    train/position_7_acc=0.00e+00, train/domino_final_loss=0.00e+00, train/domino_base_loss=0.00e+00,                
+                    train/domino_base_acc=0.00e+00, train/domino_final_acc=0.00e+00, epoch=0, lr=7.14e-06,                           
+                    global_step=58                                                                                                   
+[03:16:15] ERROR    Request timed out after 4 attempts: Connection error.                                           vllm_client.py:48
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: Failed to load/cache hidden states for sample 3480: Connection error.
+  warnings.warn(
+[03:16:15] WARNING  Request aborted (attempt 2/4): Connection error.. Retrying in 4s...                             vllm_client.py:40
+           WARNING  Request aborted (attempt 1/4): Connection error.. Retrying in 2s...                             vllm_client.py:40
+           INFO     train/domino_lambda_base=0.999, train/loss=0.00e+00, train/full_acc=0.00e+00,                      trainer.py:247
+                    train/position_1_acc=0.00e+00, train/position_2_acc=0.00e+00, train/position_3_acc=0.00e+00,                     
+                    train/position_4_acc=0.00e+00, train/position_5_acc=0.00e+00, train/position_6_acc=0.00e+00,                     
+                    train/position_7_acc=0.00e+00, train/domino_final_loss=0.00e+00, train/domino_base_loss=0.00e+00,                
+                    train/domino_base_acc=0.00e+00, train/domino_final_acc=0.00e+00, epoch=0, lr=7.27e-06,                           
+                    global_step=59                                                                                                   
+[03:16:16] INFO     train/domino_lambda_base=0.999, train/loss=0.00e+00, train/full_acc=0.00e+00,                      trainer.py:247
+                    train/position_1_acc=0.00e+00, train/position_2_acc=0.00e+00, train/position_3_acc=0.00e+00,                     
+                    train/position_4_acc=0.00e+00, train/position_5_acc=0.00e+00, train/position_6_acc=0.00e+00,                     
+                    train/position_7_acc=0.00e+00, train/domino_final_loss=0.00e+00, train/domino_base_loss=0.00e+00,                
+                    train/domino_base_acc=0.00e+00, train/domino_final_acc=0.00e+00, epoch=0, lr=7.39e-06,                           
+                    global_step=60                                                                                                   
+[03:16:16] WARNING  Request aborted (attempt 3/4): Connection error.. Retrying in 8s...                             vllm_client.py:40
+[03:16:16] WARNING  Request aborted (attempt 3/4): Connection error.. Retrying in 8s...                             vllm_client.py:40
+[03:16:16] WARNING  Request aborted (attempt 3/4): Connection error.. Retrying in 8s...                             vllm_client.py:40
+[03:16:16] WARNING  Request aborted (attempt 2/4): Connection error.. Retrying in 4s...                             vllm_client.py:40
+[03:16:16] WARNING  Request aborted (attempt 3/4): Connection error.. Retrying in 8s...                             vllm_client.py:40
+[03:16:16] WARNING  Request aborted (attempt 3/4): Connection error.. Retrying in 8s...                             vllm_client.py:40
+[03:16:17] WARNING  Request aborted (attempt 2/4): Connection error.. Retrying in 4s...                             vllm_client.py:40
+[03:16:17] WARNING  Request aborted (attempt 3/4): Connection error.. Retrying in 8s...                             vllm_client.py:40
+[03:16:18] WARNING  Request aborted (attempt 3/4): Connection error.. Retrying in 8s...                             vllm_client.py:40
+[03:16:18] WARNING  Request aborted (attempt 3/4): Connection error.. Retrying in 8s...                             vllm_client.py:40
+[03:16:18] WARNING  Request aborted (attempt 3/4): Connection error.. Retrying in 8s...                             vllm_client.py:40
+[03:16:19] WARNING  Request aborted (attempt 3/4): Connection error.. Retrying in 8s...                             vllm_client.py:40
+[03:16:20] WARNING  Request aborted (attempt 3/4): Connection error.. Retrying in 8s...                             vllm_client.py:40
+[03:16:21] WARNING  Request aborted (attempt 3/4): Connection error.. Retrying in 8s...                             vllm_client.py:40
+/home/wenxuan/speculators/src/speculators/train/data.py:309: UserWarning: F
