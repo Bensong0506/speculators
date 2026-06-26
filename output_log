@@ -1,42 +1,15 @@
-import os, sys, time, torch, torch_npu
-from vllm_ascend.distributed.kv_transfer.utils.mooncake_transfer_engine import global_te
-
-ALIGN = 2 * 1024 * 1024
-def make_slab(engine, nbytes, dev):
-    raw = torch.empty(nbytes + ALIGN, dtype=torch.uint8, device=dev)
-    off = (ALIGN - raw.data_ptr() % ALIGN) % ALIGN
-    base = raw[off: off + nbytes]
-    assert base.data_ptr() % ALIGN == 0
-    assert engine.register_memory(base.data_ptr(), nbytes) == 0, "register failed"
-    return raw, base
-
-def main():
+(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 wenxuan]# python test_rdma.py 
+INFO 06-26 15:17:45 [__init__.py:44] Available plugins for group vllm.platform_plugins:
+INFO 06-26 15:17:45 [__init__.py:46] - ascend -> vllm_ascend:register
+INFO 06-26 15:17:45 [__init__.py:46] - ascend_vllm -> ascend_vllm:register
+INFO 06-26 15:17:45 [__init__.py:58] Loading plugin ascend_vllm
+INFO 06-26 15:17:45 [__init__.py:239] Platform plugin ascend_vllm is activated
+Traceback (most recent call last):
+  File "/data/wenxuan/test_rdma.py", line 42, in <module>
+    main()
+  File "/data/wenxuan/test_rdma.py", line 14, in main
     role = sys.argv[1]                       # owner | reader
-    host = os.environ["EC_TEST_HOST"]        # 本机 IP（= 你 serve 脚本里的 IP_ADDRESS）
-    torch_npu.npu.set_device(0)
-    eng = global_te.get_transfer_engine(host, device_name=None)
-    port = int(eng.get_rpc_port())
-    print(f"[{role}] host={host} rpc_port={port}", flush=True)
-    raw, base = make_slab(eng, 256 * 1024 * 1024, "npu:0")
-    N = 64 * 1024 * 1024
-
-    if role == "owner":
-        data = (torch.arange(N, dtype=torch.int64, device="npu:0") % 251).to(torch.uint8)
-        base[:N].copy_(data)
-        print(f"LOCATOR addr={base.data_ptr()} size={N} csum={int(base[:N].sum().item())}", flush=True)
-        print("owner holding... ctrl-c to stop", flush=True)
-        while True: time.sleep(3600)
-    else:
-        oh = os.environ["EC_OWNER_HOST"]; op = int(os.environ["EC_OWNER_PORT"])
-        oa = int(os.environ["EC_OWNER_ADDR"]); osz = int(os.environ["EC_OWNER_SIZE"])
-        oc = int(os.environ["EC_OWNER_CSUM"])
-        session = f"{oh}:{op}"
-        recv = base.data_ptr()
-        t0 = time.perf_counter()
-        # 假设参数序 = (session, 本地, 远端, 长度)。若 csum 不对就把 [recv] 和 [oa] 调换再试。
-        ret = eng.batch_transfer_sync_read(session, [recv], [oa], [osz])
-        dt = (time.perf_counter() - t0) * 1000
-        got = int(base[:osz].sum().item())
-        print(f"read ret={ret} {dt:.1f}ms got={got} exp={oc} MATCH={got==oc}", flush=True)
-
-main()
+           ~~~~~~~~^^^
+IndexError: list index out of range
+[ERROR] 2026-06-26-15:17:48 (PID:604999, Device:-1, RankID:-1) ERR99999 UNKNOWN applicaiton exception
+(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 wenxuan]# 
