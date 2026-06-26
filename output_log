@@ -1,15 +1,58 @@
-(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 wenxuan]# python test_rdma.py 
-INFO 06-26 15:17:45 [__init__.py:44] Available plugins for group vllm.platform_plugins:
-INFO 06-26 15:17:45 [__init__.py:46] - ascend -> vllm_ascend:register
-INFO 06-26 15:17:45 [__init__.py:46] - ascend_vllm -> ascend_vllm:register
-INFO 06-26 15:17:45 [__init__.py:58] Loading plugin ascend_vllm
-INFO 06-26 15:17:45 [__init__.py:239] Platform plugin ascend_vllm is activated
-Traceback (most recent call last):
-  File "/data/wenxuan/test_rdma.py", line 42, in <module>
-    main()
-  File "/data/wenxuan/test_rdma.py", line 14, in main
-    role = sys.argv[1]                       # owner | reader
-           ~~~~~~~~^^^
-IndexError: list index out of range
-[ERROR] 2026-06-26-15:17:48 (PID:604999, Device:-1, RankID:-1) ERR99999 UNKNOWN applicaiton exception
-(PyTorch-2.9.0) [root@devserver-hps-f69df060-00001 wenxuan]# 
+import os, sys, time, json, torch, torch_npu
+from vllm_ascend.distributed.kv_transfer.utils.mooncake_transfer_engine import global_te
+
+ALIGN = 2 * 1024 * 1024
+RV = os.environ.get("EC_TEST_RV", "/ce-efs-hd2-01/ec_test_locator.json")  # 共享盘接头点
+N = 64 * 1024 * 1024
+
+def make_slab(engine, nbytes, dev):
+    raw = torch.empty(nbytes + ALIGN, dtype=torch.uint8, device=dev)
+    off = (ALIGN - raw.data_ptr() % ALIGN) % ALIGN
+    base = raw[off: off + nbytes]
+    assert base.data_ptr() % ALIGN == 0, "base not 2MB aligned"
+    ret = engine.register_memory(base.data_ptr(), nbytes)
+    assert ret == 0, f"register_memory failed ret={ret}"
+    return raw, base
+
+def main():
+    if len(sys.argv) < 2 or sys.argv[1] not in ("owner", "reader"):
+        print("用法: python test_rdma.py owner|reader   （先在一台跑 owner，再在另一台跑 reader）\n"
+              "      记得 export EC_TEST_HOST=<本机IP>", flush=True)
+        return
+    role = sys.argv[1]
+    host = os.environ.get("EC_TEST_HOST") or os.environ.get("IP_ADDRESS")
+    assert host, "请 export EC_TEST_HOST=<本机IP>"
+    torch_npu.npu.set_device(0)
+    eng = global_te.get_transfer_engine(host, device_name=None)
+    port = int(eng.get_rpc_port())
+    print(f"[{role}] host={host} rpc_port={port}", flush=True)
+    raw, base = make_slab(eng, 256 * 1024 * 1024, "npu:0")
+
+    if role == "owner":
+        data = (torch.arange(N, dtype=torch.int64, device="npu:0") % 251).to(torch.uint8)
+        base[:N].copy_(data)
+        loc = {"host": host, "port": port, "addr": int(base.data_ptr()),
+               "size": N, "csum": int(base[:N].sum().item())}
+        with open(RV, "w") as f:
+            json.dump(loc, f)
+        print(f"[owner] locator 已写入 {RV}: {loc}", flush=True)
+        print("[owner] 保持注册中，ctrl-c 退出。", flush=True)
+        while True:
+            time.sleep(3600)
+    else:
+        with open(RV) as f:
+            loc = json.load(f)
+        print(f"[reader] 读到 locator: {loc}", flush=True)
+        base[:loc["size"]].zero_()                       # 先清零，便于发现“没搬动”
+        session = f"{loc['host']}:{loc['port']}"
+        t0 = time.perf_counter()
+        ret = eng.batch_transfer_sync_read(session, [base.data_ptr()], [loc["addr"]], [loc["size"]])
+        dt = (time.perf_counter() - t0) * 1000
+        got = int(base[:loc["size"]].sum().item())
+        print(f"[reader] read ret={ret}  {dt:.1f}ms  got={got} exp={loc['csum']}  "
+              f"MATCH={got == loc['csum']}", flush=True)
+        if got != loc["csum"]:
+            print("[reader] 不匹配 → 把 batch_transfer_sync_read 里 [base.data_ptr()] 和 "
+                  "[loc['addr']] 调换再跑一次（参数序可能相反）。", flush=True)
+
+main()
