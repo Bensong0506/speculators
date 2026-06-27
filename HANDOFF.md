@@ -1,43 +1,43 @@
-# HANDOFF 2026-06-17 — 122B MTP/DFlash speculator(下个 session 读这个)
+# HANDOFF (latest) — 122B MTP/DFlash speculator(下个 session 读这个)
 
-一行接上:`git show test_result:HANDOFF.md`。**「一切命令进 RUN.md」是硬规矩**(`mtp-training:RUN.md` = 449 行单一来源;`test_result122B:mtp_accept/RUN.md`)。
+一行接上:`git show test_result:HANDOFF.md`。**「一切命令进 RUN.md」是硬规矩**(`mtp-training:RUN.md` 单一来源;`test_result122B:mtp_accept/RUN.md`)。
 
-## 分支布局(本 session 重构,别再混 9B/122B)
-| branch | tip | 用途 |
-|---|---|---|
-| `test_result` | 48cad26 | **9B / GPU**(canonical handoff 在这) |
-| `test_result_npu` | fe095d5 | 9B / NPU(`npu_mtp_accept/`) |
-| **`test_result122B`** | 0364986 | **122B / GPU 评测**(`mtp_accept/` + DFlash 三路 + 报告) |
-| `mtp-training` | a50322a | **MTP 训练**(122B launcher + RUN.md「MTP 50k A/B」节) |
-| `dflash-122b-distill` | 4738c03 | **蒸馏数据生成**(`distill_allava_122b*.sh`) |
+## 分支布局(别混 9B/122B)
+| branch | 用途 |
+|---|---|
+| `test_result` | **9B / GPU**(canonical handoff 在这) |
+| `test_result_npu` | 9B / NPU |
+| **`test_result122B`** | **122B / GPU 评测**(`mtp_accept/` + DFlash 三路 + 报告 + `output_log` 回传结果) |
+| `mtp-training` | **MTP 训练**(122B launcher + RUN.md「MTP 50k A/B」节, steps=5/seq=4096) |
+| `dflash-122b-distill` | 蒸馏数据生成(`distill_allava_122b*.sh`,50k done) |
+| **`zhongqihuibao`** | **中期汇报证据包**(diff vs upstream + 脚本分文件夹 + 报告 + 客户报告);也记了 self-forcing 探索结果 |
 
-## ⏳ 下个 session 第一件事:MTP 50k 接受率 A/B(进行中)
-命令全在 `mtp-training:RUN.md` 的「MTP 50k 接受率 A/B」节。
-- **目标**:提升 MTP 接受率(中后位)。两台 A800,**唯一变量 = `STEP_WEIGHT_BETA`**;配置 **steps=5 / seq=4096(全长)**、50k 数据。机器1 A=`beta=0.6`、机器2 B=`beta=1.0`。
-- **当前状态**:steps=7 的 smoke **OOM 了**(trainer 端,全词表 248320 × seq × 7 步 logits 撑爆 GPU4-7)→ 决定改 **steps=5 全长**(省 ~8G,不截 seq)。**下一步:跑 steps=5 smoke(RUN.md 有命令)→ 过了起两台正式。**
-- 跑完:各取 `checkpoint_best`,切 `test_result122B` 用 `mtp_accept/run_mtp_accept_compare.sh` 评(ALLaVA+MMStar),比 **B(等权)中后位 per-position 是否高于 A**。
-- 然后:**纯 serve 的 spec sweep(3/5/7,不重训)** 定 deploy 深度(per-position 条件接受率 ~0.73 没塌,深位还产出,别先入为主定 3)。
+## 当前最优 & 进展
+- **当前最优配置 = β=0.6 + MTP 权重汤(WiSE-FT soup)**。self-forcing 探索过 → 机制有效但**无净收益,已搁置**(记在 `zhongqihuibao:reports/spec_decoding_customer_report_2026-06-22.md`)。
+- **MTP 50k A/B(steps=5,β=0.6 vs 1.0)评测已出**(`test_result122B:output_log`,`mtp_accept/results/arm_{a,b}/`):in-domain(ALLaVA)~**+10%**;OOD(MMStar)随配置变(有一臂到 +2.3%、有一臂 −5.7%)。**⚠️ output_log 是多轮累积(A/B + soup + 早期),下个 session 第一件事:把 arm_a/arm_b 的 `*_summary.json` 拉出来做干净对比,定 β。**
+- **122B MTP 权重汤 alpha sweep** 已跑(`mtp_accept/results/soup_sweep/.../soup_a<XX>/`;blend = alpha·finetuned+(1-alpha)·native)。9B soup 是赢的,122B 看 sweep 结果选 alpha。
 
-## ✅ 本 session 做完的
-1. **122B 评测出报告** = `test_result122B:examples/evaluate/mtp_dflash_122b_report.md`:
-   - **MTP best vs 原生**:ALLaVA mean-accept 3.066→3.376(**+10.1%**)/ tok/s +9.9% ✅;MMStar(OOD)−5.7%/−4.7%(first-pos 不动)。
-   - **训好的 DFlash vs 原始**:ALLaVA **+30.2%**、MMStar +8.4% ✅;但仍落后 MTP。
-   - **MTP 最强**(2.92× no-spec baseline)。
-2. **50k 蒸馏完成**(10k→50k):`dflash-122b-distill:distill_allava_122b_split.sh`,两台各 20k(SKIP/MAX 自动分片)、32 并发、TP=8、temp=0 → `data/allava/allava_122b_distill_50k.jsonl`。
-3. **分支重构** + **stitch 自包含 + hardlink 省盘**(122B 不再 244GB 全拷)+ mtp_accept 自动切后 10% val。
-4. **DFlash v2 / SGLang↔vLLM 源码结论**:DFlash 算法在 vLLM 自 **0.20.0**、vllm-ascend 自 **0.19.1rc1**(0.18 都没);「掩盖」= `async_scheduling` + fused materialize,vLLM 自带、**不用从 SGLang 移植**;async 帮 DFlash 不帮 MTP(并行 draft → host-bound)。
+## ⏳ 下个 session 待办
+1. **consolidate A/B + soup**:从 summary.json 出干净表,定最终 β + soup alpha。
+2. **deploy 深度 = serve-time spec sweep(3/5/7,不重训)**——per-position 条件接受率 ~0.73 没塌,深位还产出,别先入为主定 3。
+3. **客户问题(spec=3 接受 2.4)**:先 spec sweep(免费);**增训值不值取决于 draft 有没有对齐 SFT *后* 的分布**——SFT 挪了目标分布,draft 若没在 SFT 后输出上重训(on-policy)就有空间,对齐了则 spec=3 已近顶(~+一成)。
 
-## 💡 关键经验(借自 openPangu MTP 报告 + 实测)
-- **step-weight 配平**:我们默认 FastMTP `beta=0.6` 衰减 [.51,.31,.18] 压中后位;openPangu:配平最优、压小后位掉 1–1.7%。→ A/B 测 `beta=1.0`(等权);first-pos 已饱和 ~0.87,空间全在中后位。
-- **train-what-you-serve 深度**:launcher 默认 train steps=3 但 serve spec=7 → 后位没训过(本想 steps=7,OOM → steps=5 折中)。
-- **TPOT ∝ 1/L**(L=每步吐 token=accept+1 bonus):+9% 接受 → TPOT 降 ~6.3%(metric 不含 bonus)~8.3%(含);实测 +10.1% 接受 ≈ +9.9% tok/s 印证。
+## ✅ 本轮做完的(我这条线)
+- **122B 评测 + 报告** `test_result122B:examples/evaluate/mtp_dflash_122b_report.md`:MTP best vs 原生 in-domain **+10.1% 接受/+9.9% tok/s**;训好的 DFlash 超原始 **+30.2%** 但仍 < MTP;**MTP 最强(2.92× baseline)**。
+- **评测 harness**:`mtp_accept/run_mtp_accept_compare.sh`(native-vs-trained,自动 stitch+hardlink 省盘+自动切后10% val)+ `eval_mtp_ab.sh`(双机 A/B,ARM=a/b)。
+- **50k 蒸馏**(`distill_allava_122b_split.sh`,双机各 20k、32 并发、TP=8)。
+- **分支重构**(test_result122B 独立)+ **`zhongqihuibao` 汇报证据包**(diff +5.7k~11.9k 行/分支 + 脚本分类 + 报告)。
+- **源码结论**:DFlash 在 vLLM 自 0.20.0、vllm-ascend 自 0.19.1rc1;「掩盖」=async_scheduling+fused materialize(vLLM 自带,不用移植);async 帮 DFlash 不帮 MTP。
 
-## ⚠️ 坑(记牢)
-- **MTP 必须 bf16**(fp32 崩 lm_head);DFlash 用 fp32。
-- **122B heads=32 → TP 只能 {4,8}**;verifier TP=4(GPU0-3)+ trainer(4-7)。
-- **steps 大 → trainer OOM**(全词表 248320 × seq × steps logits)→ 砍 steps 别砍 seq(截 VLM 样本丢信号);**别**用 `PYTORCH_CUDA_ALLOC_CONF=expandable_segments`(破坏 vLLM hidden-states connector)。
-- **DFlash eval 的 `BASELINE_DRAFT`** 必须是真实原始 122B DFlash 路径(占位符会 `[fatal]` 退,本 session 踩过)。
-- **MTP head 不能裸 serve** → `stitch_mtp.py` 缝进 verifier;stitched = base + 训好的头,**可直接上线(质量=base,只提速)**;搬运注意 hardlink 会实体化(生产建议在目标机现 stitch)。
-- 路径 `/data/wenxuan` vs `/home/wenxuan` 按机器调;跑前 `pkill -f vllm`;内网只 pull,结果走 `output_log`/`output_debug` 回传;`/health` 探活要 `no_proxy=localhost`(否则走代理超时)。
+## 💡 关键经验(记牢)
+- **接受率 metric 不含 free-lunch bonus**:`spec_mean_accepted_tokens_per_draft`(如 3.314)= 接受的 draft 数(含 pos0、不含 bonus);**真实每步吐 L = accepted + 1**(3.314 → L=4.314)。报"接受长度"用 L,报"draft 接受"用前者。`TPOT ∝ 1/L`。
+- **step-weight**:默认 FastMTP β=0.6 衰减压中后位;openPangu 说配平好。但 122B A/B 初步看 β=0.6 OOD 更稳(等权更易 in-domain 过拟合)→ 以 A/B 干净对比为准。**当前最优仍 β=0.6 + soup**。
+- **增训前先 spec sweep(免费)**;**增训要 on-policy**(在目标 SFT 后的自身 continuation 上训)。
 
-下个 session:`git show test_result:HANDOFF.md` → 跑 steps=5 smoke → A/B → eval → spec sweep。
+## ⚠️ 坑
+- MTP=bf16(fp32 崩 lm_head);DFlash=fp32。122B heads=32 → TP 只能 {4,8}(verifier TP=4 GPU0-3 + trainer 4-7)。
+- **steps 大→trainer OOM**(全词表 248320×seq×steps logits)→ 砍 steps 别砍 seq;**别**用 `expandable_segments`(破坏 vLLM hidden-states connector)。
+- MTP head 不能裸 serve → `stitch_mtp.py` 缝;stitched=base+训好的头,**可直接上线(质量=base 只提速)**,搬运注意 hardlink 实体化。
+- DFlash eval 的 `BASELINE_DRAFT` 要真实路径;`/data` vs `/home` 按机器;跑前 `pkill -f vllm`;`/health` 探活要 `no_proxy=localhost`;内网只 pull,结果走 `output_log`/`output_debug`。
+
+下个 session:`git show test_result:HANDOFF.md` → consolidate A/B+soup → spec sweep → 客户增训决策。
