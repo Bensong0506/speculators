@@ -1,6 +1,13 @@
-export NETWORK_CARD_NAME=enp23s0f3                 # ← 必须是这台机真实的 RDMA 网卡名，先 ip addr 确认
-export HCCL_IF_IP=$(hostname -I | awk '{print $1}')
-export HCCL_SOCKET_IFNAME=$NETWORK_CARD_NAME
-export GLOO_SOCKET_IFNAME=$NETWORK_CARD_NAME
-export TP_SOCKET_IFNAME=$NETWORK_CARD_NAME
-# 你 serve 脚本里其它 Mooncake/HCCL 相关的也一起 source
+NEWIMG="file:///data/wenxuan/1e944de0-eb05-49d1-aec5-0b2203d398f9.png"   # 换一张没发过的更好
+
+ask() { curl -sS http://7.150.12.35:19800/v1/chat/completions -H 'Content-Type: application/json' \
+ -d '{"model":"qwen3.5","temperature":0,"messages":[{"role":"user","content":[
+   {"type":"image_url","image_url":{"url":"'"$NEWIMG"'"}},
+   {"type":"text","text":"'"$1"'"}]}]}'; echo; }
+
+ask "这张图是什么";      sleep 3
+ask "图里有几个物体";    sleep 3
+ask "用一句话描述";      sleep 3
+ask "图片主色调是什么";  sleep 3
+ask "这是室内还是室外";  sleep 3
+ask "图里有文字吗"
