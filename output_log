@@ -1,3 +1,8 @@
-echo "===== P0 ====="; grep -E '\[P3-MIXED\]|\[P3v4-direct-T\]|\[EC-POOL\]' prefill_0.log | tail -20
-echo "===== P1 ====="; grep -E '\[P3-MIXED\]|\[P3v4-direct-T\]|\[EC-POOL\]' prefill_1.log | tail -20
-echo "===== 池文件 ====="; ls -la /dev/shm/ec_pool/v0/ 2>/dev/null
+# 池里已有 P1 写的图；P0 全新。直连 P0:8010（绕过路由），P0 应命中池：
+IMG="file:///data/wenxuan/1e944de0-eb05-49d1-aec5-0b2203d398f9.png"   # 你一直用的这张，确定在池里
+curl -sS http://7.150.12.35:8010/v1/chat/completions -H 'Content-Type: application/json' -d '{
+  "model":"qwen3.5","temperature":0,"messages":[{"role":"user","content":[
+    {"type":"image_url","image_url":{"url":"'"$IMG"'"}},
+    {"type":"text","text":"这张图是什么"}]}]}'; echo
+# HTTP 可能 hang/报错（P0 是 producer，没经路由编排没有 decode 接手）——没关系，看日志：
+grep -E '\[P3-MIXED\]|\[P3v4-direct-T\]|\[EC-POOL\]' prefill_0.log | tail -10
