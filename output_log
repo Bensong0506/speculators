@@ -1,18 +1,13 @@
-# 两台都先 pull + 覆盖 patch
-cd /data/wenxuan/vllm-ascend-ec-pool && git pull
-cp ec_pool.py phase2.py <ascend_vllm>/patch/platform/patch_mm_opt/
-先确认共享盘两台都可写（关键，跨机能不能共享就看这个）：
+# 在 server1 (7.150.14.201) 上：
+AV=/home/ma-user/AscendCloud/AscendCloud-LLM/llm_inference/ascend_vllm
+find "$AV" -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null
+SP=/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages
+find "$SP/vllm" "$SP/vllm_ascend" -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null
+rm -rf ~/.triton/cache /root/.cache/vllm/
 
-# 在 server1 和 server2 各跑一遍
-touch /ce-efs-hd2-01/ec_pool_probe_$(hostname) && echo "writable on $(hostname)"; rm -f /ce-efs-hd2-01/ec_pool_probe_$(hostname)
-# 清一次池（任一台跑一次即可）
-rm -rf /ce-efs-hd2-01/ec_pool && mkdir -p /ce-efs-hd2-01/ec_pool
-server1（7.150.14.201）—— P_a：
+# 顺手看下磁盘是不是满了（pyc 写坏常因为这个）：
+df -h /home /tmp /dev/shm
 
+# 再重起 P_a
 export EC_POOL_EFS_DIR=/ce-efs-hd2-01/ec_pool
 PREFILL_INSTANCE=0 bash pd_p.sh
-server2（7.150.12.35）—— P_b + D：
-
-export EC_POOL_EFS_DIR=/ce-efs-hd2-01/ec_pool
-DO_WIPE=1 PREFILL_INSTANCE=1 bash pd_p.sh    # 等 prefill_1.log complete
-bash pd_d.sh
