@@ -1,34 +1,20 @@
-(base) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei# pip show vllm
-Name: vllm
-Version: 0.13.0
-Summary: A high-throughput and memory-efficient inference and serving engine for LLMs
-Home-page: https://github.com/vllm-project/vllm
-Author: vLLM Team
-Author-email: 
-License-Expression: Apache-2.0
-Location: /home/ray/anaconda3/lib/python3.10/site-packages
-Requires: aiohttp, anthropic, blake3, cachetools, cbor2, cloudpickle, compressed-tensors, depyf, diskcache, einops, fastapi, filelock, flashinfer-python, gguf, ijson, lark, llguidance, lm-format-enforcer, mcp, mistral_common, model-hosting-container-standards, msgspec, ninja, numba, numpy, openai, openai-harmony, opencv-python-headless, outlines_core, partial-json-parser, pillow, prometheus-fastapi-instrumentator, prometheus_client, protobuf, psutil, py-cpuinfo, pybase64, pydantic, python-json-logger, pyyaml, pyzmq, ray, regex, requests, scipy, sentencepiece, setproctitle, tiktoken, tokenizers, torch, torchaudio, torchvision, tqdm, transformers, typing_extensions, watchfiles, xgrammar
-Required-by: 
-(base) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei# 
-(base) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei# 
-(base) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei# 
-(base) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei# 
 (base) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei# ls
-Qwen3.5-122B-A10B  Qwen3.5-122B-A10B_best_practice.yaml  train.jsonl
-(base) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei# cd Qwen3.5-122B-A10B
-(base) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/Qwen3.5-122B-A10B# ls
-args.json                                       quant_model_weights-00005-of-00032.safetensors  quant_model_weights-00016-of-00032.safetensors  quant_model_weights-00027-of-00032.safetensors
-chat_template.jinja                             quant_model_weights-00006-of-00032.safetensors  quant_model_weights-00017-of-00032.safetensors  quant_model_weights-00028-of-00032.safetensors
-config.json                                     quant_model_weights-00007-of-00032.safetensors  quant_model_weights-00018-of-00032.safetensors  quant_model_weights-00029-of-00032.safetensors
-merges.txt                                      quant_model_weights-00008-of-00032.safetensors  quant_model_weights-00019-of-00032.safetensors  quant_model_weights-00030-of-00032.safetensors
-preprocessor_config.json                        quant_model_weights-00009-of-00032.safetensors  quant_model_weights-00020-of-00032.safetensors  quant_model_weights-00031-of-00032.safetensors
-processor_config.json                           quant_model_weights-00010-of-00032.safetensors  quant_model_weights-00021-of-00032.safetensors  quant_model_weights-00032-of-00032.safetensors
-quant_model_description.json                    quant_model_weights-00011-of-00032.safetensors  quant_model_weights-00022-of-00032.safetensors  quant_model_weights.safetensors.index.json
-quant_model_weights-00001-of-00032.safetensors  quant_model_weights-00012-of-00032.safetensors  quant_model_weights-00023-of-00032.safetensors  tokenizer.json
-quant_model_weights-00002-of-00032.safetensors  quant_model_weights-00013-of-00032.safetensors  quant_model_weights-00024-of-00032.safetensors  tokenizer_config.json
-quant_model_weights-00003-of-00032.safetensors  quant_model_weights-00014-of-00032.safetensors  quant_model_weights-00025-of-00032.safetensors  video_preprocessor_config.json
-quant_model_weights-00004-of-00032.safetensors  quant_model_weights-00015-of-00032.safetensors  quant_model_weights-00026-of-00032.safetensors  vocab.json
-(base) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/Qwen3.5-122B-A10B# 
-(base) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/Qwen3.5-122B-A10B# 
-(base) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/Qwen3.5-122B-A10B# 
-(base) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/Qwen3.5-122B-A10B# cd ..
+Qwen3.5-122B-A10B  Qwen3.5-122B-A10B_best_practice.yaml  qwen3.5-vl-122B  speculators  train.jsonl
+(base) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei# cd qwen3.5-vl-122B/
+(base) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/qwen3.5-vl-122B# ls
+args.json                          model-00008-of-00051.safetensors  model-00021-of-00051.safetensors  model-00034-of-00051.safetensors  model-00047-of-00051.safetensors
+chat_template.jinja                model-00009-of-00051.safetensors  model-00022-of-00051.safetensors  model-00035-of-00051.safetensors  model-00048-of-00051.safetensors
+config.json                        model-00010-of-00051.safetensors  model-00023-of-00051.safetensors  model-00036-of-00051.safetensors  model-00049-of-00051.safetensors
+iter_0000792                       model-00011-of-00051.safetensors  model-00024-of-00051.safetensors  model-00037-of-00051.safetensors  model-00050-of-00051.safetensors
+latest_checkpointed_iteration.txt  model-00012-of-00051.safetensors  model-00025-of-00051.safetensors  model-00038-of-00051.safetensors  model-00051-of-00051.safetensors
+merges.txt                         model-00013-of-00051.safetensors  model-00026-of-00051.safetensors  model-00039-of-00051.safetensors  model.safetensors.index.json
+model-00001-of-00051.safetensors   model-00014-of-00051.safetensors  model-00027-of-00051.safetensors  model-00040-of-00051.safetensors  preprocessor_config.json
+model-00002-of-00051.safetensors   model-00015-of-00051.safetensors  model-00028-of-00051.safetensors  model-00041-of-00051.safetensors  processor_config.json
+model-00003-of-00051.safetensors   model-00016-of-00051.safetensors  model-00029-of-00051.safetensors  model-00042-of-00051.safetensors  tokenizer.json
+model-00004-of-00051.safetensors   model-00017-of-00051.safetensors  model-00030-of-00051.safetensors  model-00043-of-00051.safetensors  tokenizer_config.json
+model-00005-of-00051.safetensors   model-00018-of-00051.safetensors  model-00031-of-00051.safetensors  model-00044-of-00051.safetensors  video_preprocessor_config.json
+model-00006-of-00051.safetensors   model-00019-of-00051.safetensors  model-00032-of-00051.safetensors  model-00045-of-00051.safetensors  vocab.json
+model-00007-of-00051.safetensors   model-00020-of-00051.safetensors  model-00033-of-00051.safetensors  model-00046-of-00051.safetensors
+(base) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/qwen3.5-vl-122B# ^C
+(base) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/qwen3.5-vl-122B# ^C
+(base) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/qwen3.5-vl-122B# 
