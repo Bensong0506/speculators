@@ -1,65 +1,34 @@
-[rank1]: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 3.00 GiB. GPU 1 has a total capacity of 79.32 GiB of which 811.00 MiB is free. Process 273194 has 78.52 GiB memory in use. Of the allocated memory 74.91 GiB is allocated by PyTorch, and 2.69 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)
-[rank3]: Traceback (most recent call last):
-[rank3]:   File "/data/wenxuan/speculators/scripts/train.py", line 954, in <module>
-[rank3]:     main(args)
-[rank3]:   File "/data/wenxuan/speculators/scripts/train.py", line 576, in main
-[rank3]:     trainer.run_training()
-[rank3]:   File "/data/wenxuan/speculators/src/speculators/train/graceful_shutdown.py", line 118, in wrapper
-[rank3]:     return fn(self, *args, **kwargs)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/data/wenxuan/speculators/src/speculators/train/trainer.py", line 360, in run_training
-[rank3]:     self.train_epoch(epoch)
-[rank3]:   File "/data/wenxuan/speculators/src/speculators/train/trainer.py", line 213, in train_epoch
-[rank3]:     _draft_tokens, loss, metrics = self.model(
-[rank3]:                                    ^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
-[rank3]:     return self._call_impl(*args, **kwargs)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1885, in _call_impl
-[rank3]:     return inner()
-[rank3]:            ^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1833, in inner
-[rank3]:     result = forward_call(*args, **kwargs)
-[rank3]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/eval_frame.py", line 1024, in compile_wrapper
-[rank3]:     return fn(*args, **kwargs)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/data/wenxuan/speculators/src/speculators/models/mtp/core.py", line 194, in forward
-[rank3]:     mtp_output = self.mtp_layers[0](
-[rank3]:                  ^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/transformers/modeling_layers.py", line 93, in __call__
-[rank3]:     return super().__call__(*args, **kwargs)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
-[rank3]:     return self._call_impl(*args, **kwargs)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1885, in _call_impl
-[rank3]:     return inner()
-[rank3]:            ^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1812, in inner
-[rank3]:     args_kwargs_result = hook(self, args, kwargs)  # type: ignore[misc]
-[rank3]:                          ^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/fsdp/_fully_shard/_fsdp_state.py", line 64, in fsdp_hook_wrapper
-[rank3]:     return torch._dynamo.disable(
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/eval_frame.py", line 1263, in _fn
-[rank3]:     return fn(*args, **kwargs)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/fsdp/_fully_shard/_fsdp_state.py", line 268, in _pre_forward
-[rank3]:     args, kwargs = self._fsdp_param_group.pre_forward(module, args, kwargs)
-[rank3]:                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/fsdp/_fully_shard/_fsdp_param_group.py", line 449, in pre_forward
-[rank3]:     self.unshard(self.unshard_async_op)
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/fsdp/_fully_shard/_fsdp_param_group.py", line 339, in unshard
-[rank3]:     self._all_gather_result = foreach_all_gather(
-[rank3]:                               ^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/_contextlib.py", line 124, in decorate_context
-[rank3]:     return func(*args, **kwargs)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/fsdp/_fully_shard/_fsdp_collectives.py", line 263, in foreach_all_gather
-[rank3]:     all_gather_output = all_gather_comm.allocate(
-[rank3]:                         ^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/fsdp/_fully_shard/_fsdp_collectives.py", line 59, in allocate
-[rank3]:     return torch.empty(*size, dtype=dtype, device=device)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 4.70 GiB. GPU 3 has a total capacity of 79.32 GiB of which 4.52 GiB is free. Process 273196 has 74.79 GiB memory in use. Of the allocated memory 70.04 GiB is allocated by PyTorch, and 3.83 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/n
+(base) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei# pip show vllm
+Name: vllm
+Version: 0.13.0
+Summary: A high-throughput and memory-efficient inference and serving engine for LLMs
+Home-page: https://github.com/vllm-project/vllm
+Author: vLLM Team
+Author-email: 
+License-Expression: Apache-2.0
+Location: /home/ray/anaconda3/lib/python3.10/site-packages
+Requires: aiohttp, anthropic, blake3, cachetools, cbor2, cloudpickle, compressed-tensors, depyf, diskcache, einops, fastapi, filelock, flashinfer-python, gguf, ijson, lark, llguidance, lm-format-enforcer, mcp, mistral_common, model-hosting-container-standards, msgspec, ninja, numba, numpy, openai, openai-harmony, opencv-python-headless, outlines_core, partial-json-parser, pillow, prometheus-fastapi-instrumentator, prometheus_client, protobuf, psutil, py-cpuinfo, pybase64, pydantic, python-json-logger, pyyaml, pyzmq, ray, regex, requests, scipy, sentencepiece, setproctitle, tiktoken, tokenizers, torch, torchaudio, torchvision, tqdm, transformers, typing_extensions, watchfiles, xgrammar
+Required-by: 
+(base) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei# 
+(base) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei# 
+(base) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei# 
+(base) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei# 
+(base) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei# ls
+Qwen3.5-122B-A10B  Qwen3.5-122B-A10B_best_practice.yaml  train.jsonl
+(base) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei# cd Qwen3.5-122B-A10B
+(base) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/Qwen3.5-122B-A10B# ls
+args.json                                       quant_model_weights-00005-of-00032.safetensors  quant_model_weights-00016-of-00032.safetensors  quant_model_weights-00027-of-00032.safetensors
+chat_template.jinja                             quant_model_weights-00006-of-00032.safetensors  quant_model_weights-00017-of-00032.safetensors  quant_model_weights-00028-of-00032.safetensors
+config.json                                     quant_model_weights-00007-of-00032.safetensors  quant_model_weights-00018-of-00032.safetensors  quant_model_weights-00029-of-00032.safetensors
+merges.txt                                      quant_model_weights-00008-of-00032.safetensors  quant_model_weights-00019-of-00032.safetensors  quant_model_weights-00030-of-00032.safetensors
+preprocessor_config.json                        quant_model_weights-00009-of-00032.safetensors  quant_model_weights-00020-of-00032.safetensors  quant_model_weights-00031-of-00032.safetensors
+processor_config.json                           quant_model_weights-00010-of-00032.safetensors  quant_model_weights-00021-of-00032.safetensors  quant_model_weights-00032-of-00032.safetensors
+quant_model_description.json                    quant_model_weights-00011-of-00032.safetensors  quant_model_weights-00022-of-00032.safetensors  quant_model_weights.safetensors.index.json
+quant_model_weights-00001-of-00032.safetensors  quant_model_weights-00012-of-00032.safetensors  quant_model_weights-00023-of-00032.safetensors  tokenizer.json
+quant_model_weights-00002-of-00032.safetensors  quant_model_weights-00013-of-00032.safetensors  quant_model_weights-00024-of-00032.safetensors  tokenizer_config.json
+quant_model_weights-00003-of-00032.safetensors  quant_model_weights-00014-of-00032.safetensors  quant_model_weights-00025-of-00032.safetensors  video_preprocessor_config.json
+quant_model_weights-00004-of-00032.safetensors  quant_model_weights-00015-of-00032.safetensors  quant_model_weights-00026-of-00032.safetensors  vocab.json
+(base) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/Qwen3.5-122B-A10B# 
+(base) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/Qwen3.5-122B-A10B# 
+(base) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/Qwen3.5-122B-A10B# 
+(base) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/Qwen3.5-122B-A10B# cd ..
