@@ -53,7 +53,7 @@
 
 ### 2.1 DFlash: 独立 draft 模型，一次并行预测候选块
 
-![DFlash algorithm](assets/dflash_algorithm.svg)
+![DFlash algorithm](assets/dflash_algorithm.png)
 
 我们可以把 DFlash 理解成独立于 verifier 的 draft 模块。它根据当前上下文和 verifier 隐状态，一次性并行预测一整块候选 token，例如 spec=7 时预测 7 个 token。随后 verifier 对这 7 个 token 做并行校验，并从第一个 token 开始接受连续匹配的前缀。
 
@@ -63,7 +63,7 @@ DFlash 的问题也很直接: **开源 DFlash draft 主要缺少多模态分布*
 
 ### 2.2 MTP: verifier 原生多 token 预测头
 
-![MTP algorithm](assets/mtp_algorithm.svg)
+![MTP algorithm](assets/mtp_algorithm.png)
 
 我们再看 MTP(Multi-Token Prediction)。它不是独立 draft，而是 verifier 原生权重里自带的多 token 预测头。它利用 verifier 的隐藏状态逐步预测后续 token。因为 MTP 头与 verifier 表示更贴近，通常可以获得更高的接受长度。
 
