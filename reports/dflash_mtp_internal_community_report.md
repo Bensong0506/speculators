@@ -4,6 +4,14 @@
 **范围**: Qwen3.5-9B 多模态模型与 Qwen3.5-122B-A10B 多模态 MoE 模型  
 **场景**: vLLM speculative decoding，spec=7，greedy decoding，ALLaVA 域内 + MMStar 域外
 
+## 导读: 投机推理加速系列
+
+**「投机推理加速」系列**来自真实客户项目中的工程实践，目标不是重复介绍 speculative decoding 的基础概念，而是把我们在多模态大模型、vLLM 服务化、GPU/NPU 迁移中踩过的坑、验证过的方案和可复用的实验结论整理成一组 Know How。这个系列会围绕一个核心问题展开: 在保证 verifier 输出不变的前提下，如何把自回归解码中的重复计算尽可能压下去。
+
+**第一篇就是本文:《Qwen3.5 多模态投机解码接受率提升: 从 DFlash 到 MTP》。**我们先从最直接的瓶颈切入: draft 猜得不准，verifier 接受的 token 少，投机推理的收益就上不去。由于开源 DFlash 权重缺少多模态数据训练，在图文场景下接受率明显低于纯文本场景，因此我们以 DFlash 为起点，研究如何通过多模态自蒸馏提升 draft 的接受率。随后，我们把同样的思路迁移到 verifier 原生 MTP 头上，验证这套“用目标模型分布训练 draft”的方法是否也能继续挖 MTP 的收益。
+
+**第二篇计划写 D-Cut。**当 DFlash/MTP 的接受率和 draft 成本被优化到一定程度后，高并发场景下的瓶颈会逐渐从“draft 能不能猜对”转向“verifier 需要校验多少 token”。D-Cut 关注的是另一侧的问题: 不改变主模型、不重训 draft，而是在投机校验阶段动态减少 verify token 数。例如 spec=7 时，如果平均只需要校验 4 个 token，理论上 verify token 数可减少约 43%。这会是我们后续面向高并发和 NPU 部署继续展开的一篇。
+
 ## 0. 最终结论先看
 
 我们先把 `original MTP`、`original DFlash`、`baseline`、`trained MTP`、`trained DFlash` 放在一张表里。红色行为我们训练或权重插值后的结果；提升比例均相对各自原始方法计算。
