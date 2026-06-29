@@ -2,3 +2,17 @@ conda create -n vllm022 python=3.10 -y
 conda activate vllm022
 pip install vllm==0.22.0 -i https://mirrors.aliyun.com/pypi/simple/
 python -c "import vllm,torch;print('vllm',vllm.__version__,'torch',torch.__version__,'cuda',torch.version.cuda)"
+
+
+M=/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/qwen3.5-vl-122B
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 vllm serve "$M" \
+  --served-model-name qwen3.5-vl-122b-sft \
+  --tensor-parallel-size 8 \
+  --trust-remote-code \
+  --dtype bfloat16 \
+  --max-model-len 32768 \
+  --limit-mm-per-prompt '{"image":1}' \
+  --gpu-memory-utilization 0.90 \
+  --enforce-eager \
+  --port 8100
+# 健康检查:curl -sf localhost:8100/health && echo OK
