@@ -1,13 +1,9 @@
-# 在 server1 (7.150.14.201) 上：
-AV=/home/ma-user/AscendCloud/AscendCloud-LLM/llm_inference/ascend_vllm
-find "$AV" -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null
-SP=/home/ma-user/anaconda3/envs/PyTorch-2.9.0/lib/python3.11/site-packages
-find "$SP/vllm" "$SP/vllm_ascend" -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null
-rm -rf ~/.triton/cache /root/.cache/vllm/
+hostname; hostname -I              # 确认这是 .176
+grep 'EC-POOL] init' prefill_0.log | head -1    # 看 dir= 是不是 /ce-efs-hd2-01/ec_pool
+grep -c '\[EC-POOL\] hits=1/1' prefill_0.log
+ls -la /ce-efs-hd2-01/ec_pool/v0/
 
-# 顺手看下磁盘是不是满了（pyc 写坏常因为这个）：
-df -h /home /tmp /dev/shm
-
-# 再重起 P_a
-export EC_POOL_EFS_DIR=/ce-efs-hd2-01/ec_pool
-PREFILL_INSTANCE=0 bash pd_p.sh
+hostname; hostname -I              # 确认这是 .17
+grep 'EC-POOL] init' prefill_1.log | head -1    # dir= 应也是 /ce-efs-hd2-01/ec_pool
+grep '\[EC-POOL\] write_back' prefill_1.log | tail
+ls -la /ce-efs-hd2-01/ec_pool/v0/
