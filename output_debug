@@ -5,6 +5,18 @@ python -c "import vllm,torch;print('vllm',vllm.__version__,'torch',torch.__versi
 
 
 M=/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/qwen3.5-vl-122B
+
+echo "===== 架构 / model_type(决定 vLLM 0.22 支不支持)====="
+python3 -c "import json;c=json.load(open('$M/config.json'));print(json.dumps({k:c.get(k) for k in ('model_type','architectures','torch_dtype','num_hidden_layers','hidden_size','vocab_size','num_attention_heads','num_key_value_heads','max_position_embeddings','rope_scaling')}, indent=2, ensure_ascii=False)); print('--- text_config ---', c.get('text_config',{}).get('model_type') if isinstance(c.get('text_config'),dict) else None); print('--- vision_config ---', bool(c.get('vision_config'))); print('--- mtp keys in config? ---', [k for k in c if 'mtp' in k.lower() or 'nextn' in k.lower()])"
+
+echo "===== 有没有原生 MTP 头(我们增训要用)====="
+python3 -c "import json;w=json.load(open('$M/model.safetensors.index.json'))['weight_map'];import re;mtp=[k for k in w if re.search(r'mtp|nextn|eh_proj|enorm|hnorm',k)];print('mtp-ish tensors:',len(mtp));print(mtp[:8])"
+
+echo "===== GPU 数量/型号/显存(决定 TP)====="
+nvidia-smi --query-gpu=index,name,memory.total --format=csv
+
+
+M=/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/qwen3.5-vl-122B
 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 vllm serve "$M" \
   --served-model-name qwen3.5-vl-122b-sft \
   --tensor-parallel-size 8 \
