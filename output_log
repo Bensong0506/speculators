@@ -1,9 +1,107 @@
-hostname; hostname -I              # 确认这是 .176
-grep 'EC-POOL] init' prefill_0.log | head -1    # 看 dir= 是不是 /ce-efs-hd2-01/ec_pool
-grep -c '\[EC-POOL\] hits=1/1' prefill_0.log
-ls -la /ce-efs-hd2-01/ec_pool/v0/
+(PyTorch-2.9.0) [root@liteserver-hps-148c-00031 vllm-ascend-ec-pool]# export EC_POOL_EFS_DIR=/ce-efs-hd2-01/ec_pool
+(PyTorch-2.9.0) [root@liteserver-hps-148c-00031 vllm-ascend-ec-pool]# PREFILL_INSTANCE=0 bash pd_p.sh
+[pd_p] P0 devices=0,1,2,3 port=8010 engine_id=0 kv_port=36010 plog=./plog/prefill_0/20260629_094924 pool=/ce-efs-hd2-01/ec_pool
+[pd_p] P0 pid=247 -> prefill_0.log
+(PyTorch-2.9.0) [root@liteserver-hps-148c-00031 vllm-ascend-ec-pool]# bash pd_rs.sh 
+[pd_rs] PREFILL_SERVERS=7.150.11.176:8010,7.150.14.17:8011 DECODE_SERVERS=7.150.14.17:8020
+[pd_rs] deploy=/home/ma-user/AscendCloud/AscendCloud-LLM/llm_inference/route_server/deploy.sh port=19800 mode=Layerwise-CPCD
+Env RS_INSTALL_DIR not set, set to default location /opt/huawei
+USE_DOMAIN_FOR_LEADER not set, set to default false
+DOMAIN not set, set to default 
+install RouteServer to /opt/huawei/route_server
+kill existing route server if exists
+kill: not enough arguments
+wait for kill to take effect
+REUSE_PREFILLED_TOKENS is enabled, setting prefill_stream functions...
+collect-metrics-unique-ip is null, so collect metrics form all instances.
+assigning Host ip to 7.150.11.176
+log-file is set to ./rs/route-server.log
+deploying as candidate=true
+success to write config file to /opt/huawei/route_server/DistributedScheduler/config
+SHOW_STD_OUTPUT is false, output to dev/null
+pid is 6490, waiting for 5 sec to check.
+RouteServer process is running (PID: 6490), --daemon is not set, exit with 0
 
-hostname; hostname -I              # 确认这是 .17
-grep 'EC-POOL] init' prefill_1.log | head -1    # dir= 应也是 /ce-efs-hd2-01/ec_pool
-grep '\[EC-POOL\] write_back' prefill_1.log | tail
-ls -la /ce-efs-hd2-01/ec_pool/v0/
+[pd_rs] route server should be listening on 7.150.11.176:19800
+[pd_rs] TEST WITH:  ROUTER=7.150.11.176:19800 bash bench_ec_pool.sh
+[pd_rs] (the router runs on THIS host -- point bench at THIS IP, not a backend's)
+(PyTorch-2.9.0) [root@liteserver-hps-148c-00031 vllm-ascend-ec-pool]# ROUTER=7.150.11.176:19800 bash bench_ec_pool.sh
+[bench] router=7.150.11.176:19800 img=file:///data/wenxuan/1e944de0-eb05-49d1-aec5-0b2203d398f9.png N=60 conc=12
+............................................................
+[bench] done in 0s
+
+===== P0 (prefill_0.log) EC-POOL =====
+===== P1 (prefill_1.log) EC-POOL =====
+(Worker_TP0_EP0 pid=235345) [EC-POOL] write_back stored=1/1 in 50ms
+
+===== pool files =====
+
+PASS = one engine shows 'write_back stored=', the OTHER shows 'hits=1/1 miss=0' (4 ranks).
+(PyTorch-2.9.0) [root@liteserver-hps-148c-00031 vllm-ascend-ec-pool]# ROUTER=7.150.11.176:19800 bash bench_ec_pool.sh
+[bench] router=7.150.11.176:19800 img=file:///data/wenxuan/1e944de0-eb05-49d1-aec5-0b2203d398f9.png N=60 conc=12
+............................................................
+[bench] done in 0s
+
+===== P0 (prefill_0.log) EC-POOL =====
+===== P1 (prefill_1.log) EC-POOL =====
+(Worker_TP0_EP0 pid=235345) [EC-POOL] write_back stored=1/1 in 50ms
+
+===== pool files =====
+
+PASS = one engine shows 'write_back stored=', the OTHER shows 'hits=1/1 miss=0' (4 ranks).
+(PyTorch-2.9.0) [root@liteserver-hps-148c-00031 vllm-ascend-ec-pool]# ROUTER=7.150.11.176:19800 bash bench_ec_pool.sh
+[bench] router=7.150.11.176:19800 img=file:///data/wenxuan/1e944de0-eb05-49d1-aec5-0b2203d398f9.png N=60 conc=12
+............................................................
+[bench] done in 35s
+
+===== P0 (prefill_0.log) EC-POOL =====
+(Worker_TP3_EP3 pid=1334) [EC-POOL] hits=1/1 miss=0 rank=3
+(Worker_TP1_EP1 pid=1280) [EC-POOL] hits=1/1 miss=0 rank=1
+(Worker_TP0_EP0 pid=1272) [EC-POOL] hits=1/1 miss=0 rank=0
+(Worker_TP2_EP2 pid=1306) [EC-POOL] hits=1/1 miss=0 rank=2
+===== P1 (prefill_1.log) EC-POOL =====
+(Worker_TP0_EP0 pid=235345) [EC-POOL] write_back stored=1/1 in 50ms
+
+===== pool files =====
+
+PASS = one engine shows 'write_back stored=', the OTHER shows 'hits=1/1 miss=0' (4 ranks).
+(PyTorch-2.9.0) [root@liteserver-hps-148c-00031 vllm-ascend-ec-pool]# grep 'E^C
+(PyTorch-2.9.0) [root@liteserver-hps-148c-00031 vllm-ascend-ec-pool]# grep 'EC-POOL] init' prefill_0.log | head -1    # 看 dir= 是不是 /ce-efs-hd2-01/ec_pool
+(Worker_TP0_EP0 pid=1272) [EC-POOL] init backend=fs index=fs dir=/ce-efs-hd2-01/ec_pool version=v0 rank=0
+(PyTorch-2.9.0) [root@liteserver-hps-148c-00031 vllm-ascend-ec-pool]# grep -c '\[EC-POOL\] hits=1/1' prefill_0.log
+4
+(PyTorch-2.9.0) [root@liteserver-hps-148c-00031 vllm-ascend-ec-pool]# ls -la /ce-efs-hd2-01/ec_pool/v0/
+total 9320
+drwxr-x--- 2 root root      85 Jun 27 18:16 .
+drwxr-x--- 3 root root      20 Jun 27 18:16 ..
+-rw-r----- 1 root root 9531930 Jun 27 18:16 f2a1f80daed549b3214db4e6f67d67d685591a00239532e096632e09b414aa45.pt
+(PyTorch-2.9.0) [root@liteserver-hps-148c-00031 vllm-ascend-ec-pool]# grep -c '\[EC-POOL\] hits=1/1' prefill_1.log
+0
+(PyTorch-2.9.0) [root@liteserver-hps-148c-00031 vllm-ascend-ec-pool]# grep -c '\[EC-POOL\] hits=1/1' prefill_0.log
+4
+(PyTorch-2.9.0) [root@liteserver-hps-148c-00031 vllm-ascend-ec-pool]# grep '\[EC-POOL\] write_back' prefill_0.log | tail
+(PyTorch-2.9.0) [root@liteserver-hps-148c-00031 vllm-ascend-ec-pool]#   
+
+
+
+(PyTorch-2.9.0) [root@liteserver-hps-148c-00004 vllm-ascend-ec-pool]# unset http_proxy
+(PyTorch-2.9.0) [root@liteserver-hps-148c-00004 vllm-ascend-ec-pool]# unset https_proxy
+(PyTorch-2.9.0) [root@liteserver-hps-148c-00004 vllm-ascend-ec-pool]# export EC_POOL_EFS_DIR=/ce-efs-hd2-01/ec_pool
+(PyTorch-2.9.0) [root@liteserver-hps-148c-00004 vllm-ascend-ec-pool]# PREFILL_INSTANCE=1 bash pd_p.sh
+[pd_p] P1 devices=4,5,6,7 port=8011 engine_id=2 kv_port=36030 plog=./plog/prefill_1/20260629_094948 pool=/ce-efs-hd2-01/ec_pool
+[pd_p] P1 pid=250 -> prefill_1.log
+(PyTorch-2.9.0) [root@liteserver-hps-148c-00004 vllm-ascend-ec-pool]# bash pd_d.sh 
+[pd_d] decode devices=8-15 port=8020 engine_id=1 kv_port=26010 plog=./plog/decode/20260629_094951
+[pd_d] decode pid=327 -> decode.log
+(PyTorch-2.9.0) [root@liteserver-hps-148c-00004 vllm-ascend-ec-pool]# grep 'EC-POOL] init' prefill_1.log | head -1    # dir= 应也是 /ce-efs-hd2-01/ec_pool
+(Worker_TP0_EP0 pid=2515) [EC-POOL] init backend=fs index=fs dir=/ce-efs-hd2-01/ec_pool version=v0 rank=0
+(PyTorch-2.9.0) [root@liteserver-hps-148c-00004 vllm-ascend-ec-pool]# grep '\[EC-POOL\] write_back' prefill_1.log | tail
+(PyTorch-2.9.0) [root@liteserver-hps-148c-00004 vllm-ascend-ec-pool]# ls -la /ce-efs-hd2-01/ec_pool/v0/
+total 9320
+drwxr-x--- 2 root root      85 Jun 27 18:16 .
+drwxr-x--- 3 root root      20 Jun 27 18:16 ..
+-rw-r----- 1 root root 9531930 Jun 27 18:16 f2a1f80daed549b3214db4e6f67d67d685591a00239532e096632e09b414aa45.pt
+(PyTorch-2.9.0) [root@liteserver-hps-148c-00004 vllm-ascend-ec-pool]# 
+(PyTorch-2.9.0) [root@liteserver-hps-148c-00004 vllm-ascend-ec-pool]# grep -c '\[EC-POOL\] hits=1/1' prefill_1.log
+4
+(PyTorch-2.9.0) [root@liteserver-hps-148c-00004 vllm-ascend-ec-pool]# 
