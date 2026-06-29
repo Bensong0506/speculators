@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="520" viewBox="0 0 1120 520">
+  <defs>
+    <style>
+      .bg { fill: #fff; }
+      .box { fill: #f7f7f7; stroke: #d6d6d6; stroke-width: 2; rx: 18; }
+      .redbox { fill: #fff1f1; stroke: #c7000b; stroke-width: 2.5; rx: 18; }
+      .dark { fill: #222; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif; font-size: 24px; font-weight: 650; }
+      .text { fill: #555; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif; font-size: 19px; }
+      .small { fill: #666; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif; font-size: 16px; }
+      .red { fill: #c7000b; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif; font-size: 20px; font-weight: 700; }
+      .arrow { stroke: #c7000b; stroke-width: 3; fill: none; marker-end: url(#arrow); }
+      .thin { stroke: #999; stroke-width: 2; fill: none; marker-end: url(#arrowGray); }
+      .head { fill: #fff; stroke: #c7000b; stroke-width: 2; rx: 12; }
+      .ok { fill: #e9f7ef; stroke: #1f8a4c; stroke-width: 2; rx: 9; }
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#c7000b"/>
+    </marker>
+    <marker id="arrowGray" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#999"/>
+    </marker>
+  </defs>
+  <rect class="bg" x="0" y="0" width="1120" height="520"/>
+  <text class="dark" x="48" y="52">MTP head: verifier 原生多 token 预测头逐步生成候选 token</text>
+  <text class="text" x="48" y="86">MTP 嵌在主模型权重内，和 verifier 表示更贴近，因此通常接受率更高。</text>
+
+  <rect class="box" x="48" y="132" width="220" height="116"/>
+  <text class="dark" x="78" y="178">图文输入</text>
+  <text class="small" x="78" y="210">image + prompt</text>
+
+  <path class="arrow" d="M272 190 C306 190, 324 190, 356 190"/>
+  <rect class="redbox" x="360" y="118" width="298" height="144"/>
+  <text class="dark" x="392" y="162">Verifier Transformer</text>
+  <text class="text" x="392" y="196">主模型隐藏状态 h_t</text>
+  <text class="red" x="392" y="226">MTP 头与 verifier 共用表示</text>
+
+  <path class="arrow" d="M662 190 C696 190, 714 190, 746 190"/>
+  <rect class="box" x="750" y="112" width="310" height="236"/>
+  <text class="dark" x="782" y="154">原生 MTP heads</text>
+  <rect class="head" x="788" y="184" width="92" height="44"/>
+  <rect class="head" x="898" y="184" width="92" height="44"/>
+  <rect class="head" x="788" y="252" width="92" height="44"/>
+  <rect class="head" x="898" y="252" width="92" height="44"/>
+  <text class="small" x="810" y="212">t+1</text>
+  <text class="small" x="920" y="212">t+2</text>
+  <text class="small" x="810" y="280">t+3</text>
+  <text class="small" x="920" y="280">t+5</text>
+  <path class="thin" d="M880 206 L894 206"/>
+  <path class="thin" d="M834 230 L834 246"/>
+  <path class="thin" d="M880 274 L894 274"/>
+  <text class="text" x="782" y="324">按步预测，深位依赖浅位质量</text>
+
+  <path class="arrow" d="M904 350 C904 396, 724 406, 592 406"/>
+  <rect class="box" x="292" y="342" width="296" height="128"/>
+  <text class="dark" x="326" y="388">Verifier 校验前缀</text>
+  <text class="small" x="326" y="420">早位每轮都会生效</text>
+  <text class="small" x="326" y="446">深位必须等待前缀全接受</text>
+
+  <rect class="ok" x="650" y="400" width="86" height="42"/>
+  <rect class="ok" x="748" y="400" width="86" height="42"/>
+  <rect class="ok" x="846" y="400" width="86" height="42"/>
+  <text class="small" x="678" y="427">接收</text>
+  <text class="small" x="776" y="427">接收</text>
+  <text class="small" x="874" y="427">接收</text>
+  <text class="red" x="650" y="474">训练重点: 保护 early tokens，同时提升中后位</text>
+</svg>
