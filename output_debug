@@ -1,4 +1,19 @@
+# 看一眼正在跑的相关进程
+ps -ef | grep -E "pip|setup_vllm|fix_torch|conda create" | grep -v grep
+
+# 杀掉所有 pip 安装 + 驱动它们的 nohup 脚本(防止脚本又重新拉起 pip)
+pkill -9 -f "pip install"
+pkill -9 -f "pip download"
+pkill -9 -f "setup_vllm022.sh"
+pkill -9 -f "setup_vllm_on_base_torch.sh"
+pkill -9 -f "fix_torch_cu128.sh"
+pkill -9 -f "conda create"
+
+# 确认清干净了(应只剩 grep 自己)
+ps -ef | grep -E "pip|setup_vllm|fix_torch" | grep -v grep
+
+conda activate vllm022
 git -C /mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/speculators pull
-nohup bash install/setup_vllm_on_base_torch.sh > ~/setup_vllm_qwen.log 2>&1 &
-tail -f ~/setup_vllm_qwen.log
-grep -E "PICKED_VLLM|CUDA_OK|ARCH_SUPPORTED|SETUP_DONE" ~/setup_vllm_qwen.log
+nohup bash install/fix_torch_cu128.sh > ~/fix_torch.log 2>&1 &
+tail -f ~/fix_torch.log
+grep -E "built-cuda|CUDA_OK|CUDA_FAIL" ~/fix_torch.log
