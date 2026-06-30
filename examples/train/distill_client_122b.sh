@@ -39,11 +39,39 @@ CLIENT_TRAIN_JSONL="${CLIENT_TRAIN_JSONL:-/mnt/tidal-alsh01/dataset/pai/zhaofei4
 MODE="${MODE:-text}"                       # text | multimodal
 MAX_SAMPLES="${MAX_SAMPLES:-8137}"
 SKIP_SAMPLES="${SKIP_SAMPLES:-0}"
-OUT_JSONL="${OUT_JSONL:-$REPO_ROOT/data/client/client_122b_distill_${MODE}_${MAX_SAMPLES}.jsonl}"
+
+# SAFETY: this is the client's machine. We NEVER touch the original train.jsonl.
+# All our files live under WORK_DIR inside the /huawei folder (next to the data),
+# and we operate on a READ-ONLY COPY of the source, never the original.
+HUAWEI_ROOT="${HUAWEI_ROOT:-$(cd "$(dirname "$CLIENT_TRAIN_JSONL")" && pwd)}"
+WORK_DIR="${WORK_DIR:-$HUAWEI_ROOT/mtp_clean}"
+SOURCE_COPY="${SOURCE_COPY:-$WORK_DIR/train_source_copy.jsonl}"
+OUT_JSONL="${OUT_JSONL:-$WORK_DIR/client_122b_distill_${MODE}_${MAX_SAMPLES}.jsonl}"
 
 [ -d "$CLIENT_MODEL" ] || { echo "[fatal] CLIENT_MODEL not found: $CLIENT_MODEL"; exit 1; }
 [ -s "$CLIENT_TRAIN_JSONL" ] || { echo "[fatal] CLIENT_TRAIN_JSONL not found: $CLIENT_TRAIN_JSONL"; exit 1; }
-mkdir -p "$(dirname "$OUT_JSONL")"
+mkdir -p "$WORK_DIR" "$(dirname "$OUT_JSONL")"
+
+# Guard: refuse if any output path resolves to the original source.
+SRC_RP="$(readlink -f "$CLIENT_TRAIN_JSONL")"
+for p in "$SOURCE_COPY" "$OUT_JSONL"; do
+    mkdir -p "$(dirname "$p")"
+    if [ "$(readlink -f "$(dirname "$p")")/$(basename "$p")" = "$SRC_RP" ]; then
+        echo "[fatal] output path '$p' would hit the original source $SRC_RP — refusing"; exit 1
+    fi
+done
+
+# Make/refresh the read-only working copy (original stays untouched). cp -n keeps an
+# existing copy (rerun-safe); we verify it matches the source by size before reuse.
+if [ ! -f "$SOURCE_COPY" ] || [ "$(stat -c%s "$SOURCE_COPY" 2>/dev/null)" != "$(stat -c%s "$CLIENT_TRAIN_JSONL" 2>/dev/null)" ]; then
+    echo "Copying source -> read-only working copy (original NOT modified):"
+    echo "  src:  $CLIENT_TRAIN_JSONL"
+    echo "  copy: $SOURCE_COPY"
+    cp -f "$CLIENT_TRAIN_JSONL" "$SOURCE_COPY"
+    chmod 0444 "$SOURCE_COPY"   # read-only copy; never the original
+fi
+# From here on we read ONLY the copy.
+CLIENT_TRAIN_JSONL="$SOURCE_COPY"
 
 # ---- serving knobs (8x H800, full-precision 122B, LONG context) ----
 GPUS="${GPUS:-0,1,2,3,4,5,6,7}"
@@ -67,7 +95,7 @@ TEMPERATURE="${TEMPERATURE:-0}"            # greedy: learn the verifier's argmax
 CONCURRENCY="${CONCURRENCY:-$MAX_NUM_SEQS}"
 RESUME="${RESUME:-1}"
 
-LOG_DIR="${LOG_DIR:-$REPO_ROOT/run_logs}"
+LOG_DIR="${LOG_DIR:-$WORK_DIR/logs}"
 SERVER_LOG="${SERVER_LOG:-$LOG_DIR/distill_client_122b_${STAMP}_vllm.log}"
 mkdir -p "$LOG_DIR"
 

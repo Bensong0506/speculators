@@ -178,6 +178,13 @@ def main() -> None:
                       help="keep images (server needs --allowed-local-media-path + --limit-mm-per-prompt)")
     args = ap.parse_args()
 
+    # SAFETY: never write onto an input file (a mis-set --out-jsonl with mode "w"
+    # would truncate the client's original train.jsonl). Refuse if out == any in.
+    out_rp = args.out_jsonl.resolve()
+    for src in args.inputs:
+        if out_rp == Path(src).resolve():
+            raise SystemExit(f"[fatal] --out-jsonl resolves to an input file ({src}); refusing to overwrite source data")
+
     import openai  # noqa: PLC0415
 
     args.out_jsonl.parent.mkdir(parents=True, exist_ok=True)
