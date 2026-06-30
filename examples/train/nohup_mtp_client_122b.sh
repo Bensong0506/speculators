@@ -30,9 +30,9 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$REPO_ROOT"
 
 # ---- client knobs ----
-CLIENT_MODEL="${CLIENT_MODEL:-/data/wenxuan/Qwen3.5-122B-A10B-sft}"
-CLIENT_DISTILL_JSONL="${CLIENT_DISTILL_JSONL:-$REPO_ROOT/data/client/client_122b_distill_10k.jsonl}"
-CLIENT_IMAGE_ROOT="${CLIENT_IMAGE_ROOT:-/data/client/images}"
+CLIENT_MODEL="${CLIENT_MODEL:-/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/qwen3.5-vl-122B}"
+CLIENT_DISTILL_JSONL="${CLIENT_DISTILL_JSONL:-$REPO_ROOT/data/client/client_122b_distill_text_8137.jsonl}"
+CLIENT_IMAGE_ROOT="${CLIENT_IMAGE_ROOT:-/mnt/tidal-alsh01}"
 
 if [ ! -d "$CLIENT_MODEL" ]; then
     echo "[fatal] CLIENT_MODEL not found: $CLIENT_MODEL  (must contain native mtp.* weights)"
@@ -53,6 +53,14 @@ export DISTILLED_ALLAVA_JSONL="$CLIENT_DISTILL_JSONL"
 export ALLAVA_IMAGE_ROOT="$CLIENT_IMAGE_ROOT"
 export OUTPUT_DIR="${OUTPUT_DIR:-./output/mtp_client_122b}"
 export SAVE_PATH="${SAVE_PATH:-$OUTPUT_DIR/${RUN_NAME}/checkpoints}"
+
+# Client RAG prompts are LONG (system ~5k + retrieved notes up to ~56k chars ->
+# ~9k-15k tokens typical). The 9B/ALLaVA default SEQ_LENGTH=4096 would truncate
+# the context the answer was generated from. Bump it; note longer seq raises
+# trainer memory (full-vocab logits scale seq x steps), so if STEP 2 OOMs lower
+# this or NUM_SPECULATIVE_STEPS first.
+export SEQ_LENGTH="${SEQ_LENGTH:-16384}"
+export PREPROCESS_SEQ_LENGTH="${PREPROCESS_SEQ_LENGTH:-16384}"
 
 echo "=== STEP 2: MTP training on post-SFT 122B (client domain) ==="
 echo "  run_name:      $RUN_NAME"

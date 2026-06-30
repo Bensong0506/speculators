@@ -29,9 +29,9 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$REPO_ROOT"
 
 # ---- client knobs ----
-CLIENT_MODEL="${CLIENT_MODEL:-/data/wenxuan/Qwen3.5-122B-A10B-sft}"
-CLIENT_DISTILL_JSONL="${CLIENT_DISTILL_JSONL:-$REPO_ROOT/data/client/client_122b_distill_10k.jsonl}"
-CLIENT_IMAGE_ROOT="${CLIENT_IMAGE_ROOT:-/data/client/images}"
+CLIENT_MODEL="${CLIENT_MODEL:-/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/qwen3.5-vl-122B}"
+CLIENT_DISTILL_JSONL="${CLIENT_DISTILL_JSONL:-$REPO_ROOT/data/client/client_122b_distill_text_8137.jsonl}"
+CLIENT_IMAGE_ROOT="${CLIENT_IMAGE_ROOT:-/mnt/tidal-alsh01}"
 
 if [ -z "${MTP_CKPT:-}" ]; then
     echo "[fatal] set MTP_CKPT=output/mtp_client_122b/<run>/checkpoints/checkpoint_best"
@@ -46,6 +46,8 @@ export MTP_CKPT
 export TP="${TP:-8}"
 export GPUS="${GPUS:-0,1,2,3,4,5,6,7}"
 export GPU_MEMORY_UTIL="${GPU_MEMORY_UTIL:-0.90}"
+export MAX_MODEL_LEN="${MAX_MODEL_LEN:-65536}"   # client RAG prompts are long
+export MAX_TOKENS="${MAX_TOKENS:-512}"           # measure accept over a real answer span
 export INFER_NUM_SPEC="${INFER_NUM_SPEC:-7}"
 export NUM_PROMPTS="${NUM_PROMPTS:-128}"
 export SERVED_MODEL_NAME="${SERVED_MODEL_NAME:-qwen3.5-122b-sft-mtp-orig-vs-trained}"
