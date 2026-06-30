@@ -43,20 +43,28 @@ GH_PROXIES="${GH_PROXIES:-https://ghfast.top/ https://gh-proxy.com/ https://gith
 
 download_ok() { [ -s "$DEST" ] && [ "$(stat -c%s "$DEST" 2>/dev/null || echo 0)" -gt 1000000 ]; }
 
-rm -f "$DEST"
+# wget -c resumes across drops (the box loses SSH ~every 5 min) — better than curl
+# here. Fall back to curl if wget is missing.
+fetch() {  # fetch <url> ; appends to $DEST, resuming
+    local url="$1"
+    if command -v wget >/dev/null 2>&1; then
+        wget -c --tries=20 --timeout=60 --waitretry=5 -O "$DEST" "$url"
+    else
+        curl -L -C - --fail --retry 20 --retry-delay 5 --connect-timeout 20 \
+             --speed-time 30 --speed-limit 50000 -o "$DEST" "$url"
+    fi
+}
+
 if [ -n "${WHEEL_URL_FINAL:-}" ]; then
     echo "  using WHEEL_URL_FINAL=$WHEEL_URL_FINAL"
-    curl -L --fail --retry 10 --retry-delay 5 --max-time 1800 -o "$DEST" "$WHEEL_URL_FINAL" || true
+    fetch "$WHEEL_URL_FINAL" || true
 fi
 if ! download_ok; then
-    for prox in "" $GH_PROXIES; do
+    for prox in $GH_PROXIES ""; do   # mirrors first (CN), bare github last
         TRY="${prox}${WHEEL_URL}"
         echo "  trying: ${TRY}"
-        rm -f "$DEST"
-        # short connect timeout so a dead mirror fails fast; generous overall cap
-        if curl -L --fail --connect-timeout 20 --retry 3 --retry-delay 3 --max-time 1800 \
-                --speed-time 30 --speed-limit 50000 -o "$DEST" "$TRY" && download_ok; then
-            echo "  OK via: ${prox:-<direct>}"
+        if fetch "$TRY" && download_ok; then
+            echo "  OK via: ${prox:-<direct github>}"
             break
         fi
     done
