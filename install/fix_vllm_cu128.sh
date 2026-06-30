@@ -18,27 +18,34 @@ CONDA_SH="${CONDA_SH:-/home/ray/anaconda3/etc/profile.d/conda.sh}"
 ENV_NAME="${ENV_NAME:-vllm022}"
 VLLM_VER="${VLLM_VER:-0.22.0}"
 CPU_ARCH="${CPU_ARCH:-x86_64}"
+# vLLM 0.22.0 has NO cu128 wheel — the lowest CUDA-12 build is cu129 (CUDA 12.9).
+# cu129 runs on this 12.8 driver via CUDA minor-version compatibility, and it links
+# libcudart.so.12 (provided by our cu128 torch) — NOT the .so.13 the PyPI wheel needed.
+CUDA_TAG="${CUDA_TAG:-cu129}"
+MANYLINUX="${MANYLINUX:-manylinux_2_28}"
 
 # shellcheck disable=SC1090
 source "$CONDA_SH"
 conda activate "$ENV_NAME"
 
-echo "===== find the cu128 vLLM ${VLLM_VER} wheel (GitHub release asset) ====="
-# Prefer the GitHub releases API (gives the real filename); fall back to the
-# documented URL pattern if the API isn't reachable.
-API="https://api.github.com/repos/vllm-project/vllm/releases/tags/v${VLLM_VER}"
-WHEEL_URL="$(curl -s --max-time 30 "$API" \
-    | grep -oE 'https://[^"]*vllm-[^"]*\+cu128[^"]*'"${CPU_ARCH}"'\.whl' | head -1)"
-if [ -z "$WHEEL_URL" ]; then
-    WHEEL_URL="https://github.com/vllm-project/vllm/releases/download/v${VLLM_VER}/vllm-${VLLM_VER}+cu128-cp38-abi3-manylinux_2_35_${CPU_ARCH}.whl"
-    echo "  API gave nothing; trying documented URL pattern."
-fi
+echo "===== fetch the ${CUDA_TAG} vLLM ${VLLM_VER} wheel (GitHub release asset) ====="
+WHEEL="vllm-${VLLM_VER}+${CUDA_TAG}-cp38-abi3-${MANYLINUX}_${CPU_ARCH}.whl"
+# %2B = '+' (GitHub asset paths url-encode the plus).
+WHEEL_URL="${WHEEL_URL:-https://github.com/vllm-project/vllm/releases/download/v${VLLM_VER}/vllm-${VLLM_VER}%2B${CUDA_TAG}-cp38-abi3-${MANYLINUX}_${CPU_ARCH}.whl}"
 echo "WHEEL_URL $WHEEL_URL"
-curl -sfI --max-time 30 "$WHEEL_URL" >/dev/null 2>&1 && echo "  (asset reachable)" || \
-    echo "  WARN: HEAD failed; pip will still try (or set WHEEL_URL=... by hand)."
 
-echo "===== install the cu128 vLLM over the cu13 one (--no-deps: keep our cu128 torch) ====="
-PIP_CONFIG_FILE=/dev/null pip install --no-cache-dir --force-reinstall --no-deps "$WHEEL_URL"
+# Download to a local file first (curl -L follows the CDN redirect; more reliable
+# than pip fetching the github URL directly), then pip-install the local wheel.
+DEST="/tmp/${WHEEL}"
+if ! curl -L --fail --retry 10 --retry-delay 5 --max-time 1800 -o "$DEST" "$WHEEL_URL"; then
+    echo "DOWNLOAD_FAIL: could not fetch $WHEEL_URL"
+    echo "  Try a proxy/mirror, or download the wheel by hand and rerun with WHEEL_URL=file:///path/to.whl"
+    echo "FIX_DONE rc=1"; exit 1
+fi
+ls -la "$DEST"
+
+echo "===== install the ${CUDA_TAG} vLLM over the cu13 one (--no-deps: keep our cu128 torch) ====="
+PIP_CONFIG_FILE=/dev/null pip install --no-cache-dir --force-reinstall --no-deps "$DEST"
 RC=$?
 
 echo "===== verify: the _C extension that was failing now loads + arch supported ====="
