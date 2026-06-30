@@ -1,37 +1,6 @@
-(vllm022) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/speculators# nohup bash install/fix_torch_cu128.sh > ~/fix_torch.log 2>&1 &
-[1] 39016
-(vllm022) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/speculators# tail -f ~/fix_torch.log
-+ echo '  index reachability check:'
-  index reachability check:
-+ curl -sI --max-time 20 https://download.pytorch.org/whl/cu128/torch/
-+ head -3
-HTTP/2 200 
-content-type: text/html
-content-length: 89396
-+ echo '  installing: torch==2.11.0+cu128 torchvision==0.26.0+cu128 torchaudio==2.11.0+cu128  from https://download.pytorch.org/whl/cu128 (cu128 index only, no pypi fallback)'
-  installing: torch==2.11.0+cu128 torchvision==0.26.0+cu128 torchaudio==2.11.0+cu128  from https://download.pytorch.org/whl/cu128 (cu128 index only, no pypi fallback)
-+ pip install --no-cache-dir --force-reinstall torch==2.11.0+cu128 torchvision==0.26.0+cu128 torchaudio==2.11.0+cu128 --index-url https://download.pytorch.org/whl/cu128
-Looking in indexes: https://download.pytorch.org/whl/cu128
-Collecting torch==2.11.0+cu128
-  Downloading torch-2.11.0%2Bcu128-cp310-cp310-manylinux_2_28_x86_64.whl.metadata (29 kB)
-Collecting torchvision==0.26.0+cu128
-  Downloading torchvision-0.26.0%2Bcu128-cp310-cp310-manylinux_2_28_x86_64.whl.metadata (5.5 kB)
-Collecting torchaudio==2.11.0+cu128
-  Downloading torchaudio-2.11.0%2Bcu128-cp310-cp310-manylinux_2_28_x86_64.whl.metadata (6.9 kB)
-Collecting filelock (from torch==2.11.0+cu128)
-  Downloading filelock-3.29.0-py3-none-any.whl.metadata (2.0 kB)
-Collecting typing-extensions>=4.10.0 (from torch==2.11.0+cu128)
-  Downloading typing_extensions-4.15.0-py3-none-any.whl.metadata (3.3 kB)
-Collecting setuptools<82 (from torch==2.11.0+cu128)
-  Downloading setuptools-70.2.0-py3-none-any.whl.metadata (5.8 kB)
-Collecting sympy>=1.13.3 (from torch==2.11.0+cu128)
-  Downloading sympy-1.14.0-py3-none-any.whl.metadata (12 kB)
-Collecting networkx>=2.5.1 (from torch==2.11.0+cu128)
-  Downloading networkx-3.4.2-py3-none-any.whl.metadata (6.3 kB)
-Collecting jinja2 (from torch==2.11.0+cu128)
-  Downloading jinja2-3.1.6-py3-none-any.whl.metadata (2.9 kB)
-Collecting fsspec>=0.8.5 (from torch==2.11.0+cu128)
-  Downloading fsspec-2026.4.0-py3-none-any.whl.metadata (10 kB)
-Collecting cuda-toolkit==12.8.1 (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==12.8.1; platform_system == "Linux"->torch==2.11.0+cu128)
-  WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'ReadTimeoutError("HTTPSConnectionPool(host='pypi.nvidia.cn', port=443): Read timed out. (read timeout=15)")': /cuda-toolkit/cuda_toolkit-12.8.1-py2.py3-none-any.whl
-  WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'ReadTimeoutError("HTTPSConnectionPool(host='pypi.nvidia.cn', port=443): Read timed out. (read timeout=15)")': /cuda-toolkit/cuda_toolkit-12.8.1-py2.py3-none-any.whl
+pkill -9 -f "pip install"; pkill -9 -f "fix_torch_cu128.sh"
+conda activate vllm022
+git -C /mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/speculators pull
+nohup bash install/fix_torch_cu128.sh > ~/fix_torch.log 2>&1 &
+tail -f ~/fix_torch.log
+grep -E "built-cuda|CUDA_OK|CUDA_FAIL" ~/fix_torch.log
