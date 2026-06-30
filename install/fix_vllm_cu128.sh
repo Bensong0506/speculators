@@ -32,14 +32,40 @@ echo "===== fetch the ${CUDA_TAG} vLLM ${VLLM_VER} wheel (GitHub release asset) 
 WHEEL="vllm-${VLLM_VER}+${CUDA_TAG}-cp38-abi3-${MANYLINUX}_${CPU_ARCH}.whl"
 # %2B = '+' (GitHub asset paths url-encode the plus).
 WHEEL_URL="${WHEEL_URL:-https://github.com/vllm-project/vllm/releases/download/v${VLLM_VER}/vllm-${VLLM_VER}%2B${CUDA_TAG}-cp38-abi3-${MANYLINUX}_${CPU_ARCH}.whl}"
-echo "WHEEL_URL $WHEEL_URL"
+echo "WHEEL_URL(direct) $WHEEL_URL"
 
-# Download to a local file first (curl -L follows the CDN redirect; more reliable
-# than pip fetching the github URL directly), then pip-install the local wheel.
+# Direct github release download is slow/stalls from CN. Try a list of GitHub
+# acceleration mirrors (prepend the proxy to the full github URL); first one that
+# pulls bytes wins. Override the whole list with GH_PROXIES="p1 p2", or skip
+# straight to a hand-set URL/file with WHEEL_URL_FINAL=file:///path or https://...
 DEST="/tmp/${WHEEL}"
-if ! curl -L --fail --retry 10 --retry-delay 5 --max-time 1800 -o "$DEST" "$WHEEL_URL"; then
-    echo "DOWNLOAD_FAIL: could not fetch $WHEEL_URL"
-    echo "  Try a proxy/mirror, or download the wheel by hand and rerun with WHEEL_URL=file:///path/to.whl"
+GH_PROXIES="${GH_PROXIES:-https://ghfast.top/ https://gh-proxy.com/ https://github.moeyy.xyz/ https://ghproxy.net/ }"
+
+download_ok() { [ -s "$DEST" ] && [ "$(stat -c%s "$DEST" 2>/dev/null || echo 0)" -gt 1000000 ]; }
+
+rm -f "$DEST"
+if [ -n "${WHEEL_URL_FINAL:-}" ]; then
+    echo "  using WHEEL_URL_FINAL=$WHEEL_URL_FINAL"
+    curl -L --fail --retry 10 --retry-delay 5 --max-time 1800 -o "$DEST" "$WHEEL_URL_FINAL" || true
+fi
+if ! download_ok; then
+    for prox in "" $GH_PROXIES; do
+        TRY="${prox}${WHEEL_URL}"
+        echo "  trying: ${TRY}"
+        rm -f "$DEST"
+        # short connect timeout so a dead mirror fails fast; generous overall cap
+        if curl -L --fail --connect-timeout 20 --retry 3 --retry-delay 3 --max-time 1800 \
+                --speed-time 30 --speed-limit 50000 -o "$DEST" "$TRY" && download_ok; then
+            echo "  OK via: ${prox:-<direct>}"
+            break
+        fi
+    done
+fi
+if ! download_ok; then
+    echo "DOWNLOAD_FAIL: every source stalled/failed for $WHEEL"
+    echo "  Options: (1) set GH_PROXIES to a mirror that works from your network;"
+    echo "           (2) download $WHEEL on a fast box and put it on the machine, then"
+    echo "               rerun with WHEEL_URL_FINAL=file:///abs/path/$WHEEL"
     echo "FIX_DONE rc=1"; exit 1
 fi
 ls -la "$DEST"
