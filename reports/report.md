@@ -1,18 +1,18 @@
 # 从 D-Cut 到 DSpark: 投机解码的下一步不是多猜,而是少验
 
 **日期**: 2026-06-30
-**范围**: Qwen3.5 多模态 DFlash / D-Cut 内测结果, DeepSeek-AI DeepSpec / DSpark 论文与开源实现
-**场景**: vLLM speculative decoding, DFlash 并行 draft, fixed `spec=7` 到 adaptive verification 的迁移
+**范围**: Qwen3.5-9B DFlash / D-Cut GPU A/B 结果, DeepSeek-AI DeepSpec / DSpark 论文与开源实现
+**场景**: vLLM speculative decoding, DFlash 并行 draft, `speculative_tokens=15` 到 adaptive verification 的迁移
 **目标**: 给内部论坛/哈桑汇报使用,讲清楚我们已经验证的 D-Cut 价值、DeepSeek DSpark 到底做了什么、以及两者如何合并成下一阶段路线
 
 ## 0. 结论先看
 
 先把核心判断放在最前面:
 
-1. **我们内部 D-Cut 已经验证了最关键的工程杠杆**: 在 DFlash `spec=7` 的设置下,如果平均只把 4 个 draft token 交给 verifier 校验,每轮 verifier draft-token 工作量从 7 降到 4,减少 **3/7 = 42.9%**。这个收益不需要重训模型,也不改变 rejection sampling 接受规则。
+1. **我们内部 D-Cut 已经有真实 GPU A/B 数据**: 在 Qwen3.5-9B + Qwen3.5-9B-DFlash、ALLaVA、`seq=4096/out=128`、每组 256 请求的测试里,D-Cut 在低并发 `c=16` 略慢,但在 `c=32` 时 output tok/s **+27.6%**,在 `c=64` 时 output tok/s **+50.3%**,p50 latency 分别从 `2.74s -> 1.99s`、`4.97s -> 3.21s`。
 2. **DeepSeek DSpark 做的是 D-Cut 的训练版与系统版**: 它不是简单“再做一个 draft 模型”,而是把 DFlash 的并行草稿、Markov head 的轻量局部依赖、confidence scheduler 的动态校验预算合到一起。
 3. **D-Cut 和 DSpark 是同一条路的两个阶段**: D-Cut 用 heuristic 分数做静态/轻量剪尾;DSpark 用训练出来并校准过的 confidence head 估计 prefix survival,再结合硬件吞吐曲线做 batch-aware 调度。
-4. **短期最应该继续推 D-Cut**: 我们已有 DFlash checkpoint,但没有 Qwen3.5 多模态 DSpark checkpoint。完整 DSpark 的 Markov head 和 confidence head 都要训练;D-Cut 不需要训练,更适合作为 vLLM/NPU variable verify path 的第一版。
+4. **短期最应该继续推 D-Cut**: 我们已有 DFlash checkpoint,但没有 Qwen3.5 多模态 DSpark checkpoint。完整 DSpark 的 Markov head 和 confidence head 都要训练;D-Cut 不需要训练,且真实 GPU 数据已经说明它的有效区间主要在中高并发。
 5. **长期目标是 DSpark 化**: 当 variable verify runtime 稳定后,把 D-Cut 的 heuristic score 替换成 learned confidence,把固定阈值替换成 hardware-aware scheduler,就能自然演进到 DSpark 的生产形态。
 
 一句话:
@@ -25,41 +25,59 @@
 
 先定义符号:
 
-- `K`: draft block size,也就是每轮最多提出的 draft token 数。当前 DFlash 主设置是 `K=7`。
+- `K`: draft block size,也就是每轮最多提出的 draft token 数。本次 GPU A/B 里 `K=15`。
 - `ell`: 本轮实际送给 verifier 校验的 draft token 数,满足 `0 <= ell <= K`。
-- `bar{ell}`: 多轮平均校验深度,即 `ell` 的平均值。
+- `c`: concurrency,即并发请求数。
+- `R_req`: request throughput,单位是 requests/s。
+- `R_tok`: output-token throughput,单位是 output tokens/s。
+- `TTFT_50`: time-to-first-token 的 p50。
+- `L_50`: end-to-end latency 的 p50。
 - `M_t`: target model / verifier,即最终输出必须保持一致的主模型。
 - `M_d`: draft model / proposer,即 DFlash 这类便宜草稿模型。
 
-固定 DFlash 的校验方式是:
+本次真实 GPU 测试设置如下:
+
+| 项目 | 设置 |
+|---|---|
+| Target model `M_t` | Qwen3.5-9B |
+| Draft model `M_d` | Qwen3.5-9B-DFlash |
+| Dataset | ALLaVA JSONL |
+| Speculative method | DFlash |
+| Draft block size `K` | 15 |
+| Profiling sequence length | 4096 |
+| Output tokens per request | 128 |
+| Requests per arm / concurrency point | 256 |
+| Tested concurrency `c` | 16, 32, 64 |
+
+吞吐增益的计算方式是:
 
 ```text
-每轮 M_d 提出 K=7 个 token
-每轮 M_t 校验 ell=7 个 draft token
+Delta R_tok = (R_tok^D-Cut - R_tok^vanilla) / R_tok^vanilla
 ```
 
-D-Cut 的校验方式是:
+真实 A/B 结果如下:
+
+| `c` | Vanilla req/s | D-Cut req/s | Req/s delta | Vanilla out tok/s | D-Cut out tok/s | Out tok/s delta | Vanilla TTFT p50 | D-Cut TTFT p50 | Vanilla `L_50` | D-Cut `L_50` |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 16 | 10.02 | 9.73 | -2.9% | 963.7 | 941.2 | -2.3% | 0.13s | 0.13s | 1.58s | 1.54s |
+| 32 | 12.41 | 15.99 | +28.8% | 1188.4 | 1516.4 | +27.6% | 0.21s | 0.17s | 2.74s | 1.99s |
+| 64 | 12.32 | 18.81 | +52.7% | 1176.9 | 1769.2 | +50.3% | 1.10s | 0.74s | 4.97s | 3.21s |
+
+这个表比抽象的 verify-token reduction 更重要,因为它直接回答了 serving 问题:
+
+1. 在 `c=16` 时,D-Cut 的 controller / D2H / 调度开销还没有被 verifier compute 节省完全摊平,所以 output tok/s 略低 `-2.3%`。
+2. 在 `c=32` 时,verifier compute 开始成为主要瓶颈,D-Cut output tok/s 提升 `+27.6%`,p50 latency 从 `2.74s` 降到 `1.99s`。
+3. 在 `c=64` 时,高并发把 target verify 压到更满,D-Cut output tok/s 提升 `+50.3%`,p50 latency 从 `4.97s` 降到 `3.21s`,TTFT p50 也从 `1.10s` 降到 `0.74s`。
+
+因此,D-Cut 不是“所有 batch 下都白赚”的优化,而是一个很典型的高并发 serving 优化: 低并发时控制器开销可见,中高并发时 verifier compute 和排队成本占主导,剪掉低价值 verifier 工作才开始变成大收益。
+
+这份结果还有一个工程 caveat: 捕获的 `output_log` 里没有找到完整的 D-Cut activation / profiling 日志行。性能形状已经明显区别于 vanilla DFlash,但下次复跑应保留 `VLLM_LOGGING_LEVEL=INFO`,并在结果里附上:
 
 ```text
-每轮 M_d 仍提出 K=7 个 token
-每轮 M_t 只校验 ell 个连续前缀 token
-内部已验证实测点: bar{ell}=4
+D-Cut adaptive verify ENABLED
+VerifyAdaptiveController: cost table ready
+profile  bs=... seq_lens=4096
 ```
-
-因此 verifier 侧 draft-token 工作量的直接下降是:
-
-```text
-verify token reduction = (K - bar{ell}) / K
-                       = (7 - 4) / 7
-                       = 42.9%
-```
-
-| 方案 | draft 长度 `K` | 平均校验深度 `bar{ell}` | verifier draft-token 工作量 | 是否重训 | 是否 lossless |
-|---|---:|---:|---:|---|---|
-| 固定 DFlash | 7 | 7 | 1.00x | 否 | 是 |
-| D-Cut 内测实测点 | 7 | 4 | 0.57x | 否 | 是 |
-
-这里要强调: **42.9% 是 verifier 需要校验的 draft token 数减少,不是直接等价于端到端吞吐 +42.9%**。端到端吞吐还取决于 target 前向成本、draft 成本、batch shape、D2H/CPU 决策开销、NPU runner 组 batch 能力等。但这个数据足够说明方向: 当 draft 已经很便宜时,下一段收益来自减少 verifier 浪费。
 
 我们之前 DFlash / MTP 报告关注的是“让 draft 更准”。D-Cut 关注的是另一半: **当尾部 token 大概率会被拒,为什么还要让 target 花 batch capacity 去验它?**
 
@@ -354,7 +372,7 @@ DeepSpec 配置里,DFlash 和 DSpark 的关系很直接:
 | matched throughput | V4-Flash 单用户生成速度 +60% 到 +85% |
 | matched throughput | V4-Pro 单用户生成速度 +57% 到 +78% |
 
-这些结果和我们的 D-Cut 判断是同向的: 高并发时,收益不只来自 draft 接受率,还来自避免 verifier 校验低价值尾巴。
+这些结果和我们的 D-Cut GPU A/B 是同向的: 高并发时,收益不只来自 draft 接受率,还来自避免 verifier 校验低价值尾巴。我们的 Qwen3.5-9B 测试里,D-Cut 在 `c=32/64` 分别带来 `+27.6%/+50.3%` output tok/s,也正好说明 verifier-side budget 在中高并发下足够关键。
 
 ## 9. 和我们当前工作的对应关系
 
@@ -362,12 +380,12 @@ DeepSpec 配置里,DFlash 和 DSpark 的关系很直接:
 |---|---|---|---|---|
 | DFlash 自蒸馏 | 需要 | 提高 draft 接受率 | 已在 9B/122B 多模态验证 | 保留为底座 |
 | MTP 微调 + soup | 需要 | 提高原生 MTP 接受率 | 已验证,122B 当前最强 | 继续用于 MTP 主线 |
-| D-Cut MVP | 不需要 | 固定 `K=7`,动态减少 `ell` | 内部已验证 `bar{ell}=4`,verify token -42.9%;vLLM 插件分支已在 `Bensong0506/vllm:feat/dcut-adaptive-verify` | 跑高并发 A/B,迁 NPU |
+| D-Cut MVP | 不需要 | 固定 draft block,动态减少 `ell` | Qwen3.5-9B GPU A/B: `c=32` output tok/s +27.6%,`c=64` +50.3%;`c=16` -2.3%;vLLM 插件分支已在 `Bensong0506/vllm:feat/dcut-adaptive-verify` | 补齐 activation/profiling 日志,迁 NPU |
 | DSpark Markov | 需要 | `U_k + B(x_{k-1})` 修后缀 | 尚无 Qwen3.5 多模态权重 | 训练小模型头做 A/B |
 | DSpark confidence | 需要+校准 | 预测 `c_k` / `a_j` | 尚未训练 | 替换 D-Cut heuristic |
 | Hardware scheduler | 需要 runtime | 用 `Theta = expected_accepts * SPS(B)` 分配 verify budget | D-Cut 分支已有 controller/profiling 雏形 | 与 continuous batching / NPU runner 对齐 |
 
-这里最值得强调的是: **我们不应该等完整 DSpark 训练完才做 serving 链路**。D-Cut 已经证明 `ell` 可以从 7 降到 4 这个方向值得做;而 DSpark 最终也依赖同一条 variable verify path。
+这里最值得强调的是: **我们不应该等完整 DSpark 训练完才做 serving 链路**。D-Cut 已经在真实 GPU A/B 里证明了中高并发收益;而 DSpark 最终也依赖同一条 variable verify path。
 
 ## 10. 合入路线
 
@@ -377,7 +395,7 @@ DeepSpec 配置里,DFlash 和 DSpark 的关系很直接:
 
 关键动作:
 
-1. DFlash proposer 继续输出完整 `K=7` token。
+1. DFlash proposer 继续输出完整 draft block;当前 GPU A/B 使用 `K=15`。
 2. 记录每个位置的 draft confidence proxy,例如 selected probability、margin、entropy、position decay。
 3. D-Cut controller 选择 `ell`。
 4. verifier 只接收 `x_{1:ell}`。
@@ -387,18 +405,20 @@ DeepSpec 配置里,DFlash 和 DSpark 的关系很直接:
 
 | 指标 | 含义 |
 |---|---|
-| `bar{ell}` | 平均 verifier 校验深度 |
-| verify token reduction | `(K - bar{ell}) / K` |
+| `bar{ell}` | 平均 verifier 校验深度;本次 GPU 表暂未捕获,下次应从 controller log 补齐 |
+| verify token reduction | `(K - bar{ell}) / K`;只在 `bar{ell}` 被真实记录后汇报 |
 | `tau` | 平均接受 draft token 数 |
 | `tau + 1` | 真实每轮输出 token 数,含 bonus |
 | output tok/s | 端到端输出吞吐 |
 | TTFT / TPOT | 用户侧首 token / 每 token 延迟 |
 | wasted verify tokens | 校验但最终不会贡献输出的尾部 token |
+| activation log | 是否出现 `D-Cut adaptive verify ENABLED` 与 cost-table profiling 行 |
 
 第一版结论应该按 concurrency 分层看,不能只看单请求:
 
-- `concurrency=1`: D-Cut 可能因为 D2H/CPU 决策开销变慢。
-- `concurrency=16/32/64`: verifier batch capacity 更紧张,才是 D-Cut 的主战场。
+- `concurrency=16`: 本次 GPU A/B output tok/s `-2.3%`,说明低并发下控制器开销还可见。
+- `concurrency=32`: output tok/s `+27.6%`,p50 latency `2.74s -> 1.99s`。
+- `concurrency=64`: output tok/s `+50.3%`,p50 latency `4.97s -> 3.21s`,是当前最强证据点。
 
 ### Phase B: 训练 Markov head
 
@@ -468,8 +488,8 @@ maximize Theta = expected_accepted_tokens * SPS(B)
 **误解 1: D-Cut 可以用于 MTP。**
 当前 D-Cut 路径只适合 DFlash/PARD 这类 parallel drafter。原因是它需要一次拿到整块 per-position probability,然后剪 verifier 宽度。MTP 是自回归 draft,成本主要在 draft 侧,更适合做 draft-side early stop,不是这套 D-Cut。
 
-**误解 2: 平均校验 4 个 token 等于吞吐直接提升 43%。**
-不等价。43% 是 verifier draft-token 工作量减少。端到端收益还要看 target 前向占比、batch shape、D2H/CPU controller 开销、NPU kernel 对变长 batch 的支持。
+**误解 2: D-Cut 在任何并发下都会提升吞吐。**
+不成立。真实 GPU A/B 里 `c=16` output tok/s 是 `-2.3%`,因为 controller / D2H / 调度开销还没有被 verifier compute 节省摊平。D-Cut 的有效区间从 `c=32` 开始明显出现,到 `c=64` 时 output tok/s 达到 `+50.3%`。
 
 **误解 3: DSpark 不需要训练。**
 完整 DSpark 需要训练 Markov head 和 confidence head。我们现在能无需训练先做的是 D-Cut MVP。
@@ -479,7 +499,7 @@ maximize Theta = expected_accepted_tokens * SPS(B)
 
 ## 12. 一句话收束
 
-我们已经用 DFlash/MTP 证明了“draft 猜得更准”能带来收益;D-Cut 的内测数据进一步说明,当 `spec=7` 平均只需要验 4 个 token 时,verifier 侧可以少做 **42.9%** 的 draft-token 校验。DeepSeek DSpark 把这条路系统化: 用 Markov head 让 DFlash 后缀更连贯,用 confidence head 预测 prefix survival,再用 hardware-aware scheduler 把 verifier budget 分给最值得验的 token。
+我们已经用 DFlash/MTP 证明了“draft 猜得更准”能带来收益;D-Cut 的 Qwen3.5-9B GPU A/B 进一步说明,在 `seq4096/out128` 这类长上下文高并发负载下,少验低价值尾巴可以在 `c=32` 带来 `+27.6%` output tok/s,在 `c=64` 带来 `+50.3%` output tok/s。DeepSeek DSpark 把这条路系统化: 用 Markov head 让 DFlash 后缀更连贯,用 confidence head 预测 prefix survival,再用 hardware-aware scheduler 把 verifier budget 分给最值得验的 token。
 
 所以我们的路线应该是:
 
@@ -491,11 +511,12 @@ DFlash checkpoint
   -> hardware-aware scheduler: DSpark-style serving
 ```
 
-短期继续把 D-Cut 在 vLLM/NPU 上跑实;中期训练 Qwen3.5 多模态 DSpark heads;长期把 D-Cut 的 heuristic controller 替换成 DSpark 的 learned confidence scheduler。
+短期继续把 D-Cut 在 vLLM/NPU 上跑实,并补齐 activation / profiling 日志;中期训练 Qwen3.5 多模态 DSpark heads;长期把 D-Cut 的 heuristic controller 替换成 DSpark 的 learned confidence scheduler。
 
 ## 参考
 
 - 内部 D-Cut vLLM 分支: `Bensong0506/vllm:feat/dcut-adaptive-verify`
+- 内部 D-Cut GPU A/B 结果: `reports/D-cut`
 - 内部 DFlash/MTP 系列报告: `reports/dflash_mtp_internal_community_report.md`
 - DeepSpec GitHub: https://github.com/deepseek-ai/DeepSpec
 - DSpark paper: `DSpark_paper.pdf`
