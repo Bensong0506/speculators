@@ -1,4 +1,78 @@
-cd <repo> && git fetch origin && git checkout mtp-training-client && git pull
+F=/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/train.jsonl
 
-nohup bash install/setup_vllm022.sh > ~/setup_vllm022.log 2>&1 &
-tail -f ~/setup_vllm022.log
+python3 - "$F" <<'PY'
+import sys, json, collections, statistics, re
+path = sys.argv[1]
+
+n=0; keys=collections.Counter(); conv_key=None; img_key=None
+roles=collections.Counter(); turns=[]; user_chars=[]; asst_chars=[]
+n_img_per=[]; img_modes=collections.Counter(); samples=[]
+CONV_KEYS=("messages","conversations","conversation","conv","turns","dialog")
+IMG_KEYS=("image","images","img","image_path","img_path","image_url","pictures")
+
+def find_imgs(obj):
+    """count image refs + how they're encoded, anywhere in the record."""
+    cnt=0
+    def walk(x):
+        nonlocal cnt
+        if isinstance(x,str):
+            if x.startswith("data:image") or ";base64," in x: img_modes["base64"]+=1; cnt+=1
+            elif re.search(r'\.(jpg|jpeg|png|webp|gif|bmp)(\?|$)', x, re.I):
+                img_modes["url" if "://" in x else "path"]+=1; cnt+=1
+            elif x.strip()=="<image>": img_modes["<image>-token"]+=1
+        elif isinstance(x,dict):
+            if x.get("type") in ("image","image_url"): img_modes["openai-part"]+=1; cnt+=1
+            for v in x.values(): walk(v)
+        elif isinstance(x,list):
+            for v in x: walk(v)
+    walk(obj); return cnt
+
+with open(path, encoding="utf-8") as f:
+    for line in f:
+        line=line.strip()
+        if not line: continue
+        try: r=json.loads(line)
+        except: continue
+        n+=1
+        if isinstance(r,dict):
+            for k in r: keys[k]+=1
+            if conv_key is None:
+                for ck in CONV_KEYS:
+                    if isinstance(r.get(ck),list): conv_key=ck; break
+            if img_key is None:
+                for ik in IMG_KEYS:
+                    if ik in r: img_key=ik; break
+            if n<=2: samples.append(r)
+            n_img_per.append(find_imgs(r))
+            conv = r.get(conv_key) if conv_key else None
+            if isinstance(conv,list):
+                turns.append(len(conv))
+                for t in conv:
+                    role=str(t.get("from") or t.get("role") or "?").lower(); roles[role]+=1
+                    val=t.get("value") if "value" in t else t.get("content")
+                    s=val if isinstance(val,str) else json.dumps(val,ensure_ascii=False)
+                    if role in ("human","user"): user_chars.append(len(s))
+                    elif role in ("gpt","assistant","bot"): asst_chars.append(len(s))
+
+def stat(xs):
+    if not xs: return "n/a"
+    xs=sorted(xs)
+    return f"min={xs[0]} p50={xs[len(xs)//2]} p90={xs[int(len(xs)*.9)]} max={xs[-1]} mean={statistics.mean(xs):.0f}"
+
+print("=== rows:", n)
+print("=== top-level keys:", dict(keys.most_common()))
+print("=== conv_key:", conv_key, " img_key:", img_key)
+print("=== roles:", dict(roles))
+print("=== turns/sample:", stat(turns))
+print("=== user chars/turn:", stat(user_chars))
+print("=== assistant chars/turn:", stat(asst_chars), "  <-- 这个决定 MTP/DFlash 蒸馏的答案长度")
+print("=== image refs/sample:", stat(n_img_per), " modes:", dict(img_modes))
+print("=== samples with >=1 image:", sum(1 for x in n_img_per if x>0), "/", n)
+print("\n=== FIRST RECORD (truncated) ===")
+print(json.dumps(samples[0], ensure_ascii=False, indent=2)[:2500] if samples else "none")
+PY
+
+echo "----- 原始第一行(看真实结构) -----"
+head -c 1500 "$F"; echo
+echo "----- 文件大小 / 行数 -----"
+ls -lh "$F"; wc -l "$F"
