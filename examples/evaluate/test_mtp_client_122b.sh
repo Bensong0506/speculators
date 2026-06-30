@@ -38,6 +38,19 @@ if [ -z "${MTP_CKPT:-}" ]; then
     exit 1
 fi
 
+# --- self-detach: survive SSH drops (~every 5 min). DETACH=0 stays foreground.
+STAMP="$(date +%Y%m%d_%H%M%S)"
+NOHUP_LOG="${NOHUP_LOG:-$REPO_ROOT/run_logs/test_mtp_client_122b_${STAMP}.nohup.log}"
+if [ "${DETACH:-1}" = "1" ] && [ -z "${_DETACHED:-}" ]; then
+    mkdir -p "$(dirname "$NOHUP_LOG")"
+    echo "Detaching eval (survives disconnect). Follow with:"
+    echo "  tail -f $NOHUP_LOG"
+    _DETACHED=1 nohup bash "$0" "$@" > "$NOHUP_LOG" 2>&1 &
+    echo "  PID $!   (stop: kill $!)"
+    echo "$!" > "${NOHUP_LOG%.log}.pid"
+    exit 0
+fi
+
 # Map client knobs onto the base orig-vs-trained eval. 122B needs TP (heads=32 -> {4,8}).
 export MODEL="$CLIENT_MODEL"
 export ALLAVA_JSONL="$CLIENT_DISTILL_JSONL"      # its tail-10% is the val slice

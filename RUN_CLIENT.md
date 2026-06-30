@@ -13,6 +13,11 @@ conda. Use the FULL-PRECISION SFT weights (`qwen3.5-vl-122B`), NOT the
 msModelSlim-quantized `Qwen3.5-122B-A10B` (GPU vLLM can't load that). Install vLLM
 0.22.0 first — see `install/`.
 
+> **All three steps auto-detach** (the box drops SSH ~every 5 min) — each command
+> returns immediately, prints a `tail -f <log>` line, and keeps running under nohup.
+> Just run it, then `tail -f` the printed log; reconnect and tail again any time. Pass
+> `DETACH=0` to run in the foreground instead.
+
 Set these once and export them in your shell:
 
 ```bash

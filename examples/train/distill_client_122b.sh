@@ -53,6 +53,18 @@ OUT_JSONL="${OUT_JSONL:-$WORK_DIR/client_122b_distill_${MODE}_${MAX_SAMPLES}.jso
 [ -s "$CLIENT_TRAIN_JSONL" ] || { echo "[fatal] CLIENT_TRAIN_JSONL not found: $CLIENT_TRAIN_JSONL"; exit 1; }
 mkdir -p "$WORK_DIR" "$(dirname "$OUT_JSONL")"
 
+# --- self-detach: survive SSH drops (the box loses connection ~every 5 min).
+#     Re-exec under nohup so serve+distill keep running; DETACH=0 stays foreground.
+NOHUP_LOG="${NOHUP_LOG:-$WORK_DIR/distill_client_122b_${MODE}_${STAMP}.nohup.log}"
+if [ "${DETACH:-1}" = "1" ] && [ -z "${_DETACHED:-}" ]; then
+    echo "Detaching distillation (survives disconnect). Follow with:"
+    echo "  tail -f $NOHUP_LOG"
+    _DETACHED=1 nohup bash "$0" "$@" > "$NOHUP_LOG" 2>&1 &
+    echo "  PID $!   (stop: kill $!)"
+    echo "$!" > "${NOHUP_LOG%.log}.pid"
+    exit 0
+fi
+
 # Guard: refuse if any output path resolves to the original source.
 SRC_RP="$(readlink -f "$CLIENT_TRAIN_JSONL")"
 for p in "$SOURCE_COPY" "$OUT_JSONL"; do
