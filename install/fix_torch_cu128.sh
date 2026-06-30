@@ -31,20 +31,29 @@ TVV="$(python -c "import torchvision;print(torchvision.__version__.split('+')[0]
 TVA="$(python -c "import torchaudio;print(torchaudio.__version__.split('+')[0])"   2>/dev/null || echo "")"
 echo "installed (version only): torch=${TV:-?} torchvision=${TVV:-?} torchaudio=${TVA:-?} (current build is +cu130 -> too new for the 12.8 driver)"
 
-echo "===== FORCE-reinstall the SAME versions as cu128 builds ====="
-# The earlier run skipped because pip saw '2.11.0' already satisfied (it ignores the
-# +cu130 local tag). --force-reinstall + an index that ONLY has cu128 wheels forces
-# the cu128 build; deps (nvidia-*-cu12) come from the same mirror, non-torch deps
-# from pypi. Pin the detected versions so vllm's torch requirement stays satisfied.
+echo "===== FORCE-reinstall the SAME versions as EXPLICIT +cu128 builds ====="
+# Last run still got +cu130: pip treats '+cu130' as a HIGHER local version than
+# '+cu128', so when a pypi extra-index also offered 2.11.0(+cu130) it won. Fix:
+# pin the explicit '+${CUDA_TAG}' local version and use ONLY the cu128 index (no
+# pypi fallback). If the wheel doesn't exist there, pip errors clearly (-> plan B).
+CUDA_TAG="${CUDA_TAG:-cu128}"
 PKGS=()
-[ -n "$TV" ]  && PKGS+=("torch==${TV}")
-[ -n "$TVV" ] && PKGS+=("torchvision==${TVV}")
-[ -n "$TVA" ] && PKGS+=("torchaudio==${TVA}")
-[ ${#PKGS[@]} -eq 0 ] && PKGS=(torch torchvision torchaudio)
+[ -n "$TV" ]  && PKGS+=("torch==${TV}+${CUDA_TAG}")
+[ -n "$TVV" ] && PKGS+=("torchvision==${TVV}+${CUDA_TAG}")
+[ -n "$TVA" ] && PKGS+=("torchaudio==${TVA}+${CUDA_TAG}")
+[ ${#PKGS[@]} -eq 0 ] && PKGS=("torch+${CUDA_TAG}")
 
-pip install --no-cache-dir --force-reinstall "${PKGS[@]}" \
-    --index-url "$TORCH_INDEX" \
-    --extra-index-url https://mirrors.aliyun.com/pypi/simple/
+echo "  installing: ${PKGS[*]}  from $TORCH_INDEX (cu128 index only, no pypi fallback)"
+# Only the cu128 index (deps -> cu12 libs from the same index). No pypi extra so the
+# +cu130 build can't win on local-version ordering.
+if ! pip install --no-cache-dir --force-reinstall "${PKGS[@]}" --index-url "$TORCH_INDEX"; then
+    echo "PLAN_B_NEEDED: ${PKGS[*]} not available on $TORCH_INDEX (torch ${TV} may be cu130-only)."
+    echo "  Probing what the mirror has for torch:"
+    pip index versions torch --index-url "$TORCH_INDEX" 2>&1 | head -5 || true
+    echo "  Is the official cu128 index reachable from here?"
+    curl -sI --max-time 15 https://download.pytorch.org/whl/cu128/ 2>&1 | head -3 || true
+    echo "  -> report this block; we'll pin a cu128-capable torch or upgrade the driver."
+fi
 
 echo "===== verify (this actually inits CUDA on the GPUs) ====="
 python - <<'PY'
