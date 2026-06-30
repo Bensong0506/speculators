@@ -1,25 +1,41 @@
-# 从 D-Cut 到 DSpark: 投机解码的下一步不是多猜,而是少验
+# DeepSeek DSpark 之后: 我们该拿走什么
 
 **日期**: 2026-06-30
 **范围**: Qwen3.5-9B DFlash / D-Cut GPU A/B 结果, DeepSeek-AI DeepSpec / DSpark 论文与开源实现
 **场景**: vLLM speculative decoding, DFlash 并行 draft, `speculative_tokens=15` 到 adaptive verification 的迁移
 **目标**: 给内部论坛/哈桑汇报使用,讲清楚我们已经验证的 D-Cut 价值、DeepSeek DSpark 到底做了什么、以及两者如何合并成下一阶段路线
 
-## 0. 结论先看
+DeepSeek 最近放出了 DeepSpec / DSpark,这不是又一个普通的 draft model repo。它传递出来的信号更像是: 投机推理已经从“多猜几个 token”进入到“怎么让这些 token 更连贯、怎么让 verifier 只验值得验的部分”的新阶段。
 
-先把核心判断放在最前面:
+所以我们要问的问题不是“要不要照搬 DSpark”,而是: **哪些东西今天就能为我们的 Qwen3.5 多模态 DFlash 服务,哪些东西需要训练以后再合入,哪些 serving 链路应该先铺好。**
 
-1. **我们内部 D-Cut 已经有真实 GPU A/B 数据**: 在 Qwen3.5-9B + Qwen3.5-9B-DFlash、ALLaVA、`seq=4096/out=128`、每组 256 请求的测试里,D-Cut 在低并发 `c=16` 略慢,但在 `c=32` 时 output tok/s **+27.6%**,在 `c=64` 时 output tok/s **+50.3%**,p50 latency 分别从 `2.74s -> 1.99s`、`4.97s -> 3.21s`。
-2. **DeepSeek DSpark 做的是 D-Cut 的训练版与系统版**: 它不是简单“再做一个 draft 模型”,而是把 DFlash 的并行草稿、Markov head 的轻量局部依赖、confidence scheduler 的动态校验预算合到一起。
-3. **D-Cut 和 DSpark 是同一条路的两个阶段**: D-Cut 用 heuristic 分数做静态/轻量剪尾;DSpark 用训练出来并校准过的 confidence head 估计 prefix survival,再结合硬件吞吐曲线做 batch-aware 调度。
-4. **短期最应该继续推 D-Cut**: 我们已有 DFlash checkpoint,但没有 Qwen3.5 多模态 DSpark checkpoint。完整 DSpark 的 Markov head 和 confidence head 都要训练;D-Cut 不需要训练,且真实 GPU 数据已经说明它的有效区间主要在中高并发。
-5. **长期目标是 DSpark 化**: 当 variable verify runtime 稳定后,把 D-Cut 的 heuristic score 替换成 learned confidence,把固定阈值替换成 hardware-aware scheduler,就能自然演进到 DSpark 的生产形态。
+## 0. 先看结果: Vanilla vs D-Cut
 
-一句话:
+这里的 **Vanilla** 指不开 D-Cut 的 DFlash baseline: target、draft、数据集、`speculative_tokens=15` 都相同,只是 verifier 仍按原始 DFlash 路径校验候选块,不做 adaptive verification cutting。
 
-> **DFlash 解决“便宜地多猜”;D-Cut 解决“不要盲目多验”;DSpark 解决“猜得更连贯,验得更聪明”。**
+测试设置: Qwen3.5-9B + Qwen3.5-9B-DFlash,ALLaVA,`seq=4096/out=128`,每个并发点每组 256 请求。
 
-## 1. 我们自己的 D-Cut 数据先讲清楚
+| concurrency | Vanilla req/s | D-Cut req/s | Vanilla out tok/s | D-Cut out tok/s | out tok/s delta | p50 latency |
+|---:|---:|---:|---:|---:|---:|---|
+| 16 | 10.02 | 9.73 | 963.7 | 941.2 | -2.3% | 1.58s -> 1.54s |
+| 32 | 12.41 | 15.99 | 1188.4 | 1516.4 | +27.6% | 2.74s -> 1.99s |
+| 64 | 12.32 | 18.81 | 1176.9 | 1769.2 | +50.3% | 4.97s -> 3.21s |
+
+一句话: D-Cut 不是低并发白赚的优化,但一到 `c=32/64`,verifier 成为主要瓶颈以后,少验低价值尾巴就开始直接换吞吐和延迟。
+
+## 1. DeepSeek 这次真正提醒了我们什么
+
+过去我们做 DFlash / MTP,核心努力是让 draft 更准: draft 猜得越接近 target,accepted length 越长,系统就越快。DeepSeek 的 DSpark 没有否定这条路,而是把它往前推了一步: **draft 不仅要多猜,还要猜得连贯;verifier 不仅要验,还要把预算花在最可能被接受的 token 上。**
+
+把 DSpark 拆开看,它给了三件可以落地的东西:
+
+1. **Markov head**: 给 DFlash 的并行后缀补一点轻量局部依赖,解决 `"of problem"` 这种 mode-mixing 问题。
+2. **confidence head**: 预测每个 draft 位置继续被接受的概率,把“该验多长”从 heuristic 变成 learned probability。
+3. **hardware-aware scheduler**: 不只看 token 置信度,还看当前 GPU/NPU batch shape 下多验一个 token 值不值。
+
+这和我们的 D-Cut 不是两条线。D-Cut 是这条路线的第一块拼图: 不训练新模型,先把 serving 链路从“固定验满”改成“动态剪尾”。等这条 variable verify path 稳了,后面才能自然接 Markov head、confidence head 和 scheduler。
+
+## 2. 我们自己的 D-Cut GPU 结果怎么读
 
 这里的 **D-Cut** 指 DFlash 路径上的 dynamic verification cutting: draft 仍然一次提出完整候选块,但 verifier 只校验更有价值的连续前缀。
 
@@ -55,7 +71,7 @@
 Delta R_tok = (R_tok^D-Cut - R_tok^vanilla) / R_tok^vanilla
 ```
 
-真实 A/B 结果如下:
+完整 A/B 表如下:
 
 | `c` | Vanilla req/s | D-Cut req/s | Req/s delta | Vanilla out tok/s | D-Cut out tok/s | Out tok/s delta | Vanilla TTFT p50 | D-Cut TTFT p50 | Vanilla `L_50` | D-Cut `L_50` |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -81,7 +97,7 @@ profile  bs=... seq_lens=4096
 
 我们之前 DFlash / MTP 报告关注的是“让 draft 更准”。D-Cut 关注的是另一半: **当尾部 token 大概率会被拒,为什么还要让 target 花 batch capacity 去验它?**
 
-## 2. 一个例子: DeepSeek 到底在做什么
+## 3. 一个例子: DeepSeek 到底在做什么
 
 先用论文里的 `"of problem"` 例子讲清楚 DSpark。这个例子非常适合解释为什么 DFlash 后缀会崩,以及 Markov head 为什么有效。
 
@@ -146,7 +162,7 @@ flowchart LR
 
 这个例子的重点不是英语短语,而是一个普遍现象: **并行预测会混合多个 mode 的边缘分布,轻量局部条件能把 mode 对齐回来。**
 
-## 3. 数学形式: speculative decoding 的三个杠杆
+## 4. 数学形式: speculative decoding 的三个杠杆
 
 我们把一轮 speculative decoding 写成:
 
@@ -174,7 +190,7 @@ L = (T_draft + T_verify) / (tau + 1)
 
 过去我们主要做第 2 件事: 让 draft 接受率更高。现在 D-Cut/DSpark 关注第 3 件事: **不要把 target verify 浪费在大概率会被拒的尾巴上。**
 
-## 4. Markov Head: 用极小串行成本修 DFlash 后缀
+## 5. Markov Head: 用极小串行成本修 DFlash 后缀
 
 DSpark 把 draft 分成两个阶段。
 
@@ -228,7 +244,7 @@ prev token id -> W_1 lookup -> small vector -> W_2 projection -> logits bias
 
 这比重新跑一遍 transformer 便宜得多。论文里也验证了这个头开销很小: batch=128 时,proposal length 从 4 增到 16,相对 DFlash 的整轮 latency 只增加约 0.2% 到 1.3%,但 accepted length 最多提升到 +30% 级别。
 
-## 5. Confidence Scheduler: D-Cut 的满血形态
+## 6. Confidence Scheduler: D-Cut 的满血形态
 
 D-Cut 和 DSpark scheduler 都建立在同一个事实上: speculative decoding 只接受连续前缀。
 
@@ -291,7 +307,7 @@ Theta = expected_accepted_tokens * SPS(B)
 
 这就是为什么我说 **DSpark scheduler 是 D-Cut 的训练版、校准版、硬件感知版**。
 
-## 6. 为什么这个设计保持 lossless
+## 7. 为什么这个设计保持 lossless
 
 投机解码的无损性来自 rejection sampling。第 `k` 位 draft token `x_k` 的接受概率是:
 
@@ -320,7 +336,7 @@ submit x_{1:ell}, drop x_{ell+1:K}
 
 我们的 D-Cut MVP 更容易守住这个约束: 它只做连续前缀裁剪,不改 rejection sampler。后续如果合入 Markov head,还要特别注意第一点: 采样用了 `U_k + B(x_{k-1})`,则 acceptance 里的 `p^d_k` 也必须来自 `softmax(U_k + B(x_{k-1}))`,不能再用原始 `softmax(U_k)`。
 
-## 7. DeepSpec 仓库给了什么
+## 8. DeepSpec 仓库给了什么
 
 DeepSpec 是 DeepSeek 开源的投机解码训练/评测仓,包含 Eagle3、DFlash、DSpark 三套算法。公开 checkpoint 覆盖:
 
@@ -345,7 +361,7 @@ DeepSpec 配置里,DFlash 和 DSpark 的关系很直接:
 
 换句话说,DeepSpec 的 DFlash 是 DSpark 的退化版: 关掉 Markov 和 confidence,就是纯并行 DFlash。
 
-## 8. 论文结果: DSpark 相对 DFlash 的收益
+## 9. 论文结果: DSpark 相对 DFlash 的收益
 
 离线 benchmark 上,论文关闭 scheduler,只比较 raw draft quality。DSpark 相对 DFlash 的 accepted length 提升:
 
@@ -374,7 +390,7 @@ DeepSpec 配置里,DFlash 和 DSpark 的关系很直接:
 
 这些结果和我们的 D-Cut GPU A/B 是同向的: 高并发时,收益不只来自 draft 接受率,还来自避免 verifier 校验低价值尾巴。我们的 Qwen3.5-9B 测试里,D-Cut 在 `c=32/64` 分别带来 `+27.6%/+50.3%` output tok/s,也正好说明 verifier-side budget 在中高并发下足够关键。
 
-## 9. 和我们当前工作的对应关系
+## 10. 和我们当前工作的对应关系
 
 | 方案 | 是否需要训练 | 做了什么 | 我们当前状态 | 下一步 |
 |---|---|---|---|---|
@@ -387,7 +403,7 @@ DeepSpec 配置里,DFlash 和 DSpark 的关系很直接:
 
 这里最值得强调的是: **我们不应该等完整 DSpark 训练完才做 serving 链路**。D-Cut 已经在真实 GPU A/B 里证明了中高并发收益;而 DSpark 最终也依赖同一条 variable verify path。
 
-## 10. 合入路线
+## 11. 合入路线
 
 ### Phase A: D-Cut 继续做成生产可测版本
 
@@ -483,7 +499,7 @@ maximize Theta = expected_accepted_tokens * SPS(B)
 
 这一步做完,D-Cut 才真正变成 DSpark scheduler。
 
-## 11. 需要避免的误解
+## 12. 需要避免的误解
 
 **误解 1: D-Cut 可以用于 MTP。**
 当前 D-Cut 路径只适合 DFlash/PARD 这类 parallel drafter。原因是它需要一次拿到整块 per-position probability,然后剪 verifier 宽度。MTP 是自回归 draft,成本主要在 draft 侧,更适合做 draft-side early stop,不是这套 D-Cut。
@@ -497,7 +513,7 @@ maximize Theta = expected_accepted_tokens * SPS(B)
 **误解 4: 剪尾会改变输出。**
 只要剪的是连续后缀,且已提交 token 仍走标准 rejection sampling,输出分布仍然是 target model 的分布。剪尾只是少给 verifier 一些本来也很可能被拒的候选,不是改 target 采样规则。
 
-## 12. 一句话收束
+## 13. 一句话收束
 
 我们已经用 DFlash/MTP 证明了“draft 猜得更准”能带来收益;D-Cut 的 Qwen3.5-9B GPU A/B 进一步说明,在 `seq4096/out128` 这类长上下文高并发负载下,少验低价值尾巴可以在 `c=32` 带来 `+27.6%` output tok/s,在 `c=64` 带来 `+50.3%` output tok/s。DeepSeek DSpark 把这条路系统化: 用 Markov head 让 DFlash 后缀更连贯,用 confidence head 预测 prefix survival,再用 hardware-aware scheduler 把 verifier budget 分给最值得验的 token。
 
