@@ -92,8 +92,11 @@ TP="${TP:-8}"
 PORT="${PORT:-8100}"
 SERVED_MODEL_NAME="${SERVED_MODEL_NAME:-qwen3.5-vl-122b-sft}"
 # client prompts are long (system ~5k + retrieved notes up to ~56k chars) -> big ctx
+# 8x H800 serving a 122B MoE (~10B active, only 2 KV heads -> KV is tiny), so we
+# can run a fat batch. Push concurrency for distillation throughput; lower if the
+# very long RAG prompts cause prefill pressure.
 MAX_MODEL_LEN="${MAX_MODEL_LEN:-65536}"
-MAX_NUM_SEQS="${MAX_NUM_SEQS:-16}"
+MAX_NUM_SEQS="${MAX_NUM_SEQS:-64}"
 GPU_MEMORY_UTIL="${GPU_MEMORY_UTIL:-0.90}"
 DTYPE="${DTYPE:-bfloat16}"
 ENFORCE_EAGER="${ENFORCE_EAGER:-1}"

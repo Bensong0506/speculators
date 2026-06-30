@@ -30,6 +30,19 @@ skipped if it exists and finished wheels are reused from `~/.cache/pip`.
 
 Knobs (env overrides): `CONDA_SH`, `ENV_NAME`, `PY_VER`, `VLLM_VER`, `PIP_INDEX`.
 
+## If serving dies with "NVIDIA driver too old (found version 12080)"
+
+vLLM 0.22.0 pulled a torch built for CUDA newer than this box's 12.8 driver. Fix by
+reinstalling torch as cu128:
+
+```bash
+nohup bash install/fix_torch_cu128.sh > ~/fix_torch.log 2>&1 &
+tail -f ~/fix_torch.log
+grep -E "CUDA_OK|CUDA_FAIL|FIX_DONE" ~/fix_torch.log
+```
+
+Look for `CUDA_OK` + `VLLM <ver>`. Then retry the serve / STEP 1.
+
 ## After install — the decisive check
 
 The client model is `qwen3_5_moe` / `Qwen3_5MoeForConditionalGeneration` (VL MoE,
