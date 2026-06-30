@@ -1,6 +1,5 @@
-pkill -9 -f "pip install"; pkill -9 -f "fix_torch_cu128.sh"
-conda activate vllm022
-git -C /mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/speculators pull
-nohup bash install/fix_torch_cu128.sh > ~/fix_torch.log 2>&1 &
-tail -f ~/fix_torch.log
-grep -E "built-cuda|CUDA_OK|CUDA_FAIL" ~/fix_torch.log
+步骤	命令	行为
+安装	nohup bash install/setup_vllm022.sh > ~/setup_vllm022.log 2>&1 &	你手动 nohup(已给)
+STEP 1 蒸馏	MAX_SAMPLES=8137 bash examples/train/distill_client_122b.sh	自动 detach,打印 tail -f
+STEP 2 训练	bash examples/train/nohup_mtp_client_122b.sh	本来就内部 nohup
+STEP 3 测试	MTP_CKPT=... bash examples/evaluate/test_mtp_client_122b.sh	自动 detach,打印 tail -f
