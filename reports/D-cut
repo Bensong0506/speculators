@@ -1,0 +1,69 @@
+D-Cut on Qwen3.5-9B DFlash, Seq4096 / Out128
+Summary
+In the Qwen3.5-9B + DFlash A/B run with long-context profiling
+(warmup_seq_lens=4096) and 128 generated tokens, D-Cut is neutral to slightly
+slower at lower concurrency, but shows clear throughput and latency gains once
+the batch is large enough:
+
+c16: roughly parity / slight throughput loss.
+c32: about +28% request throughput, +28% output-token throughput,
+and 27% lower p50 latency.
+c64: about +53% request throughput, +50% output-token throughput,
+and 36% lower p50 latency.
+This matches the expected D-Cut behavior: the controller adds small CPU/D2H
+overhead, so it may not help at low batch, but it pays off at higher concurrency
+where verifier compute dominates, especially with long multimodal-style
+contexts.
+
+Setup
+Target model: Qwen3.5-9B
+Draft model: Qwen3.5-9B-DFlash
+Dataset: ALLaVA JSONL
+Speculative method: DFlash
+Speculative tokens: 15
+D-Cut profiling sequence length: 4096
+Output tokens per request: 128
+Requests per arm / concurrency point: 256
+Tested concurrency: 16, 32, 64
+Results
+Concurrency	Vanilla req/s	D-Cut req/s	Req/s delta	Vanilla out tok/s	D-Cut out tok/s	Out tok/s delta	Vanilla TTFT p50	D-Cut TTFT p50	Vanilla latency p50	D-Cut latency p50
+16	10.02	9.73	-2.9%	963.7	941.2	-2.3%	0.13s	0.13s	1.58s	1.54s
+32	12.41	15.99	+28.8%	1188.4	1516.4	+27.6%	0.21s	0.17s	2.74s	1.99s
+64	12.32	18.81	+52.7%	1176.9	1769.2	+50.3%	1.10s	0.74s	4.97s	3.21s
+Interpretation
+D-Cut should be judged mainly at medium/high concurrency for this workload.
+At c16, verifier compute is not yet dominant enough to amortize controller
+overhead, so throughput is slightly below vanilla DFlash. At c32 and c64,
+the long-context verifier cost becomes the bottleneck, and cutting the verifier
+query length produces large throughput gains.
+
+The TTFT result in this run is also favorable at higher concurrency:
+
+c32: TTFT p50 improves from 0.21s to 0.17s.
+c64: TTFT p50 improves from 1.10s to 0.74s.
+This suggests that under high load, queueing and verifier cost dominate enough
+that D-Cut reduces time-to-first-token as well, despite its per-step control
+overhead.
+
+Caveat
+The captured output_log reports:
+
+[warn] no D-Cut activation/profiling lines found in /tmp/qwen35_dcut_ab_9b_seq4096_out128/server_dcut.log
+​
+The performance shape strongly suggests the D-Cut arm behaved differently from
+vanilla DFlash, but the report should not be treated as fully closed until the
+server log also shows:
+
+D-Cut adaptive verify ENABLED
+VerifyAdaptiveController: cost table ready
+profile  bs=... seq_lens=4096
+​
+The next rerun should keep VLLM_LOGGING_LEVEL=INFO enabled and attach the
+D-Cut server check block to the result.
+
+Conclusion
+For Qwen3.5-9B DFlash under seq4096 / out128, D-Cut is promising at high
+concurrency. The useful operating region starts around c32; at c64, the
+measured gain is about +50% output-token throughput with substantially lower
+latency. Low-concurrency results should not be used as the primary evaluation
+point because D-Cut's controller overhead is not amortized there.
