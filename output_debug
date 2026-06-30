@@ -4,41 +4,8 @@ STEP 1 蒸馏	MAX_SAMPLES=8137 bash examples/train/distill_client_122b.sh	自动
 STEP 2 训练	bash examples/train/nohup_mtp_client_122b.sh	本来就内部 nohup
 STEP 3 测试	MTP_CKPT=... bash examples/evaluate/test_mtp_client_122b.sh	自动 detach,打印 tail -f
 
-(vllm022) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/speculators# tail -f ~/fix_vllm.log
-+ __conda_hashr
-+ '[' -n '' ']'
-+ '[' -n '' ']'
-+ hash -r
-+ echo '===== find the cu128 vLLM 0.22.0 wheel (GitHub release asset) ====='
-===== find the cu128 vLLM 0.22.0 wheel (GitHub release asset) =====
-+ API=https://api.github.com/repos/vllm-project/vllm/releases/tags/v0.22.0
-++ curl -s --max-time 30 https://api.github.com/repos/vllm-project/vllm/releases/tags/v0.22.0
-++ grep -oE 'https://[^"]*vllm-[^"]*\+cu128[^"]*x86_64\.whl'
-++ head -1
-+ WHEEL_URL=
-+ '[' -z '' ']'
-+ WHEEL_URL=https://github.com/vllm-project/vllm/releases/download/v0.22.0/vllm-0.22.0+cu128-cp38-abi3-manylinux_2_35_x86_64.whl
-+ echo '  API gave nothing; trying documented URL pattern.'
-  API gave nothing; trying documented URL pattern.
-+ echo 'WHEEL_URL https://github.com/vllm-project/vllm/releases/download/v0.22.0/vllm-0.22.0+cu128-cp38-abi3-manylinux_2_35_x86_64.whl'
-WHEEL_URL https://github.com/vllm-project/vllm/releases/download/v0.22.0/vllm-0.22.0+cu128-cp38-abi3-manylinux_2_35_x86_64.whl
-+ curl -sfI --max-time 30 https://github.com/vllm-project/vllm/releases/download/v0.22.0/vllm-0.22.0+cu128-cp38-abi3-manylinux_2_35_x86_64.whl
-+ echo '  WARN: HEAD failed; pip will still try (or set WHEEL_URL=... by hand).'
-  WARN: HEAD failed; pip will still try (or set WHEEL_URL=... by hand).
-+ echo '===== install the cu128 vLLM over the cu13 one (--no-deps: keep our cu128 torch) ====='
-===== install the cu128 vLLM over the cu13 one (--no-deps: keep our cu128 torch) =====
-+ PIP_CONFIG_FILE=/dev/null
-+ pip install --no-cache-dir --force-reinstall --no-deps https://github.com/vllm-project/vllm/releases/download/v0.22.0/vllm-0.22.0+cu128-cp38-abi3-manylinux_2_35_x86_64.whl
-Collecting vllm==0.22.0+cu128
-  ERROR: HTTP error 404 while getting https://github.com/vllm-project/vllm/releases/download/v0.22.0/vllm-0.22.0+cu128-cp38-abi3-manylinux_2_35_x86_64.whl
-ERROR: Could not install requirement vllm==0.22.0+cu128 from https://github.com/vllm-project/vllm/releases/download/v0.22.0/vllm-0.22.0+cu128-cp38-abi3-manylinux_2_35_x86_64.whl because of HTTP error 404 Client Error: Not Found for url: https://github.com/vllm-project/vllm/releases/download/v0.22.0/vllm-0.22.0+cu128-cp38-abi3-manylinux_2_35_x86_64.whl for URL https://github.com/vllm-project/vllm/releases/download/v0.22.0/vllm-0.22.0+cu128-cp38-abi3-manylinux_2_35_x86_64.whl
-+ RC=1
-+ echo '===== verify: the _C extension that was failing now loads + arch supported ====='
-===== verify: the _C extension that was failing now loads + arch supported =====
-+ python -
-torch 2.11.0+cu128 built-cuda 12.8 cuda.is_available True
-VLLM 0.22.0
-VLLM_FAIL ImportError('libcudart.so.13: cannot open shared object file: No such file or directory')
-+ echo 'FIX_DONE rc=1'
-FIX_DONE rc=1
-+ exit 1
+conda activate vllm022
+git -C /mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/speculators pull
+nohup bash install/fix_vllm_cu128.sh > ~/fix_vllm.log 2>&1 &
+tail -f ~/fix_vllm.log
+grep -E "WHEEL_URL|VLLM_C_OK|ARCH_SUPPORTED|VLLM_FAIL|DOWNLOAD_FAIL" ~/fix_vllm.log
