@@ -4,8 +4,13 @@ STEP 1 蒸馏	MAX_SAMPLES=8137 bash examples/train/distill_client_122b.sh	自动
 STEP 2 训练	bash examples/train/nohup_mtp_client_122b.sh	本来就内部 nohup
 STEP 3 测试	MTP_CKPT=... bash examples/evaluate/test_mtp_client_122b.sh	自动 detach,打印 tail -f
 
-conda activate vllm022
-git -C /mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/speculators pull
-nohup bash install/fix_vllm_cu128.sh > ~/fix_vllm.log 2>&1 &
-tail -f ~/fix_vllm.log
-grep -E "WHEEL_URL|VLLM_C_OK|ARCH_SUPPORTED|VLLM_FAIL|DOWNLOAD_FAIL" ~/fix_vllm.log
+(vllm022) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/speculators# tail -f ~/fix_vllm.log
++ WHEEL=vllm-0.22.0+cu129-cp38-abi3-manylinux_2_28_x86_64.whl
++ WHEEL_URL=https://github.com/vllm-project/vllm/releases/download/v0.22.0/vllm-0.22.0%2Bcu129-cp38-abi3-manylinux_2_28_x86_64.whl
++ echo 'WHEEL_URL https://github.com/vllm-project/vllm/releases/download/v0.22.0/vllm-0.22.0%2Bcu129-cp38-abi3-manylinux_2_28_x86_64.whl'
+WHEEL_URL https://github.com/vllm-project/vllm/releases/download/v0.22.0/vllm-0.22.0%2Bcu129-cp38-abi3-manylinux_2_28_x86_64.whl
++ DEST=/tmp/vllm-0.22.0+cu129-cp38-abi3-manylinux_2_28_x86_64.whl
++ curl -L --fail --retry 10 --retry-delay 5 --max-time 1800 -o /tmp/vllm-0.22.0+cu129-cp38-abi3-manylinux_2_28_x86_64.whl https://github.com/vllm-project/vllm/releases/download/v0.22.0/vllm-0.22.0%2Bcu129-cp38-abi3-manylinux_2_28_x86_64.whl
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
