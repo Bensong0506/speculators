@@ -1,13 +1,9 @@
-(base) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/qwen3.5-vl-122B# M=/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/qwen3.5-vl-122B
+conda create -n vllm022 python=3.10 -y && conda activate vllm022
+# PAI 一般能连阿里 PyPI 镜像:
+pip install vllm==0.22.0 -i https://mirrors.aliyun.com/pypi/simple/
+python -c "import vllm; print(vllm.__version__)"
 
-echo "===== 架构 / model_type(决定 vLLM 0.22 支不支持)====="
-python3 -c "import json;c=json.load(open('$M/config.json'));print(json.dumps({k:c.get(k) for k in ('model_type','architectures','torch_dtype','num_hidden_layers','hidden_size','vocab_size','num_attention_heads','num_key_value_heads','max_position_embeddings','rope_scaling')}, indent=2, ensure_ascii=False)); print('--- text_config ---', c.get('text_config',{}).get('model_type') if isinstance(c.get('text_config'),dict) else None); print('--- vision_config ---', bool(c.get('vision_config'))); print('--- mtp keys in config? ---', [k for k in c if 'mtp' in k.lower() or 'nextn' in k.lower()])"
 
-echo "===== 有没有原生 MTP 头(我们增训要用)====="
-python3 -c "import json;w=json.load(open('$M/model.safetensors.index.json'))['weight_map'];import re;mtp=[k for k in w if re.search(r'mtp|nextn|eh_proj|enorm|hnorm',k)];print('mtp-ish tensors:',len(mtp));print(mtp[:8])"
-
-echo "===== GPU 数量/型号/显存(决定 TP)====="
-nvidia-smi --query-gpu=index,name,memory.total --format=csv
 ===== 架构 / model_type(决定 vLLM 0.22 支不支持)=====
 {
   "model_type": "qwen3_5_moe",
