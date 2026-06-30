@@ -50,10 +50,17 @@ PKGS=()
 echo "  index reachability check:"
 curl -sI --max-time 20 "$TORCH_INDEX/torch/" 2>&1 | head -3 || \
     echo "  (cannot reach $TORCH_INDEX — if this hangs/fails, set TORCH_INDEX to a domestic cu128 mirror that has torch 2.11.0+cu128)"
-echo "  installing: ${PKGS[*]}  from $TORCH_INDEX (cu128 index only, no pypi fallback)"
-# Only the cu128 index (deps -> cu12 libs from the same index). No pypi extra so the
-# +cu130 build can't win on local-version ordering.
-if ! pip install --no-cache-dir --force-reinstall "${PKGS[@]}" --index-url "$TORCH_INDEX"; then
+echo "  installing: ${PKGS[*]}  from $TORCH_INDEX"
+# torch 2.11.0+cu128 lives on $TORCH_INDEX, but it pulls a transitive dep
+# 'cuda-toolkit==12.8.1' (NVIDIA CUDA libs). The box's own pip.conf points that at
+# pypi.nvidia.cn, which TIMES OUT -> install hangs. So: PIP_CONFIG_FILE=/dev/null to
+# ignore that config, and resolve the nvidia/cuda-toolkit deps from the aliyun pypi
+# mirror instead. The explicit '+cu128' pin means the aliyun extra can't pull cu130.
+NV_INDEX="${NV_INDEX:-https://mirrors.aliyun.com/pypi/simple/}"
+if ! PIP_CONFIG_FILE=/dev/null pip install --no-cache-dir --force-reinstall "${PKGS[@]}" \
+        --index-url "$TORCH_INDEX" \
+        --extra-index-url "$NV_INDEX" \
+        --timeout 120 --retries 20; then
     echo "PLAN_B_NEEDED: ${PKGS[*]} not available on $TORCH_INDEX (torch ${TV} may be cu130-only)."
     echo "  Probing what the mirror has for torch:"
     pip index versions torch --index-url "$TORCH_INDEX" 2>&1 | head -5 || true
