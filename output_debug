@@ -2,3 +2,21 @@ cd <repo> && git fetch origin && git checkout mtp-training-client && git pull
 
 nohup bash install/setup_vllm022.sh > ~/setup_vllm022.log 2>&1 &
 tail -f ~/setup_vllm022.log
+
+
+F=/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/train.jsonl
+python3 - <<'PY'
+import json,re
+F="/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/train.jsonl"
+for line in open(F,encoding="utf-8"):
+    r=json.loads(line)
+    if r.get("images"):
+        print("=== images 数量:", len(r["images"]))
+        print("=== images 前3条:", r["images"][:3])
+        for m in r["messages"]:
+            s=m["content"] if isinstance(m["content"],str) else json.dumps(m["content"],ensure_ascii=False)
+            ph=re.findall(r'<image>|<img>|<\|image_pad\|>|<\|vision_start\|>|\[IMG\]|<image_\d+>|图\d+|<picture>', s)
+            print(f"\n--- {m['role']} len={len(s)} 占位符匹配={ph[:10]}(共{len(ph)}) ---")
+            print(s[:500])
+        break
+PY
