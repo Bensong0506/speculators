@@ -12,6 +12,13 @@ pkill -9 -f "conda create"
 # 确认清干净了(应只剩 grep 自己)
 ps -ef | grep -E "pip|setup_vllm|fix_torch" | grep -v grep
 
+(vllm022) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/speculators# ps -ef | grep -E "pip|setup_vllm|fix_torch" | grep -v grep
+root       34490   34297  0 17:25 pts/16   00:00:00 tail -f /home/ray/setup_vllm022.log
+root       34888   34728  0 17:40 pts/17   00:00:00 tail -f /home/ray/setup_vllm022.log
+root       37410   36668  0 19:03 pts/19   00:00:00 tail -f /home/ray/fix_torch.log
+root       37757   37699  0 19:16 pts/20   00:00:00 tail -f /home/ray/fix_torch.log
+root       38452   38088  0 19:42 pts/21   00:00:00 tail -f /home/ray/setup_vllm_qwen.log
+
 conda activate vllm022
 git -C /mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/speculators pull
 nohup bash install/fix_torch_cu128.sh > ~/fix_torch.log 2>&1 &
