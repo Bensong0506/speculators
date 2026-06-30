@@ -41,10 +41,11 @@ MAX_SAMPLES="${MAX_SAMPLES:-8137}"
 SKIP_SAMPLES="${SKIP_SAMPLES:-0}"
 
 # SAFETY: this is the client's machine. We NEVER touch the original train.jsonl.
-# All our files live under WORK_DIR inside the /huawei folder (next to the data),
-# and we operate on a READ-ONLY COPY of the source, never the original.
+# Our files land in the SAME folder as train.jsonl (the /huawei dir, per request);
+# we operate on a READ-ONLY COPY of the source, never the original. The copy and
+# the outputs have distinct names, so they never collide with train.jsonl.
 HUAWEI_ROOT="${HUAWEI_ROOT:-$(cd "$(dirname "$CLIENT_TRAIN_JSONL")" && pwd)}"
-WORK_DIR="${WORK_DIR:-$HUAWEI_ROOT/mtp_clean}"
+WORK_DIR="${WORK_DIR:-$HUAWEI_ROOT}"
 SOURCE_COPY="${SOURCE_COPY:-$WORK_DIR/train_source_copy.jsonl}"
 OUT_JSONL="${OUT_JSONL:-$WORK_DIR/client_122b_distill_${MODE}_${MAX_SAMPLES}.jsonl}"
 

@@ -40,14 +40,15 @@ the work; the shell script serves + drives it.
 
 ```bash
 MAX_SAMPLES=8137 bash examples/train/distill_client_122b.sh
-# -> /mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/mtp_clean/client_122b_distill_text_8137.jsonl
+# -> /mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/client_122b_distill_text_8137.jsonl
 ```
 
 > **Safety (client machine):** the original `train.jsonl` is never modified. STEP 1
-> makes a read-only (`0444`) copy at `…/huawei/mtp_clean/train_source_copy.jsonl`,
-> reads only the copy, and writes everything (distilled data + logs) under
-> `…/huawei/mtp_clean/`. The distiller hard-refuses if `--out-jsonl` resolves to any
-> input path. Override the location with `WORK_DIR=...` if you prefer elsewhere.
+> writes into the SAME `…/huawei/` folder as train.jsonl: a read-only (`0444`) copy
+> `train_source_copy.jsonl` (we read only the copy) + the distilled
+> `client_122b_distill_*.jsonl` + a `logs/` subdir. Distinct names, so they never
+> collide with `train.jsonl`; the distiller also hard-refuses if `--out-jsonl`
+> resolves to any input path. Override with `WORK_DIR=...`.
 
 Multimodal (phase 2 — needs the image root visible + per-prompt image cap):
 ```bash
