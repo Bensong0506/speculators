@@ -30,18 +30,38 @@ skipped if it exists and finished wheels are reused from `~/.cache/pip`.
 
 Knobs (env overrides): `CONDA_SH`, `ENV_NAME`, `PY_VER`, `VLLM_VER`, `PIP_INDEX`.
 
-## If serving dies with "NVIDIA driver too old (found version 12080)"
+## The version bind (researched) and the fix
 
-vLLM 0.22.0 pulled a torch built for CUDA newer than this box's 12.8 driver. Fix by
-reinstalling torch as cu128:
+This box's driver is **CUDA 12.8**. The client model arch
+`Qwen3_5MoeForConditionalGeneration` needs **transformers ≥5.6**, which only the
+vLLM that ships it allows. Per PyPI metadata:
+
+| vLLM | torch pin | transformers | loads qwen3.5 |
+|---|---|---|---|
+| 0.17 / 0.18 / 0.19 | 2.10.0 | `<5` | ❌ |
+| 0.20 / 0.21 / 0.22 | **2.11.0** | allows `5.6+` | ✅ |
+
+So we must use vLLM ≥0.20 (→ torch 2.11.0). `pip install vllm==0.22.0` pulled
+`torch 2.11.0+cu130` (CUDA 13) which the 12.8 driver rejects. BUT **torch
+2.11.0+cu128 exists on the official PyTorch index** (just not the aliyun mirror,
+which is why earlier cu128 attempts reverted to cu130). cu128 = CUDA 12.8 → runs
+here. Fix = reinstall torch as the cu128 build, keeping vLLM 0.22.0:
 
 ```bash
+conda activate vllm022
 nohup bash install/fix_torch_cu128.sh > ~/fix_torch.log 2>&1 &
 tail -f ~/fix_torch.log
-grep -E "CUDA_OK|CUDA_FAIL|FIX_DONE" ~/fix_torch.log
+grep -E "built-cuda|CUDA_OK|CUDA_FAIL|FIX_DONE" ~/fix_torch.log
 ```
 
-Look for `CUDA_OK` + `VLLM <ver>`. Then retry the serve / STEP 1.
+Want `built-cuda 12.8` + `CUDA_OK`. Default index is `download.pytorch.org/whl/cu128`;
+if the box can't reach it, set `TORCH_INDEX=` to a domestic cu128 mirror that has
+torch 2.11.0+cu128. Then retry the serve / STEP 1.
+
+If the serve then fails with a CUDA *symbol*/`libcudart.so.13` error, vLLM's own
+kernels were built for cu130 — reinstall the cu128 vLLM build too (report it and
+we'll pin the right wheel). `setup_vllm_on_base_torch.sh` (pin torch 2.9) is a dead
+end here: torch-2.9 vLLMs (0.17–0.19) can't load qwen3.5.
 
 ## After install — the decisive check
 

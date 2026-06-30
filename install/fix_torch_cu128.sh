@@ -18,7 +18,11 @@ set -x
 set -o pipefail
 CONDA_SH="${CONDA_SH:-/home/ray/anaconda3/etc/profile.d/conda.sh}"
 ENV_NAME="${ENV_NAME:-vllm022}"
-TORCH_INDEX="${TORCH_INDEX:-https://mirrors.aliyun.com/pytorch-wheels/cu128}"
+# torch 2.11.0+cu128 EXISTS on the official index but NOT on the aliyun mirror (that
+# mirror only had cu130, which is why earlier runs kept reverting). Default to the
+# official cu128 index. If the box can't reach it, set TORCH_INDEX to a domestic
+# mirror that actually carries 2.11.0+cu128 (e.g. an SJTU/Tsinghua pytorch-wheels cu128).
+TORCH_INDEX="${TORCH_INDEX:-https://download.pytorch.org/whl/cu128}"
 
 # shellcheck disable=SC1090
 source "$CONDA_SH"
@@ -43,6 +47,9 @@ PKGS=()
 [ -n "$TVA" ] && PKGS+=("torchaudio==${TVA}+${CUDA_TAG}")
 [ ${#PKGS[@]} -eq 0 ] && PKGS=("torch+${CUDA_TAG}")
 
+echo "  index reachability check:"
+curl -sI --max-time 20 "$TORCH_INDEX/torch/" 2>&1 | head -3 || \
+    echo "  (cannot reach $TORCH_INDEX — if this hangs/fails, set TORCH_INDEX to a domestic cu128 mirror that has torch 2.11.0+cu128)"
 echo "  installing: ${PKGS[*]}  from $TORCH_INDEX (cu128 index only, no pypi fallback)"
 # Only the cu128 index (deps -> cu12 libs from the same index). No pypi extra so the
 # +cu130 build can't win on local-version ordering.
