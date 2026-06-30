@@ -5,9 +5,15 @@
 **场景**: vLLM speculative decoding, DFlash 并行 draft, `speculative_tokens=15` 到 adaptive verification 的迁移
 **目标**: 给内部论坛/哈桑汇报使用,讲清楚我们已经验证的 D-Cut 价值、DeepSeek DSpark 到底做了什么、以及两者如何合并成下一阶段路线
 
-DeepSeek 最近放出了 DeepSpec / DSpark,这不是又一个普通的 draft model repo。它传递出来的信号更像是: 投机推理已经从“多猜几个 token”进入到“怎么让这些 token 更连贯、怎么让 verifier 只验值得验的部分”的新阶段。
+## 导读: 从 D-Cut 到 DSpark
+
+这篇是「投机推理加速」系列里接在 D-Cut 后面的一篇。前面的 DFlash / MTP 文章主要解决一个问题: **draft 怎么猜得更准**。我们用多模态自蒸馏把 draft 分布往 verifier 靠,让 `mean accept/draft` 上去。D-Cut 那篇则把视角转到另一侧: 当 draft 已经能一次并行给出一整块候选 token 时,高并发场景真正贵的是 verifier 还要不要把尾巴全验完。
+
+这次 DeepSeek 放出 DeepSpec / DSpark,刚好给了一个更完整的答案。它传递出来的信号不是“再换一个 draft 模型”这么简单,而是: 投机推理正在从 **多猜几个 token** 进入到 **猜得更连贯、验得更聪明** 的阶段。DSpark 用 Markov head 修 DFlash 的并行后缀,用 confidence head 估计 prefix survival,再用 hardware-aware scheduler 决定 verifier budget 应该花在哪里。
 
 所以我们要问的问题不是“要不要照搬 DSpark”,而是: **哪些东西今天就能为我们的 Qwen3.5 多模态 DFlash 服务,哪些东西需要训练以后再合入,哪些 serving 链路应该先铺好。**
+
+这篇的阅读顺序也按这个问题展开: 第 0 节先放我们真实 GPU A/B 的 Vanilla vs D-Cut 结果;第 1-2 节解释为什么这和 DeepSeek 的新范式是同一条线;第 3 节用 `"of problem"` 例子讲 DSpark 到底在修什么;第 4-7 节再给出数学形式、Markov head、confidence scheduler 和 lossless 条件。
 
 ## 0. 先看结果: Vanilla vs D-Cut
 
