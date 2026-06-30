@@ -1,2 +1,5 @@
-conda activate base        # 原来的 0.13.0 环境
-python -c "import vllm; print('vllm', vllm.__version__); from vllm import ModelRegistry; a=ModelRegistry.get_supported_archs(); print('SUPPORTED:', 'Qwen3_5MoeForConditionalGeneration' in a); print([x for x in a if 'wen3' in x.lower()])"
+(base) root@lshb-reservedpool-byzo-14:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/speculators# python -c "import vllm; print('vllm', vllm.__version__); from vllm import ModelRegistry; a=ModelRegistry.get_supported_archs(); print('SUPPORTED:', 'Qwen3_5MoeForConditionalGeneration' in a); print([x for x in a if 'wen3' in x.lower()])"
+\
+vllm 0.13.0
+SUPPORTED: False
+['Qwen3NextForCausalLM', 'Qwen3ForCausalLM', 'Qwen3MoeForCausalLM', 'Qwen3OmniMoeForConditionalGeneration', 'Qwen3VLForConditionalGeneration', 'Qwen3VLMoeForConditionalGeneration', 'Eagle3Qwen3vlForCausalLM', 'Qwen3NextMTP']
