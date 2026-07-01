@@ -30,6 +30,17 @@ class DSparkSpeculatorConfig(DFlashSpeculatorConfig):
         description="Low-rank dimension for the Markov correction head.",
     )
 
+    markov_head_type: Literal["vanilla", "gated", "rnn"] = Field(
+        default="vanilla",
+        description=(
+            "Sequential head that injects intra-block token dependencies. "
+            "'vanilla' (paper default): memoryless first-order Markov bias "
+            "W2(W1[x_{k-1}]). 'gated': the same bias modulated by a hidden-state "
+            "gate. 'rnn': a GRU-like recurrent head that carries the full "
+            "in-block prefix history (paper Eq. 6)."
+        ),
+    )
+
     confidence_head_alpha: float = Field(
         default=1.0,
         description="Loss weight for the confidence head BCE objective.",

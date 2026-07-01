@@ -140,6 +140,8 @@ DRAFT_VOCAB_SIZE="${DRAFT_VOCAB_SIZE-32000}"  # empty = full vocab; default scra
 # Repo convention: BLOCK_SIZE includes the anchor at position 0. So
 # BLOCK_SIZE=8 means DSpark predicts gamma=7 speculative tokens.
 MARKOV_RANK="${MARKOV_RANK:-256}"
+# Sequential head: vanilla (paper default) | gated | rnn (paper Eq. 6, stronger).
+MARKOV_HEAD_TYPE="${MARKOV_HEAD_TYPE:-vanilla}"
 CE_LOSS_ALPHA="${CE_LOSS_ALPHA:-0.1}"
 L1_LOSS_ALPHA="${L1_LOSS_ALPHA:-0.9}"
 CONFIDENCE_HEAD_ALPHA="${CONFIDENCE_HEAD_ALPHA:-1.0}"
@@ -278,6 +280,7 @@ DSPARK_FLAG=()
 if [ "$SPECULATOR_TYPE" = "dspark" ]; then
     DSPARK_FLAG=(
         --markov-rank "$MARKOV_RANK"
+        --markov-head-type "$MARKOV_HEAD_TYPE"
         --ce-loss-alpha "$CE_LOSS_ALPHA"
         --l1-loss-alpha "$L1_LOSS_ALPHA"
         --confidence-head-alpha "$CONFIDENCE_HEAD_ALPHA"
@@ -356,6 +359,7 @@ echo "    validate_initial: $VALIDATE_INITIAL"
 echo "    target_layer_ids: $TARGET_LAYER_IDS"
 if [ "$SPECULATOR_TYPE" = "dspark" ]; then
     echo "    dspark markov_rank: $MARKOV_RANK"
+    echo "    dspark markov_head_type: $MARKOV_HEAD_TYPE"
     echo "    dspark loss weights: ce=$CE_LOSS_ALPHA l1=$L1_LOSS_ALPHA confidence=$CONFIDENCE_HEAD_ALPHA gamma=$LOSS_DECAY_GAMMA"
     echo "    dspark confidence_head_with_markov: $CONFIDENCE_HEAD_WITH_MARKOV"
     echo "    dspark ce_target: $CE_TARGET"

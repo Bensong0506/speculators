@@ -31,7 +31,8 @@ This branch adds `SPECULATOR_TYPE=dspark` on top of the existing DFlash online
 training path. The data pipeline, anchor sampling, DFlash backbone, hidden-state
 extraction, and verifier-logit alignment are reused; DSpark adds:
 
-- a low-rank Markov head;
+- a sequential head — `vanilla` low-rank Markov (default), `gated`, or `rnn`
+  (paper Eq. 6), selected by `MARKOV_HEAD_TYPE` / `--markov-head-type`;
 - a confidence head;
 - DeepSeek-style `CE + L1 + confidence BCE` training loss.
 
@@ -173,6 +174,53 @@ The first useful training signals are not final serving speed yet; they are
 `accept_rate_position_*`, `tau_probabilistic`, and whether confidence calibration
 error falls as training proceeds. Runtime confidence-scheduler integration can be
 verified after this training path is stable.
+
+### 0e. Sequential head variants (`MARKOV_HEAD_TYPE`)
+
+The paper's default is the memoryless `vanilla` Markov head. `rnn` (paper Eq. 6)
+carries the full in-block prefix history and usually lifts later-position
+acceptance; `gated` is in between. Swap it in via env:
+
+```bash
+MARKOV_HEAD_TYPE=rnn \
+  SPECULATOR_TYPE=dspark FINETUNE_FROM=/home/models/Qwen3.5-9B-DFlash-spec \
+  RUN_NAME=dspark_qwen3.5_9b_mm_rnn ... \
+  bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
+```
+
+`vanilla` / `gated` are memoryless (bias computed for the whole block at once);
+`rnn` unrolls left-to-right over the block during training. All three train with
+the same loss and are warm-startable from the same DFlash checkpoint (the new
+head tensors initialize fresh). The launcher echoes `dspark markov_head_type`.
+
+### Confidence calibration (STS) + hardware-aware scheduler
+
+These two make the confidence head *usable at serving time* and are shipped as
+standalone, engine-agnostic (pure-Python, no torch) modules so they can be unit
+tested and reused by the eventual vLLM DSpark proposer:
+
+- `src/speculators/models/dspark/calibration.py` — **Sequential Temperature
+  Scaling** (paper §3.2.1). After training, dump per-position
+  `(raw_confidence, prefix_survival_label)` from a held-out set and call
+  `fit_sequential_temperature_scaling(...)` to get one temperature per position
+  (min-ECE of the cumulative product, left-to-right). Apply with
+  `calibrated_prefix_survival(confidence, temperatures)` before scheduling.
+- `src/speculators/models/dspark/scheduler.py` — **hardware-aware prefix
+  scheduler** (paper Algorithm 1). `schedule_prefix_lengths(confidences, sps)`
+  greedily admits draft positions by descending prefix-survival to maximize
+  `tau * SPS(B)`, with the non-anticipating early stop. Build `SPS(B)` from a
+  profiled cost table via `make_sps_lookup(cost_table)`.
+
+CPU tests: `tests/unit/models/test_dspark_calibration.py` and
+`test_dspark_scheduler.py` (pure Python — runnable without torch). The
+`markov_head` also exposes `step_logits(...)` / `init_recurrent_state(...)` as
+the semi-autoregressive decode primitive for a serving engine.
+
+**Boundary (not in this repo):** wiring STS + the scheduler + the semi-AR
+`step_logits` loop into a live **vLLM** DSpark proposer is serving-side and needs
+the vLLM DSpark inference path (which doesn't exist yet); it can't be built or
+verified from this training repo. These modules are the tested building blocks
+for that separate vLLM work.
 
 ### If DFlash serving errors with `... does not support M-RoPE yet`
 

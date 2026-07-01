@@ -8,7 +8,7 @@ from speculators.model import SpeculatorModel
 from speculators.models.dflash.core import DFlashDraftModel, maybe_compile_dflash_forward
 from speculators.models.dflash.utils import get_base_indices_for_anchored_blocks
 from speculators.models.dspark.config import DSparkSpeculatorConfig
-from speculators.models.dspark.markov_head import VanillaMarkovHead
+from speculators.models.dspark.markov_head import build_markov_head
 from speculators.models.dspark.metrics import compute_dspark_metrics
 from speculators.models.utils import resolve_target_layer_ids
 
@@ -24,10 +24,12 @@ class DSparkDraftModel(DFlashDraftModel):
     ) -> None:
         super().__init__(config=config)
 
-        self.markov_head = VanillaMarkovHead(
+        self.markov_head = build_markov_head(
+            markov_head_type=config.markov_head_type,
             verifier_vocab_size=self.verifier_vocab_size,
             draft_vocab_size=self.draft_vocab_size,
             markov_rank=config.markov_rank,
+            hidden_size=config.transformer_layer_config.hidden_size,
         )
         confidence_in_features = config.transformer_layer_config.hidden_size
         if config.confidence_head_with_markov:
@@ -63,6 +65,7 @@ class DSparkDraftModel(DFlashDraftModel):
             mask_token_id=kwargs.get("mask_token_id"),
             sliding_window_non_causal=kwargs.get("sliding_window_non_causal", False),
             markov_rank=kwargs.get("markov_rank", 256),
+            markov_head_type=kwargs.get("markov_head_type", "vanilla"),
             confidence_head_alpha=kwargs.get("confidence_head_alpha", 1.0),
             confidence_head_with_markov=kwargs.get("confidence_head_with_markov", True),
             ce_loss_alpha=kwargs.get("ce_loss_alpha", 0.1),
@@ -215,8 +218,19 @@ class DSparkDraftModel(DFlashDraftModel):
         normalized_hidden = self.norm(noise_embedding)
         base_logits = self.lm_head(normalized_hidden)
         prev_token_ids = self._get_prev_token_ids(input_ids, anchored_block_indices)
-        prev_embeddings, markov_bias = self.markov_head(prev_token_ids)
-        logits = base_logits + markov_bias
+        prev_embeddings = self.markov_head.get_prev_embeddings(prev_token_ids)
+
+        # Apply the sequential head block-wise. Memoryless heads (vanilla/gated)
+        # are computed for the whole block at once; the RNN head unrolls across
+        # the block_size dim, carrying its recurrent state. Teacher-forced
+        # ``prev_token_ids`` supplies x_{k-1} at every position.
+        num_blocks = base_logits.shape[1] // self.block_size
+        draft_vocab = base_logits.shape[-1]
+        logits = self.markov_head.apply_block_logits(
+            base_logits.view(1, num_blocks, self.block_size, draft_vocab),
+            token_ids=prev_token_ids.view(1, num_blocks, self.block_size),
+            hidden_states=normalized_hidden.view(1, num_blocks, self.block_size, -1),
+        ).reshape(1, num_blocks * self.block_size, draft_vocab)
 
         confidence_inputs = normalized_hidden
         if self.config.confidence_head_with_markov:

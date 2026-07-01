@@ -954,6 +954,16 @@ def parse_args():
         help="Low-rank dimension for DSpark Markov head (default: 256)",
     )
     parser.add_argument(
+        "--markov-head-type",
+        type=str,
+        choices=["vanilla", "gated", "rnn"],
+        default="vanilla",
+        help=(
+            "DSpark sequential head: 'vanilla' (default, first-order Markov), "
+            "'gated' (hidden-gated Markov), or 'rnn' (recurrent, paper Eq. 6)."
+        ),
+    )
+    parser.add_argument(
         "--ce-loss-alpha",
         type=float,
         default=0.1,
