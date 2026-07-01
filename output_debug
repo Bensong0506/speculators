@@ -5,6 +5,7 @@ STEP 2 训练	bash examples/train/nohup_mtp_client_122b.sh	本来就内部 nohup
 STEP 3 测试	MTP_CKPT=... bash examples/evaluate/test_mtp_client_122b.sh	自动 detach,打印 tail -f
 
 cd /tmp
+/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/speculators
 nohup wget -c --tries=0 --retry-connrefused --timeout=60 --waitretry=10 \
   "https://github.com/vllm-project/vllm/releases/download/v0.22.0/vllm-0.22.0%2Bcu129-cp38-abi3-manylinux_2_28_x86_64.whl" \
   -O "vllm-0.22.0+cu129-cp38-abi3-manylinux_2_28_x86_64.whl" \
