@@ -68,6 +68,7 @@ class DSparkDraftModel(DFlashDraftModel):
             ce_loss_alpha=kwargs.get("ce_loss_alpha", 0.1),
             l1_loss_alpha=kwargs.get("l1_loss_alpha", 0.9),
             loss_decay_gamma=kwargs.get("loss_decay_gamma", 4.0),
+            ce_target=kwargs.get("ce_target", "ground_truth"),
             speculators_config=SpeculatorsConfig(
                 algorithm="dspark",
                 proposal_methods=[
@@ -107,6 +108,36 @@ class DSparkDraftModel(DFlashDraftModel):
         prev_indices = (block_indices - 1).clamp(min=0)
         prev_indices[:, 0] = block_indices[:, 0]
         return input_ids[:, prev_indices.reshape(-1)]
+
+    def _build_ce_ground_truth_labels(
+        self,
+        input_ids: torch.Tensor,  # shape: [1, total_seq_len]
+        anchored_block_indices: torch.Tensor,  # shape: [num_anchors*block_size]
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Paper-faithful CE labels: the realized next token at each draft slot.
+
+        ``anchored_block_indices[k]`` is the source-sequence position whose token
+        draft slot ``k`` must predict, so the ground-truth (verifier-vocab) label
+        ids are ``input_ids`` gathered at those same indices. When the draft uses
+        a reduced vocabulary we map each label from the verifier vocab into the
+        draft vocab via ``d2t`` (``verifier_id = draft_id + d2t[draft_id]``) and
+        flag positions whose token is out-of-vocab so they can be masked out of
+        the CE term. (Draft slot 0 is the anchor and is masked from the loss
+        upstream, so its label value is irrelevant.)
+        """
+        gt_verifier_ids = input_ids[:, anchored_block_indices]
+        if not self.use_draft_vocab:
+            valid = torch.ones_like(gt_verifier_ids, dtype=torch.bool)
+            return gt_verifier_ids, valid
+
+        device = input_ids.device
+        draft_ids = torch.arange(self.draft_vocab_size, device=device)
+        verifier_of_draft = draft_ids + self.d2t.to(device=device)
+        t2d_index = input_ids.new_full((self.verifier_vocab_size,), -1)
+        t2d_index[verifier_of_draft] = draft_ids
+        draft_labels = t2d_index[gt_verifier_ids]
+        valid = draft_labels >= 0
+        return draft_labels.clamp(min=0), valid
 
     @maybe_compile_dflash_forward
     def forward(
@@ -200,12 +231,21 @@ class DSparkDraftModel(DFlashDraftModel):
         )
         aligned_loss_mask[:, :: self.block_size] = 0
 
+        ce_label_ids = None
+        ce_label_valid = None
+        if self.config.ce_target == "ground_truth":
+            ce_label_ids, ce_label_valid = self._build_ce_ground_truth_labels(
+                input_ids, anchored_block_indices
+            )
+
         loss, metrics = compute_dspark_metrics(
             logits,
             targets,
             confidence_logits,
             aligned_loss_mask,
             self.block_size,
+            ce_label_ids=ce_label_ids,
+            ce_label_valid=ce_label_valid,
             ce_loss_alpha=(
                 self.config.ce_loss_alpha if ce_loss_alpha is None else ce_loss_alpha
             ),

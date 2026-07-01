@@ -33,11 +33,20 @@ def compute_dspark_metrics(
     l1_loss_alpha: float = 0.9,
     confidence_head_alpha: float = 1.0,
     gamma: float = 4.0,
+    ce_label_ids: torch.Tensor | None = None,  # shape: [1, num_anchors*block_size]
+    ce_label_valid: torch.Tensor | None = None,  # shape: [1, num_anchors*block_size]
 ) -> tuple[torch.Tensor, dict]:
     """Compute DSpark's CE + L1 + confidence training objective.
 
     The confidence target is the rejection-sampling acceptance proxy
     ``1 - 0.5 * ||softmax(logits) - softmax(targets)||_1``.
+
+    ``ce_label_ids`` selects the cross-entropy label source. When provided it is
+    the paper-faithful ground-truth realized token (already mapped into the draft
+    vocabulary), and ``ce_label_valid`` masks out positions whose ground-truth
+    token falls outside the reduced draft vocabulary (out-of-vocab). When
+    ``ce_label_ids`` is ``None`` the CE label falls back to the target model's
+    top-1 (``argmax(targets)``), the pre-migration behavior.
     """
     batch_size, seq_len, draft_vocab_size = logits.shape
     pos_idx = torch.arange(seq_len, device=logits.device) % block_size
@@ -45,13 +54,23 @@ def compute_dspark_metrics(
     loss_mask = loss_mask.to(logits.dtype)
     loss_weights = loss_mask * dflash_loss_decay(pos_idx.to(logits.dtype), gamma=gamma)
 
+    # target_ids (target model top-1) still drives the accuracy / accept-rate
+    # metrics below and is the CE fallback when no ground-truth label is passed.
     target_ids = torch.argmax(targets, dim=-1)
+    if ce_label_ids is None:
+        ce_target_ids = target_ids
+        ce_weights = loss_weights
+    else:
+        ce_target_ids = ce_label_ids
+        ce_weights = loss_weights
+        if ce_label_valid is not None:
+            ce_weights = loss_weights * ce_label_valid.to(loss_weights.dtype)
     ce_per_token = F.cross_entropy(
         logits.reshape(-1, draft_vocab_size),
-        target_ids.reshape(-1),
+        ce_target_ids.reshape(-1),
         reduction="none",
     ).reshape(batch_size, seq_len)
-    ce_loss, ce_num, ce_den = _weighted_mean(ce_per_token, loss_weights)
+    ce_loss, ce_num, ce_den = _weighted_mean(ce_per_token, ce_weights)
 
     draft_probs = torch.softmax(logits.float(), dim=-1)
     target_probs = torch.softmax(targets.float(), dim=-1)

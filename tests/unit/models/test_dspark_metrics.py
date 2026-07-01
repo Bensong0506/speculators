@@ -66,3 +66,41 @@ def test_vanilla_markov_head_shapes():
 
     assert prev_embeddings.shape == (1, 4, 3)
     assert bias.shape == (1, 4, 7)
+
+
+def test_ce_ground_truth_label_overrides_target_argmax():
+    # Draft predicts token 1 everywhere; target top-1 is token 2; ground truth is
+    # token 1. With ce_label_ids the CE label is the ground truth (matches the
+    # draft), so CE should be lower than the target-argmax fallback.
+    logits = _ids_to_logits(torch.tensor([[0, 1, 1, 1]]), vocab_size=5)
+    targets = _ids_to_logits(torch.tensor([[0, 2, 2, 2]]), vocab_size=5)
+    loss_mask = torch.tensor([[0, 1, 1, 1]])
+    gt_labels = torch.tensor([[0, 1, 1, 1]])
+    valid = torch.ones_like(gt_labels, dtype=torch.bool)
+
+    loss_gt, _ = compute_dspark_metrics(
+        logits, targets, None, loss_mask, block_size=4,
+        ce_label_ids=gt_labels, ce_label_valid=valid,
+    )
+    loss_argmax, _ = compute_dspark_metrics(
+        logits, targets, None, loss_mask, block_size=4,
+    )
+    assert loss_gt.item() < loss_argmax.item()
+
+
+def test_ce_out_of_vocab_positions_are_masked():
+    # Every supervised position is flagged out-of-vocab -> CE term drops out and
+    # the total loss reduces to the L1 term only (finite, no NaN from a bad index).
+    logits = _ids_to_logits(torch.tensor([[0, 1, 2, 3]]), vocab_size=5)
+    targets = _ids_to_logits(torch.tensor([[0, 1, 2, 3]]), vocab_size=5)
+    loss_mask = torch.tensor([[0, 1, 1, 1]])
+    gt_labels = torch.zeros(1, 4, dtype=torch.long)
+    valid = torch.zeros(1, 4, dtype=torch.bool)
+
+    loss, metrics = compute_dspark_metrics(
+        logits, targets, None, loss_mask, block_size=4,
+        ce_loss_alpha=1.0, l1_loss_alpha=0.0, confidence_head_alpha=0.0,
+        ce_label_ids=gt_labels, ce_label_valid=valid,
+    )
+    assert torch.isfinite(loss)
+    assert loss.item() == pytest.approx(0.0, abs=1e-6)

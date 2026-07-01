@@ -39,6 +39,21 @@ extraction, and verifier-logit alignment are reused; DSpark adds:
 position 0. So `BLOCK_SIZE=8` means the model predicts 7 speculative tokens
 (`gamma=7` in the DSpark paper).
 
+**CE label source (`CE_TARGET`).** The cross-entropy term now defaults to the
+paper-faithful `ground_truth` label (DSpark paper Eq. 9): the realized next
+token from the data, mapped into the reduced draft vocabulary via `d2t`, with
+out-of-vocab positions masked out of the CE term. The pre-migration behavior
+(the target model's top-1, `target_argmax`) is still available for an A/B:
+
+```bash
+CE_TARGET=ground_truth   # default, paper-faithful
+CE_TARGET=target_argmax  # old behavior (CE == argmax of the target logits)
+```
+
+Only the CE term (weight `0.1`) changes; the L1 distribution-matching term and
+the confidence BCE are unaffected. On wandb, watch `ce_loss` — with
+`ground_truth` it is CE against the realized token rather than the target mode.
+
 ### 0a. Pull the DSpark migration branch
 
 ```bash
@@ -67,10 +82,17 @@ bash examples/train/convert_zlab_dflash.sh
 
 ### 0c. Smoke run DSpark on ALLaVA
 
+Log to wandb (`LOGGER=wandb`). Log in once first — see
+[wandb](#prefer-wandb) below for `wandb login` / `WANDB_BASE_URL`; set
+`WANDB_BASE_URL` to your wandb host.
+
 ```bash
 cd /home/wenxuan/speculators
 
-SPECULATOR_TYPE=dspark \
+WANDB_BASE_URL=http://<your-wandb-host>:<port> \
+  WANDB_PROJECT=speculators \
+  LOGGER=wandb \
+  SPECULATOR_TYPE=dspark \
   FINETUNE_FROM=/home/models/Qwen3.5-9B-DFlash-spec \
   OUTPUT_DIR=./output/dspark_qwen3.5_9b_mm \
   SAVE_PATH=./output/dspark_qwen3.5_9b_mm/checkpoints \
@@ -82,6 +104,7 @@ SPECULATOR_TYPE=dspark \
   L1_LOSS_ALPHA=0.9 \
   CONFIDENCE_HEAD_ALPHA=1.0 \
   LOSS_DECAY_GAMMA=4.0 \
+  CE_TARGET=ground_truth \
   MAX_SAMPLES=5000 \
   EPOCHS=1 \
   LR_FT=1e-5 \
@@ -90,11 +113,16 @@ SPECULATOR_TYPE=dspark \
   bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
 ```
 
+If `torch.compile` complains about the CE label-mapping step on your build, set
+`SPECULATORS_DFLASH_COMPILE=0` to run the forward eagerly (correctness is
+unchanged; it only disables compilation of the draft forward).
+
 Expected signs that the migration path is active:
 
 - launcher prints `type=dspark`;
-- resolved limits print `dspark markov_rank` and DSpark loss weights;
-- trainer logs include `ce_loss`, `l1_loss`, `confidence_loss`,
+- resolved limits print `dspark markov_rank`, DSpark loss weights, and
+  `dspark ce_target: ground_truth`;
+- trainer logs (wandb) include `ce_loss`, `l1_loss`, `confidence_loss`,
   `confidence_abs_error`, and `accept_rate_position_*`;
 - warm-start log says DSpark is loading compatible tensors from the DFlash
   checkpoint, while `markov_head.*` and `confidence_head.*` are newly initialized.
@@ -107,7 +135,10 @@ for the first comparison because it maps cleanly to DSpark `gamma=7`.
 ```bash
 cd /home/wenxuan/speculators
 
-SPECULATOR_TYPE=dspark \
+WANDB_BASE_URL=http://<your-wandb-host>:<port> \
+  WANDB_PROJECT=speculators \
+  LOGGER=wandb \
+  SPECULATOR_TYPE=dspark \
   FINETUNE_FROM=/home/models/Qwen3.5-9B-DFlash-spec \
   OUTPUT_DIR=./output/dspark_qwen3.5_9b_mm_100k \
   SAVE_PATH=./output/dspark_qwen3.5_9b_mm_100k/checkpoints \
@@ -119,14 +150,18 @@ SPECULATOR_TYPE=dspark \
   L1_LOSS_ALPHA=0.9 \
   CONFIDENCE_HEAD_ALPHA=1.0 \
   LOSS_DECAY_GAMMA=4.0 \
+  CE_TARGET=ground_truth \
   MAX_SAMPLES=100000 \
   EPOCHS=2 \
   LR_FT=1e-5 \
-  LOGGER=tensorboard \
   ALLAVA_INPUTS="/home/wenxuan/ALLaVA-4V/allava_laion/ALLaVA-Caption-LAION-4V.json /home/wenxuan/ALLaVA-4V/allava_laion/ALLaVA-Instruct-LAION-4V.json" \
   ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V \
   bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
 ```
+
+For a CE-source A/B, run the same command twice with `CE_TARGET=ground_truth`
+vs `CE_TARGET=target_argmax` (distinct `RUN_NAME`s) and compare
+`accept_rate_position_*` / `tau_probabilistic` on wandb.
 
 For a controlled A/B, keep model/data/GPU layout identical and compare:
 
@@ -367,7 +402,9 @@ tail -f run_logs/dflash_ce_fp32_lr3e5_*.nohup.log
 bash examples/train/view_tensorboard.sh
 # from your laptop:  ssh -N -L 6006:localhost:6006 <user>@<gpu-box>  -> http://localhost:6006
 ```
-Prefer wandb? Install/login once, then add `LOGGER=wandb` to the training command:
+### Prefer wandb
+
+Install/login once, then add `LOGGER=wandb` to the training command:
 ```bash
 python3 -m pip install wandb
 wandb login --host http://<internal-wandb-host>:<port>

@@ -983,6 +983,17 @@ def parse_args():
         default=4.0,
         help="DSpark/DFlash exponential position-decay gamma (default: 4.0)",
     )
+    parser.add_argument(
+        "--ce-target",
+        type=str,
+        choices=["ground_truth", "target_argmax"],
+        default="ground_truth",
+        help=(
+            "DSpark cross-entropy label source. 'ground_truth' (default, "
+            "paper-faithful): realized data token mapped into the draft vocab "
+            "with OOV masked. 'target_argmax': target model top-1 (old behavior)."
+        ),
+    )
     # P-EAGLE specific parameters
     parser.add_argument(
         "--num-depths",

@@ -45,6 +45,16 @@ class DSparkSpeculatorConfig(DFlashSpeculatorConfig):
         description="Loss weight for hard-label cross entropy.",
     )
 
+    ce_target: Literal["ground_truth", "target_argmax"] = Field(
+        default="ground_truth",
+        description=(
+            "Cross-entropy label source. 'ground_truth' (paper Eq. 9): the "
+            "realized next token from the data, mapped into the reduced draft "
+            "vocabulary with out-of-vocab positions masked out. 'target_argmax': "
+            "the target model's top-1 token (the pre-migration behavior)."
+        ),
+    )
+
     l1_loss_alpha: float = Field(
         default=0.9,
         description="Loss weight for draft/target distribution L1 matching.",

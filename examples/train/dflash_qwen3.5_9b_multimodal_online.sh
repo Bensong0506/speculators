@@ -145,6 +145,8 @@ L1_LOSS_ALPHA="${L1_LOSS_ALPHA:-0.9}"
 CONFIDENCE_HEAD_ALPHA="${CONFIDENCE_HEAD_ALPHA:-1.0}"
 CONFIDENCE_HEAD_WITH_MARKOV="${CONFIDENCE_HEAD_WITH_MARKOV:-1}"
 LOSS_DECAY_GAMMA="${LOSS_DECAY_GAMMA:-4.0}"
+# CE label source: ground_truth (paper-faithful, default) or target_argmax (old).
+CE_TARGET="${CE_TARGET:-ground_truth}"
 
 # --- Warm-start (continue-training) from a pretrained DFlash --------------
 # Point at a DFlash checkpoint dir (e.g. /data/wenxuan/Qwen3.5-9B-DFlash-spec) to
@@ -280,6 +282,7 @@ if [ "$SPECULATOR_TYPE" = "dspark" ]; then
         --l1-loss-alpha "$L1_LOSS_ALPHA"
         --confidence-head-alpha "$CONFIDENCE_HEAD_ALPHA"
         --loss-decay-gamma "$LOSS_DECAY_GAMMA"
+        --ce-target "$CE_TARGET"
     )
     if [ "$CONFIDENCE_HEAD_WITH_MARKOV" = "1" ]; then
         DSPARK_FLAG+=(--confidence-head-with-markov)
@@ -355,6 +358,7 @@ if [ "$SPECULATOR_TYPE" = "dspark" ]; then
     echo "    dspark markov_rank: $MARKOV_RANK"
     echo "    dspark loss weights: ce=$CE_LOSS_ALPHA l1=$L1_LOSS_ALPHA confidence=$CONFIDENCE_HEAD_ALPHA gamma=$LOSS_DECAY_GAMMA"
     echo "    dspark confidence_head_with_markov: $CONFIDENCE_HEAD_WITH_MARKOV"
+    echo "    dspark ce_target: $CE_TARGET"
 fi
 
 # Step 0 (optional): build a `conversations` jsonl from the chosen data source.
