@@ -1,4 +1,5 @@
 import argparse
+import json
 import logging
 import random
 import warnings
@@ -18,6 +19,7 @@ from speculators.data_generation.vllm_client import (
     DEFAULT_MAX_RETRIES,
     DEFAULT_REQUEST_TIMEOUT,
 )
+from speculators.convert.utils import load_checkpoint_weights
 from speculators.model import SpeculatorModel
 from speculators.models.eagle3.data import shift_batch
 from speculators.models.metrics import resolve_loss_fn
@@ -135,8 +137,8 @@ def maybe_force_eager_training(force_eager: bool):
     logger.info("Torch compiler stance set to force_eager for training")
 
 
-def override_loaded_dflash_knobs(draft_model, args: argparse.Namespace):
-    if args.speculator_type != "dflash":
+def override_loaded_anchor_block_knobs(draft_model, args: argparse.Namespace):
+    if args.speculator_type not in ("dflash", "dspark"):
         return
 
     if hasattr(draft_model.config, "max_anchors"):
@@ -144,7 +146,7 @@ def override_loaded_dflash_knobs(draft_model, args: argparse.Namespace):
         draft_model.config.max_anchors = args.max_anchors
         if loaded_max_anchors != args.max_anchors:
             logger.info(
-                "Overriding loaded DFlash max_anchors: %s -> %s",
+                "Overriding loaded anchor-block max_anchors: %s -> %s",
                 loaded_max_anchors,
                 args.max_anchors,
             )
@@ -156,7 +158,7 @@ def override_loaded_dflash_knobs(draft_model, args: argparse.Namespace):
             draft_model.block_size = args.block_size
         if loaded_block_size != args.block_size:
             logger.info(
-                "Overriding loaded DFlash block_size: %s -> %s",
+                "Overriding loaded anchor-block block_size: %s -> %s",
                 loaded_block_size,
                 args.block_size,
             )
@@ -166,6 +168,68 @@ def override_loaded_dflash_knobs(draft_model, args: argparse.Namespace):
     for proposal_method in proposal_methods:
         if hasattr(proposal_method, "speculative_tokens"):
             proposal_method.speculative_tokens = args.block_size - 1
+
+
+def read_pretrained_speculator_type(path: str | Path) -> str | None:
+    config_path = Path(path) / "config.json"
+    if not config_path.exists():
+        return None
+    with config_path.open() as f:
+        config = json.load(f)
+    return config.get("speculators_model_type")
+
+
+def load_compatible_state_dict(
+    model: torch.nn.Module,
+    checkpoint_dir: str | Path,
+) -> None:
+    state_dict = load_checkpoint_weights(Path(checkpoint_dir))
+    model_state = model.state_dict()
+    compatible_state = {}
+    skipped = []
+    for key, value in state_dict.items():
+        if key not in model_state:
+            skipped.append((key, "not present in target model"))
+            continue
+        if model_state[key].shape != value.shape:
+            skipped.append(
+                (
+                    key,
+                    f"shape {tuple(value.shape)} != {tuple(model_state[key].shape)}",
+                )
+            )
+            continue
+        compatible_state[key] = value
+
+    incompatible = model.load_state_dict(compatible_state, strict=False)
+    logger.info(
+        "Loaded %s compatible tensors from %s",
+        len(compatible_state),
+        checkpoint_dir,
+    )
+    if skipped:
+        logger.warning(
+            "Skipped %s incompatible checkpoint tensors. First few: %s",
+            len(skipped),
+            skipped[:8],
+        )
+
+    expected_new_prefixes = (
+        "markov_head.",
+        "confidence_head.",
+        "verifier_lm_head.",
+        "verifier_norm.",
+    )
+    unexpected_missing = [
+        key
+        for key in incompatible.missing_keys
+        if not key.startswith(expected_new_prefixes)
+    ]
+    if unexpected_missing:
+        logger.warning(
+            "Missing non-DSpark warm-start tensors after partial load. First few: %s",
+            unexpected_missing[:16],
+        )
 
 
 def load_pretrained_config_with_current_verifier(model_class, args: argparse.Namespace):
@@ -383,9 +447,9 @@ def main(args: argparse.Namespace):
 
     d2t, t2d, draft_vocab_size = parse_vocab_mappings(args)
 
-    if args.sliding_window_indices and args.speculator_type != "dflash":
+    if args.sliding_window_indices and args.speculator_type not in ("dflash", "dspark"):
         raise ValueError(
-            "Currently sliding window attention is only supported by dflash "
+            "Currently sliding window attention is only supported by dflash/dspark "
             "draft models. Please open an issue/pr if you would like to use "
             "sliding window attention with a different speculator type"
         )
@@ -434,16 +498,33 @@ def main(args: argparse.Namespace):
             **vars(args),
         )
     elif args.from_pretrained:
-        pretrained_config = load_pretrained_config_with_current_verifier(
-            model_class, args
+        pretrained_speculator_type = read_pretrained_speculator_type(
+            args.from_pretrained
         )
-        draft_model = model_class.from_pretrained(
-            args.from_pretrained,
-            config=pretrained_config,
-            t2d=t2d,
-            d2t=d2t,
-        )
-        override_loaded_dflash_knobs(draft_model, args)
+        if args.speculator_type == "dspark" and pretrained_speculator_type == "dflash":
+            logger.info(
+                "Warm-starting DSpark from DFlash checkpoint at %s",
+                args.from_pretrained,
+            )
+            args.draft_vocab_size = draft_vocab_size
+            draft_model = model_class.from_training_args(
+                verifier_config=transformer_layer_config,
+                t2d=t2d,
+                d2t=d2t,
+                **vars(args),
+            )
+            load_compatible_state_dict(draft_model, args.from_pretrained)
+        else:
+            pretrained_config = load_pretrained_config_with_current_verifier(
+                model_class, args
+            )
+            draft_model = model_class.from_pretrained(
+                args.from_pretrained,
+                config=pretrained_config,
+                t2d=t2d,
+                d2t=d2t,
+            )
+            override_loaded_anchor_block_knobs(draft_model, args)
     else:
         args.draft_vocab_size = draft_vocab_size
         draft_model = model_class.from_training_args(
@@ -603,7 +684,7 @@ def parse_args():
         "--speculator-type",
         type=str,
         default="eagle3",
-        help="Type of speculator model to train (e.g., eagle3)",
+        help="Type of speculator model to train (e.g., eagle3, dflash, dspark)",
     )
     parser.add_argument(
         "--from-pretrained",
@@ -864,6 +945,43 @@ def parse_args():
         type=int,
         default=256,
         help="Maximum anchor positions for DFlash training (default: 256)",
+    )
+    # DSpark specific parameters
+    parser.add_argument(
+        "--markov-rank",
+        type=int,
+        default=256,
+        help="Low-rank dimension for DSpark Markov head (default: 256)",
+    )
+    parser.add_argument(
+        "--ce-loss-alpha",
+        type=float,
+        default=0.1,
+        help="DSpark cross-entropy loss weight (default: 0.1)",
+    )
+    parser.add_argument(
+        "--l1-loss-alpha",
+        type=float,
+        default=0.9,
+        help="DSpark L1 distribution matching loss weight (default: 0.9)",
+    )
+    parser.add_argument(
+        "--confidence-head-alpha",
+        type=float,
+        default=1.0,
+        help="DSpark confidence-head BCE loss weight (default: 1.0)",
+    )
+    parser.add_argument(
+        "--confidence-head-with-markov",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Concatenate Markov previous-token embedding into confidence head.",
+    )
+    parser.add_argument(
+        "--loss-decay-gamma",
+        type=float,
+        default=4.0,
+        help="DSpark/DFlash exponential position-decay gamma (default: 4.0)",
     )
     # P-EAGLE specific parameters
     parser.add_argument(

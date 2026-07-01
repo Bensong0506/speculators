@@ -25,6 +25,120 @@ python3 -m pip install -e . --no-deps --no-build-isolation
 uv pip install -U vllm --torch-backend=auto --extra-index-url https://wheels.vllm.ai/nightly
 ```
 
+## DSpark migration quick run
+
+This branch adds `SPECULATOR_TYPE=dspark` on top of the existing DFlash online
+training path. The data pipeline, anchor sampling, DFlash backbone, hidden-state
+extraction, and verifier-logit alignment are reused; DSpark adds:
+
+- a low-rank Markov head;
+- a confidence head;
+- DeepSeek-style `CE + L1 + confidence BCE` training loss.
+
+**Important convention:** this repo's `BLOCK_SIZE` includes the anchor at
+position 0. So `BLOCK_SIZE=8` means the model predicts 7 speculative tokens
+(`gamma=7` in the DSpark paper).
+
+### 0a. Pull the DSpark migration branch
+
+```bash
+cd /home/wenxuan/speculators
+git fetch origin
+git checkout codex/dspark-migration
+git pull --ff-only origin codex/dspark-migration
+```
+
+### 0b. Prepare a speculators-format DFlash warm-start
+
+If you already have a speculators-format DFlash checkpoint from our training,
+point `FINETUNE_FROM` directly at it, for example:
+
+```bash
+FINETUNE_FROM=/home/wenxuan/speculators/output/dflash_qwen3.5_9b_mm_ft/checkpoints/checkpoint_best
+```
+
+If you only have the raw z-lab DFlash checkpoint, convert it once first:
+
+```bash
+cd /home/wenxuan/speculators
+bash examples/train/convert_zlab_dflash.sh
+# expected output: /home/models/Qwen3.5-9B-DFlash-spec
+```
+
+### 0c. Smoke run DSpark on ALLaVA
+
+```bash
+cd /home/wenxuan/speculators
+
+SPECULATOR_TYPE=dspark \
+  FINETUNE_FROM=/home/models/Qwen3.5-9B-DFlash-spec \
+  OUTPUT_DIR=./output/dspark_qwen3.5_9b_mm \
+  SAVE_PATH=./output/dspark_qwen3.5_9b_mm/checkpoints \
+  RUN_NAME=dspark_qwen3.5_9b_mm_smoke \
+  BLOCK_SIZE=8 \
+  MAX_ANCHORS=512 \
+  MARKOV_RANK=256 \
+  CE_LOSS_ALPHA=0.1 \
+  L1_LOSS_ALPHA=0.9 \
+  CONFIDENCE_HEAD_ALPHA=1.0 \
+  LOSS_DECAY_GAMMA=4.0 \
+  MAX_SAMPLES=5000 \
+  EPOCHS=1 \
+  LR_FT=1e-5 \
+  ALLAVA_INPUTS="/home/wenxuan/ALLaVA-4V/allava_laion/ALLaVA-Caption-LAION-4V.json /home/wenxuan/ALLaVA-4V/allava_laion/ALLaVA-Instruct-LAION-4V.json" \
+  ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V \
+  bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
+```
+
+Expected signs that the migration path is active:
+
+- launcher prints `type=dspark`;
+- resolved limits print `dspark markov_rank` and DSpark loss weights;
+- trainer logs include `ce_loss`, `l1_loss`, `confidence_loss`,
+  `confidence_abs_error`, and `accept_rate_position_*`;
+- warm-start log says DSpark is loading compatible tensors from the DFlash
+  checkpoint, while `markov_head.*` and `confidence_head.*` are newly initialized.
+
+### 0d. Longer DSpark run
+
+After the smoke run starts cleanly, increase samples/epochs. Keep `BLOCK_SIZE=8`
+for the first comparison because it maps cleanly to DSpark `gamma=7`.
+
+```bash
+cd /home/wenxuan/speculators
+
+SPECULATOR_TYPE=dspark \
+  FINETUNE_FROM=/home/models/Qwen3.5-9B-DFlash-spec \
+  OUTPUT_DIR=./output/dspark_qwen3.5_9b_mm_100k \
+  SAVE_PATH=./output/dspark_qwen3.5_9b_mm_100k/checkpoints \
+  RUN_NAME=dspark_qwen3.5_9b_mm_100k \
+  BLOCK_SIZE=8 \
+  MAX_ANCHORS=512 \
+  MARKOV_RANK=256 \
+  CE_LOSS_ALPHA=0.1 \
+  L1_LOSS_ALPHA=0.9 \
+  CONFIDENCE_HEAD_ALPHA=1.0 \
+  LOSS_DECAY_GAMMA=4.0 \
+  MAX_SAMPLES=100000 \
+  EPOCHS=2 \
+  LR_FT=1e-5 \
+  LOGGER=tensorboard \
+  ALLAVA_INPUTS="/home/wenxuan/ALLaVA-4V/allava_laion/ALLaVA-Caption-LAION-4V.json /home/wenxuan/ALLaVA-4V/allava_laion/ALLaVA-Instruct-LAION-4V.json" \
+  ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V \
+  bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
+```
+
+For a controlled A/B, keep model/data/GPU layout identical and compare:
+
+- DFlash baseline: `SPECULATOR_TYPE=dflash BLOCK_SIZE=8`;
+- DSpark: `SPECULATOR_TYPE=dspark BLOCK_SIZE=8`;
+- same `FINETUNE_FROM`, `MAX_SAMPLES`, `EPOCHS`, `MAX_ANCHORS`, and target-layer ids.
+
+The first useful training signals are not final serving speed yet; they are
+`accept_rate_position_*`, `tau_probabilistic`, and whether confidence calibration
+error falls as training proceeds. Runtime confidence-scheduler integration can be
+verified after this training path is stable.
+
 ### If DFlash serving errors with `... does not support M-RoPE yet`
 
 Confirmed on vLLM **0.22.0**: `vllm/v1/spec_decode/llm_base_proposer.py` calls

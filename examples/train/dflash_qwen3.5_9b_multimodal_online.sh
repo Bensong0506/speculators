@@ -136,6 +136,16 @@ MAX_ANCHORS="${MAX_ANCHORS:-512}"  # max anchor positions sampled per step (memo
 NUM_LAYERS=5            # draft transformer layers (DFlash typically uses ~5)
 DRAFT_VOCAB_SIZE="${DRAFT_VOCAB_SIZE-32000}"  # empty = full vocab; default scratch uses reduced vocab
 
+# --- DSpark-specific (used when SPECULATOR_TYPE=dspark) -------------------
+# Repo convention: BLOCK_SIZE includes the anchor at position 0. So
+# BLOCK_SIZE=8 means DSpark predicts gamma=7 speculative tokens.
+MARKOV_RANK="${MARKOV_RANK:-256}"
+CE_LOSS_ALPHA="${CE_LOSS_ALPHA:-0.1}"
+L1_LOSS_ALPHA="${L1_LOSS_ALPHA:-0.9}"
+CONFIDENCE_HEAD_ALPHA="${CONFIDENCE_HEAD_ALPHA:-1.0}"
+CONFIDENCE_HEAD_WITH_MARKOV="${CONFIDENCE_HEAD_WITH_MARKOV:-1}"
+LOSS_DECAY_GAMMA="${LOSS_DECAY_GAMMA:-4.0}"
+
 # --- Warm-start (continue-training) from a pretrained DFlash --------------
 # Point at a DFlash checkpoint dir (e.g. /data/wenxuan/Qwen3.5-9B-DFlash-spec) to
 # FINE-TUNE it instead of training from scratch. The block below reads its
@@ -262,6 +272,21 @@ SPEC_FLAG=()
 if [ "$SPECULATOR_TYPE" = "mtp" ]; then
     SPEC_FLAG=(--num-speculative-steps "$NUM_SPECULATIVE_STEPS" --step-weight-beta "$STEP_WEIGHT_BETA")
 fi
+DSPARK_FLAG=()
+if [ "$SPECULATOR_TYPE" = "dspark" ]; then
+    DSPARK_FLAG=(
+        --markov-rank "$MARKOV_RANK"
+        --ce-loss-alpha "$CE_LOSS_ALPHA"
+        --l1-loss-alpha "$L1_LOSS_ALPHA"
+        --confidence-head-alpha "$CONFIDENCE_HEAD_ALPHA"
+        --loss-decay-gamma "$LOSS_DECAY_GAMMA"
+    )
+    if [ "$CONFIDENCE_HEAD_WITH_MARKOV" = "1" ]; then
+        DSPARK_FLAG+=(--confidence-head-with-markov)
+    else
+        DSPARK_FLAG+=(--no-confidence-head-with-markov)
+    fi
+fi
 NO_RESUME_FLAG=()
 if [ "$NO_RESUME_FROM_CHECKPOINT" = "1" ]; then
     NO_RESUME_FLAG=(--no-resume-from-checkpoint)
@@ -326,6 +351,11 @@ echo "    force_eager_training: $FORCE_EAGER"
 echo "    dflash_compile_training: $DFLASH_COMPILE"
 echo "    validate_initial: $VALIDATE_INITIAL"
 echo "    target_layer_ids: $TARGET_LAYER_IDS"
+if [ "$SPECULATOR_TYPE" = "dspark" ]; then
+    echo "    dspark markov_rank: $MARKOV_RANK"
+    echo "    dspark loss weights: ce=$CE_LOSS_ALPHA l1=$L1_LOSS_ALPHA confidence=$CONFIDENCE_HEAD_ALPHA gamma=$LOSS_DECAY_GAMMA"
+    echo "    dspark confidence_head_with_markov: $CONFIDENCE_HEAD_WITH_MARKOV"
+fi
 
 # Step 0 (optional): build a `conversations` jsonl from the chosen data source.
 # Idempotent: skips conversion only when the source/image-root fingerprint matches.
@@ -526,6 +556,7 @@ CUDA_VISIBLE_DEVICES="$TRAIN_GPUS" torchrun \
     --total-seq-len "$SEQ_LENGTH" \
     --speculator-type "$SPECULATOR_TYPE" \
     "${SPEC_FLAG[@]}" \
+    "${DSPARK_FLAG[@]}" \
     --block-size "$BLOCK_SIZE" \
     --max-anchors "$MAX_ANCHORS" \
     --num-layers "$NUM_LAYERS" \
