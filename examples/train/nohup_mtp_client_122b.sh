@@ -31,7 +31,7 @@ cd "$REPO_ROOT"
 
 # ---- client knobs ----
 CLIENT_MODEL="${CLIENT_MODEL:-/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/qwen3.5-vl-122B}"
-CLIENT_DISTILL_JSONL="${CLIENT_DISTILL_JSONL:-/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/client_122b_distill_text_8137.jsonl}"
+CLIENT_DISTILL_JSONL="${CLIENT_DISTILL_JSONL:-/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/client_122b_distill_multimodal_8137.jsonl}"
 CLIENT_IMAGE_ROOT="${CLIENT_IMAGE_ROOT:-/mnt/tidal-alsh01}"
 
 if [ ! -d "$CLIENT_MODEL" ]; then

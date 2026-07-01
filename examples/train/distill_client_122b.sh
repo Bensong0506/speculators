@@ -9,9 +9,9 @@
 # drives scripts/distill_client_messages.py (multi-image aware), not the ALLaVA
 # single-image distiller.
 #
-# DEFAULT MODE = TEXT-ONLY: the task (小红书 "问一问" RAG search) is text-dominated;
-# text-only bootstraps the whole MTP pipeline without the 20-images/sample +
-# long-context cost. Set MODE=multimodal for the full image path (phase 2).
+# DEFAULT MODE = MULTIMODAL: the client task quality depends on the image context,
+# so STEP 1 distills the same multi-image inputs we want the MTP head to learn.
+# Set MODE=text only for a quick text-only smoke run.
 #
 # USAGE
 #   CLIENT_MODEL=/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/qwen3.5-vl-122B \
@@ -20,8 +20,8 @@
 #   bash examples/train/distill_client_122b.sh
 #   # -> data/client/client_122b_distill_<N>.jsonl  (feed to STEP 2)
 #
-#   # multimodal (needs the image root visible + per-prompt image cap):
-#   MODE=multimodal IMAGE_MEDIA_ROOT=/mnt/tidal-alsh01 LIMIT_IMAGES=20 \
+#   # text-only smoke path:
+#   MODE=text \
 #     CLIENT_MODEL=... CLIENT_TRAIN_JSONL=... bash examples/train/distill_client_122b.sh
 #
 # Two unconnected machines? split with SKIP_SAMPLES + per-machine OUT_JSONL, cat after.
@@ -36,7 +36,7 @@ STAMP="$(date +%Y%m%d_%H%M%S)"
 # ---- client knobs ----
 CLIENT_MODEL="${CLIENT_MODEL:-/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/qwen3.5-vl-122B}"
 CLIENT_TRAIN_JSONL="${CLIENT_TRAIN_JSONL:-/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/train.jsonl}"
-MODE="${MODE:-text}"                       # text | multimodal
+MODE="${MODE:-multimodal}"                 # multimodal | text
 MAX_SAMPLES="${MAX_SAMPLES:-8137}"
 SKIP_SAMPLES="${SKIP_SAMPLES:-0}"
 
@@ -91,24 +91,31 @@ GPUS="${GPUS:-0,1,2,3,4,5,6,7}"
 TP="${TP:-8}"
 PORT="${PORT:-8100}"
 SERVED_MODEL_NAME="${SERVED_MODEL_NAME:-qwen3.5-vl-122b-sft}"
-# client prompts are long (system ~5k + retrieved notes up to ~56k chars) -> big ctx
-# 8x H800 serving a 122B MoE (~10B active, only 2 KV heads -> KV is tiny), so we
-# can run a fat batch. Push concurrency for distillation throughput; lower if the
-# very long RAG prompts cause prefill pressure.
+# Client prompts are long (system ~5k + retrieved notes up to ~56k chars) and
+# multi-image inputs add extra prefill pressure. Keep the default queue modest
+# and raise it only after watching vLLM's running/pending metrics.
 MAX_MODEL_LEN="${MAX_MODEL_LEN:-65536}"
-MAX_NUM_SEQS="${MAX_NUM_SEQS:-64}"
+MAX_NUM_SEQS="${MAX_NUM_SEQS:-16}"
 GPU_MEMORY_UTIL="${GPU_MEMORY_UTIL:-0.90}"
 DTYPE="${DTYPE:-bfloat16}"
 ENFORCE_EAGER="${ENFORCE_EAGER:-1}"
+DISABLE_CHUNKED_PREFILL="${DISABLE_CHUNKED_PREFILL:-1}"
 IMAGE_MEDIA_ROOT="${IMAGE_MEDIA_ROOT:-/mnt/tidal-alsh01}"   # images live here (abs paths)
 LIMIT_IMAGES="${LIMIT_IMAGES:-20}"
 START_SERVER="${START_SERVER:-1}"
 ENDPOINT="${ENDPOINT:-http://localhost:${PORT}/v1}"
 
+# Native Qwen3.5 MTP speculative decoding is lossless for the teacher output under
+# greedy decoding, and cuts decode latency when the stock SFT MTP head accepts.
+USE_MTP="${USE_MTP:-1}"
+MTP_METHOD="${MTP_METHOD:-qwen3_5_mtp}"
+MTP_NUM_SPECULATIVE_TOKENS="${MTP_NUM_SPECULATIVE_TOKENS:-3}"
+MAX_NUM_BATCHED_TOKENS="${MAX_NUM_BATCHED_TOKENS:-$((MAX_MODEL_LEN + MAX_NUM_SEQS * MTP_NUM_SPECULATIVE_TOKENS))}"
+
 # ---- distill knobs ----
-MAX_TOKENS="${MAX_TOKENS:-2048}"           # answers ~1k chars; headroom for the long tail
+MAX_TOKENS="${MAX_TOKENS:-600}"            # client wants ~600-token distilled answers
 TEMPERATURE="${TEMPERATURE:-0}"            # greedy: learn the verifier's argmax continuations
-CONCURRENCY="${CONCURRENCY:-$MAX_NUM_SEQS}"
+CONCURRENCY="${CONCURRENCY:-16}"
 RESUME="${RESUME:-1}"
 
 LOG_DIR="${LOG_DIR:-$WORK_DIR/logs}"
@@ -125,7 +132,12 @@ wait_for_server() {
     echo "Waiting for verifier on :$PORT (log: $SERVER_LOG)"
     for _ in $(seq 1 240); do
         if [ -n "$SERVER_PID" ] && ! kill -0 "$SERVER_PID" 2>/dev/null; then
-            echo "ERROR: server died during startup. Last 100 lines:"; tail -n 100 "$SERVER_LOG" || true; return 1
+            echo "ERROR: server died during startup. Last 100 lines:"; tail -n 100 "$SERVER_LOG" || true
+            if grep -qiE "speculative|mtp|unknown.*method|unsupported.*method|unrecognized.*argument" "$SERVER_LOG"; then
+                echo "DIAGNOSIS: this vLLM build may not accept USE_MTP=1 / MTP_METHOD=$MTP_METHOD."
+                echo "           Retry with USE_MTP=0, or try MTP_METHOD=mtp if this build uses the generic speculators method."
+            fi
+            return 1
         fi
         curl -sf "http://localhost:${PORT}/health" >/dev/null 2>&1 && { echo "Server ready."; return 0; }
         sleep 5
@@ -141,7 +153,7 @@ if [ "$START_SERVER" = "1" ]; then
         --seed 42
         --tensor-parallel-size "$TP"
         --max-model-len "$MAX_MODEL_LEN"
-        --max-num-batched-tokens "$MAX_MODEL_LEN"
+        --max-num-batched-tokens "$MAX_NUM_BATCHED_TOKENS"
         --max-num-seqs "$MAX_NUM_SEQS"
         --gpu-memory-utilization "$GPU_MEMORY_UTIL"
         --trust-remote-code
@@ -150,13 +162,24 @@ if [ "$START_SERVER" = "1" ]; then
         --host 0.0.0.0 --port "$PORT"
     )
     [ "$ENFORCE_EAGER" = "1" ] && args+=(--enforce-eager)
+    [ "$DISABLE_CHUNKED_PREFILL" = "1" ] && args+=(--no-enable-chunked-prefill)
     if [ "$MODE" = "multimodal" ]; then
         args+=(--allowed-local-media-path "$IMAGE_MEDIA_ROOT" --limit-mm-per-prompt "{\"image\":$LIMIT_IMAGES}")
     fi
+    if [ "$USE_MTP" = "1" ]; then
+        SPEC_CONFIG="{\"method\":\"$MTP_METHOD\",\"num_speculative_tokens\":$MTP_NUM_SPECULATIVE_TOKENS,\"enforce_eager\":true}"
+        args+=(--speculative-config "$SPEC_CONFIG")
+    fi
     echo "=== Serving post-SFT 122B for client distillation ($MODE) ==="
     echo "  model: $CLIENT_MODEL"
-    echo "  serve: TP=$TP GPUs[$GPUS] max_len=$MAX_MODEL_LEN seqs=$MAX_NUM_SEQS"
+    echo "  serve: TP=$TP GPUs[$GPUS] max_len=$MAX_MODEL_LEN seqs=$MAX_NUM_SEQS batched_tokens=$MAX_NUM_BATCHED_TOKENS"
     [ "$MODE" = multimodal ] && echo "  media: $IMAGE_MEDIA_ROOT  limit_images=$LIMIT_IMAGES"
+    if [ "$USE_MTP" = "1" ]; then
+        echo "  mtp: enabled method=$MTP_METHOD spec_tokens=$MTP_NUM_SPECULATIVE_TOKENS"
+        echo "  speculative_config: $SPEC_CONFIG"
+    else
+        echo "  mtp: disabled"
+    fi
     env CUDA_VISIBLE_DEVICES="$GPUS" "${args[@]}" >"$SERVER_LOG" 2>&1 &
     SERVER_PID=$!
     wait_for_server
@@ -179,6 +202,9 @@ DISTILL=(
 [ "$RESUME" = "1" ] && DISTILL+=(--resume)
 
 echo "=== Distilling client prompts ($MODE) ==="
+echo "  out_jsonl: $OUT_JSONL"
+echo "  max_samples: $MAX_SAMPLES skip=$SKIP_SAMPLES resume=$RESUME"
+echo "  max_tokens: $MAX_TOKENS temperature=$TEMPERATURE concurrency=$CONCURRENCY"
 printf '[cmd]'; printf ' %q' "${DISTILL[@]}"; echo
 "${DISTILL[@]}"
 

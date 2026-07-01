@@ -39,13 +39,14 @@ OpenAI chat shape, one record per line:
 ## STEP 1 — Data distillation (on-policy, client domain)
 
 Serves the **post-SFT** 122B (TP=8) and regenerates the answers with it. Default is
-**TEXT-ONLY** (the task is text-dominated RAG; bootstraps the whole pipeline without
-the 20-images/sample + long-context cost). `scripts/distill_client_messages.py` does
-the work; the shell script serves + drives it.
+**MULTIMODAL** because the client data quality depends on the image context. The
+server also enables native Qwen3.5 MTP speculative decoding by default
+(`USE_MTP=1`, `MTP_METHOD=qwen3_5_mtp`) and caps answers at 600 output tokens.
+`scripts/distill_client_messages.py` does the work; the shell script serves + drives it.
 
 ```bash
 MAX_SAMPLES=8137 bash examples/train/distill_client_122b.sh
-# -> /mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/client_122b_distill_text_8137.jsonl
+# -> /mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/client_122b_distill_multimodal_8137.jsonl
 ```
 
 > **Safety (client machine):** the original `train.jsonl` is never modified. STEP 1
@@ -55,17 +56,25 @@ MAX_SAMPLES=8137 bash examples/train/distill_client_122b.sh
 > collide with `train.jsonl`; the distiller also hard-refuses if `--out-jsonl`
 > resolves to any input path. Override with `WORK_DIR=...`.
 
-Multimodal (phase 2 — needs the image root visible + per-prompt image cap):
+The default multimodal path needs the image root visible + per-prompt image cap:
 ```bash
 MODE=multimodal IMAGE_MEDIA_ROOT=/mnt/tidal-alsh01 LIMIT_IMAGES=20 \
   MAX_SAMPLES=8137 bash examples/train/distill_client_122b.sh
 ```
 
+Text-only smoke path:
+```bash
+MODE=text MAX_SAMPLES=50 bash examples/train/distill_client_122b.sh
+```
+
+If the local vLLM build rejects the native MTP method, retry the same command with
+`USE_MTP=0` (output correctness is the same; it just decodes slower).
+
 Two unconnected machines (split, then concat):
 ```bash
 SKIP_SAMPLES=0    MAX_SAMPLES=4000 OUT_JSONL=data/client/distill_partA.jsonl bash examples/train/distill_client_122b.sh
 SKIP_SAMPLES=4000 MAX_SAMPLES=4137 OUT_JSONL=data/client/distill_partB.jsonl bash examples/train/distill_client_122b.sh
-cat data/client/distill_partA.jsonl data/client/distill_partB.jsonl > data/client/client_122b_distill_text_8137.jsonl
+cat data/client/distill_partA.jsonl data/client/distill_partB.jsonl > data/client/client_122b_distill_multimodal_8137.jsonl
 ```
 
 ## STEP 2 — MTP training
@@ -76,12 +85,12 @@ Extracts + fine-tunes `CLIENT_MODEL`'s native mtp.* head (verifier vLLM TP=4 on 
 ```bash
 # smoke (validates TP layout + MTP extraction on the SFT'd model)
 MAX_SAMPLES=50 EPOCHS=1 VALIDATE_INITIAL=0 \
-  CLIENT_DISTILL_JSONL=data/client/client_122b_distill_text_8137.jsonl \
+  CLIENT_DISTILL_JSONL=data/client/client_122b_distill_multimodal_8137.jsonl \
   bash examples/train/nohup_mtp_client_122b.sh
 tail -f run_logs/mtp_client_122b_*.nohup.log
 
 # full run
-CLIENT_DISTILL_JSONL=data/client/client_122b_distill_text_8137.jsonl \
+CLIENT_DISTILL_JSONL=data/client/client_122b_distill_multimodal_8137.jsonl \
   EPOCHS=10 LR=3e-5 NUM_SPECULATIVE_STEPS=3 STEP_WEIGHT_BETA=0.6 \
   bash examples/train/nohup_mtp_client_122b.sh
 # -> output/mtp_client_122b/<run>/checkpoints/checkpoint_best
@@ -98,7 +107,7 @@ the client's **stock SFT** MTP head vs **our trained** head on the client-domain
 tail. Same method/spec/val — only the head weights differ.
 
 ```bash
-CLIENT_DISTILL_JSONL=data/client/client_122b_distill_text_8137.jsonl \
+CLIENT_DISTILL_JSONL=data/client/client_122b_distill_multimodal_8137.jsonl \
   MTP_CKPT=output/mtp_client_122b/<run>/checkpoints/checkpoint_best \
   INFER_NUM_SPEC=7 NUM_PROMPTS=128 \
   bash examples/evaluate/test_mtp_client_122b.sh
@@ -116,7 +125,7 @@ finetune specialization; optionally WiSE-FT-soup it back (see `examples/evaluate
 
 | Stage | Client script | Notes |
 |---|---|---|
-| 1 distill | `examples/train/distill_client_122b.sh` + `scripts/distill_client_messages.py` | serves full-precision 122B, regenerates answers (text-only default / multimodal flag) |
+| 1 distill | `examples/train/distill_client_122b.sh` + `scripts/distill_client_messages.py` | serves full-precision 122B with native MTP, regenerates multimodal answers by default |
 | 2 train | `examples/train/nohup_mtp_client_122b.sh` → `nohup_mtp_122b_allava_distilled.sh` | verifier TP=4 GPUs0-3 + trainer GPUs4-7, bf16, SEQ_LENGTH=16384 |
 | 3 test | `examples/evaluate/test_mtp_client_122b.sh` → `test_mtp_allava_orig_vs_trained.sh` + `scripts/stitch_mtp.py` | native SFT MTP head vs trained head on client val tail |
 

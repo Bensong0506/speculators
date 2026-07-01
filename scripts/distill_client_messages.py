@@ -21,20 +21,19 @@ training (STEP 2) and eval (STEP 3) scripts consume it unchanged. The only thing
 that differs is the INPUT reader + native multi-image support.
 
 MODES
-  --text-only (default): strip <image> tokens, drop images, distill TEXT ONLY.
-      Fastest/safest first pass — the task is text-dominated RAG; bootstraps the
-      whole MTP pipeline without the 20-images-per-sample + long-context cost.
-  --multimodal: keep images; each <image> becomes an {"type":"image","path":...}
+  --multimodal (default): keep images; each <image> becomes an {"type":"image","path":...}
       part (the verifier must be served with --allowed-local-media-path covering
       the image root and --limit-mm-per-prompt '{"image":N}', N>=max images/row).
+  --text-only: strip <image> tokens, drop images, distill TEXT ONLY.
+      Useful only as a quick smoke path.
 
 USAGE
   python3 scripts/distill_client_messages.py \
       --endpoint http://localhost:8100/v1 \
       --in /mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/train.jsonl \
       --out-jsonl data/client/client_122b_distill.jsonl \
-      --max-samples 8137 --max-tokens 2048 --temperature 0 \
-      --concurrency 16 --resume            # add --multimodal for the image path
+      --max-samples 8137 --max-tokens 600 --temperature 0 \
+      --concurrency 16 --resume            # add --text-only only for smoke tests
 """
 
 from __future__ import annotations
@@ -145,14 +144,16 @@ def _bounded_parallel_map(fn, items, concurrency):
         pending: deque = deque()
         for _ in range(concurrency):
             try:
-                pending.append((nxt := next(src), pool.submit(_wrapped, nxt)))
+                nxt = next(src)
+                pending.append((nxt, pool.submit(_wrapped, nxt)))
             except StopIteration:
                 break
         while pending:
             it, fut = pending.popleft()
             yield it, fut.result()
             try:
-                pending.append((nxt := next(src), pool.submit(_wrapped, nxt)))
+                nxt = next(src)
+                pending.append((nxt, pool.submit(_wrapped, nxt)))
             except StopIteration:
                 continue
 
@@ -165,17 +166,18 @@ def main() -> None:
     ap.add_argument("--out-jsonl", type=Path, required=True)
     ap.add_argument("--max-samples", type=int, default=10000)
     ap.add_argument("--skip-samples", type=int, default=0)
-    ap.add_argument("--max-tokens", type=int, default=2048)
+    ap.add_argument("--max-tokens", type=int, default=600)
     ap.add_argument("--temperature", type=float, default=0.0)
     ap.add_argument("--top-p", type=float, default=1.0)
     ap.add_argument("--request-timeout", type=float, default=600.0)
     ap.add_argument("--concurrency", type=int, default=8)
     ap.add_argument("--resume", action="store_true")
     mode = ap.add_mutually_exclusive_group()
-    mode.add_argument("--text-only", dest="text_only", action="store_true", default=True,
-                      help="strip images, distill text only (default)")
+    mode.add_argument("--text-only", dest="text_only", action="store_true",
+                      help="strip images, distill text only")
     mode.add_argument("--multimodal", dest="text_only", action="store_false",
-                      help="keep images (server needs --allowed-local-media-path + --limit-mm-per-prompt)")
+                      help="keep images (default; server needs --allowed-local-media-path + --limit-mm-per-prompt)")
+    mode.set_defaults(text_only=False)
     args = ap.parse_args()
 
     # SAFETY: never write onto an input file (a mis-set --out-jsonl with mode "w"
