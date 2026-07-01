@@ -4,11 +4,11 @@ STEP 1 蒸馏	MAX_SAMPLES=8137 bash examples/train/distill_client_122b.sh	自动
 STEP 2 训练	bash examples/train/nohup_mtp_client_122b.sh	本来就内部 nohup
 STEP 3 测试	MTP_CKPT=... bash examples/evaluate/test_mtp_client_122b.sh	自动 detach,打印 tail -f
 
-cd /tmp
-/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/speculators
-nohup wget -c --tries=0 --retry-connrefused --timeout=60 --waitretry=10 \
-  "https://github.com/vllm-project/vllm/releases/download/v0.22.0/vllm-0.22.0%2Bcu129-cp38-abi3-manylinux_2_28_x86_64.whl" \
-  -O "vllm-0.22.0+cu129-cp38-abi3-manylinux_2_28_x86_64.whl" \
-  > ~/dl_vllm.log 2>&1 &
-echo "PID $!"
-tail -f ~/dl_vllm.log
+root@lshb-qs-vwik-17:/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/speculators# tail -f /mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/distill_client_122b_text_20260701_164555.nohup.log
+=== Serving post-SFT 122B for client distillation (text) ===
+  model: /mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/qwen3.5-vl-122B
+  serve: TP=8 GPUs[0,1,2,3,4,5,6,7] max_len=65536 seqs=64
+Waiting for verifier on :8100 (log: /mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/logs/distill_client_122b_20260701_164555_vllm.log)
+Server ready.
+=== Distilling client prompts (text) ===
+[cmd] python3 scripts/distill_client_messages.py --endpoint http://localhost:8100/v1 --in /mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/train_source_copy.jsonl --out-jsonl /mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/client_122b_distill_text_8137.jsonl --max-samples 8137 --skip-samples 0 --max-tokens 2048 --temperature 0 --concurrency 64 --text-only --resume
