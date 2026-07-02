@@ -6,13 +6,13 @@ STEP 3 测试	MTP_CKPT=... bash examples/evaluate/test_mtp_client_122b.sh	自动
 
 MAX_SAMPLES=8137 bash examples/train/distill_client_122b.sh
 
-H=/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei
+[warn] request failed at output row 6931: Error code: 400 - {'error': {'message': "Load image failed: file:///mnt/tidal-alsh01/usr/liujun04/code/summaryrender/data/images/2026-06-16/fd669653c1a2756b8bd1b81b05c66285.jpg, [Errno 2] No such file or directory: '/mnt/tidal-alsh01/usr/liujun04/code/summaryrender/data/images/2026-06-16/fd669653c1a2756b8bd1b81b05c66285.jpg'", 'type': 'BadRequestError', 'param': None, 'code': 400}}
+[warn] request failed at output row 6938: Error code: 400 - {'error': {'message': "Load image failed: file:///mnt/tidal-alsh01/usr/liujun04/code/summaryrender/data/images/2026-06-15/71df68b379731a959022bcab7626175d.jpg, [Errno 2] No such file or directory: '/mnt/tidal-alsh01/usr/liujun04/code/summaryrender/data/images/2026-06-15/71df68b379731a959022bcab7626175d.jpg'", 'type': 'BadRequestError', 'param': None, 'code': 400}}
+[warn] request failed at output row 6946: Error code: 400 - {'error': {'message': "Load image failed: file:///mnt/tidal-alsh01/usr/liujun04/code/summaryrender/data/images/2026-06-16/fd0046d0cef0680d94b5378837e493af.jpg, [Errno 2] No such file or directory: '/mnt/tidal-alsh01/usr/liujun04/code/summaryrender/data/images/2026-06-16/fd0046d0cef0680d94b5378837e493af.jpg'", 'type': 'BadRequestError', 'param': None, 'code': 400}}
+[6950/8137] rate=0.336 samples/s
+Done. Wrote 6954 rows -> /mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/client_122b_distill_multimodal_8137.jsonl
 
-cd /mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/speculators
-git pull
-git log -1 --oneline
-
-pkill -f "scripts/distill_client_messages.py" || true
-pkill -f "vllm serve .*/qwen3.5-vl-122B" || true
-
-MAX_SAMPLES=8137 bash examples/train/distill_client_122b.sh
+Distilled data ready: /mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/client_122b_distill_multimodal_8137.jsonl
+Next (STEP 2):
+  CLIENT_MODEL=/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/qwen3.5-vl-122B CLIENT_DISTILL_JSONL=/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/client_122b_distill_multimodal_8137.jsonl \
+    bash examples/train/nohup_mtp_client_122b.sh
