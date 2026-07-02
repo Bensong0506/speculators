@@ -62,7 +62,16 @@ export SAVE_PATH="${SAVE_PATH:-$OUTPUT_DIR/${RUN_NAME}/checkpoints}"
 export SEQ_LENGTH="${SEQ_LENGTH:-16384}"
 export PREPROCESS_SEQ_LENGTH="${PREPROCESS_SEQ_LENGTH:-16384}"
 
+# Tracking: the base 122B launcher defaults LOGGER=wandb pointing at the A800
+# intranet wandb (10.155.156.175), which THIS PAI box can't reach (wandb.init
+# would hang/error). Default to tensorboard here (local, ./train_logs, no network).
+# All metrics also print to the nohup log regardless. Override LOGGER=wandb only if
+# you set a reachable WANDB_BASE_URL / WANDB_MODE=offline.
+export LOGGER="${LOGGER:-tensorboard}"
+export LOG_DIR="${LOG_DIR:-$REPO_ROOT/train_logs/${RUN_NAME}}"
+
 echo "=== STEP 2: MTP training on post-SFT 122B (client domain) ==="
+echo "  logger:        $LOGGER   (tensorboard logdir: $LOG_DIR)"
 echo "  run_name:      $RUN_NAME"
 echo "  client_model:  $MODEL"
 echo "  distill_jsonl: $DISTILLED_ALLAVA_JSONL"
