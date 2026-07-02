@@ -1,28 +1,13 @@
-[rank2]: RuntimeError: The size of tensor a (64) must match the size of tensor b (32) at non-singleton dimension 0
-[rank3]: Traceback (most recent call last):
-[rank3]:   File "/home/wenxuan/speculators/scripts/train.py", line 1093, in <module>
-[rank3]:     main(args)
-[rank3]:   File "/home/wenxuan/speculators/scripts/train.py", line 654, in main
-[rank3]:     trainer = Trainer(draft_model, trainer_config, train_loader, val_loader)
-[rank3]:               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/home/wenxuan/speculators/src/speculators/train/trainer.py", line 76, in __init__
-[rank3]:     self.setup_model()
-[rank3]:   File "/home/wenxuan/speculators/src/speculators/train/trainer.py", line 134, in setup_model
-[rank3]:     self.checkpointer.load_model_state_dict(self.model)
-[rank3]:   File "/home/wenxuan/speculators/src/speculators/train/checkpointer.py", line 286, in load_model_state_dict
-[rank3]:     set_model_state_dict(
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/checkpoint/state_dict.py", line 1405, in set_model_state_dict
-[rank3]:     return _load_model_state_dict(model, model_state_dict, info)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/_contextlib.py", line 124, in decorate_context
-[rank3]:     return func(*args, **kwargs)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/checkpoint/state_dict.py", line 591, in _load_model_state_dict
-[rank3]:     _broadcast_state_dict(
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/_state_dict_utils.py", line 681, in _broadcast_state_dict
-[rank3]:     _broadcast_tensors(ret, local_state_dict, keys, device, pg)
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/_state_dict_utils.py", line 595, in _broadcast_tensors
-[rank3]:     _distribute_tensors(local_state_dict, keys, device, pg)
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/_state_dict_utils.py", line 636, in _distribute_tensors
-[rank3]:     ret.to_local().copy_(full_tensor[tuple(slices)])
-[rank3]: RuntimeError: The size of tensor a (64) must match the size of tensor b (32) at non-singleton dimension 0
+  NO_RESUME_FROM_CHECKPOINT=1 \
+  RUN_NAME=dspark_rnn_9b_allava_fresh \
+  OUTPUT_DIR=./output/dspark_rnn_9b_fresh \
+  SAVE_PATH=./output/dspark_rnn_9b_fresh/checkpoints \
+  MODEL=/home/wenxuan/Qwen3.5-9B \
+  FINETUNE_FROM=/home/wenxuan/Qwen3.5-9B-DFlash-spec \
+  VLLM_GPUS=0,1,2,3 VLLM_TP=1 VLLM_DP=4 \
+  MARKOV_HEAD_TYPE=rnn CE_TARGET=ground_truth LOGGER=wandb \
+  SPECULATOR_TYPE=dspark BLOCK_SIZE=8 MAX_ANCHORS=512 SEQ_LENGTH=4096 \
+  MAX_SAMPLES=5000 EPOCHS=1 LR_FT=1e-5 \
+  ALLAVA_INPUTS="/home/wenxuan/ALLaVA-4V/allava_laion/ALLaVA-Caption-LAION-4V.json /home/wenxuan/ALLaVA-4V/allava_laion/ALLaVA-Instruct-LAION-4V.json" \
+  ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V \
+  bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
