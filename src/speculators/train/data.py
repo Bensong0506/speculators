@@ -301,6 +301,7 @@ class ArrowDataset(BaseDataset):
             match self.on_generate:
                 case "cache":
                     file_idx = self._map_to_file_idx(index)
+                    self.hidden_states_path.mkdir(parents=True, exist_ok=True)
                     target_path = self.hidden_states_path / f"hs_{file_idx}.safetensors"
                     shutil.move(hs_filepath, target_path)
                 case "delete":

@@ -43,6 +43,7 @@ if [ ! -s "$CLIENT_DISTILL_JSONL" ]; then
     echo "        Run STEP 1 (examples/train/distill_client_122b.sh) first."
     exit 1
 fi
+CLIENT_DISTILL_ROWS="$(wc -l < "$CLIENT_DISTILL_JSONL" | tr -d '[:space:]')"
 
 STAMP="$(date +%Y%m%d_%H%M%S)"
 export RUN_NAME="${RUN_NAME:-mtp_client_122b_${STAMP}}"
@@ -53,6 +54,7 @@ export DISTILLED_ALLAVA_JSONL="$CLIENT_DISTILL_JSONL"
 export ALLAVA_IMAGE_ROOT="$CLIENT_IMAGE_ROOT"
 export OUTPUT_DIR="${OUTPUT_DIR:-./output/mtp_client_122b}"
 export SAVE_PATH="${SAVE_PATH:-$OUTPUT_DIR/${RUN_NAME}/checkpoints}"
+export MAX_SAMPLES="${MAX_SAMPLES:-$CLIENT_DISTILL_ROWS}"
 
 # Client RAG prompts are LONG (system ~5k + retrieved notes up to ~56k chars ->
 # ~9k-15k tokens typical). The 9B/ALLaVA default SEQ_LENGTH=4096 would truncate
@@ -61,6 +63,12 @@ export SAVE_PATH="${SAVE_PATH:-$OUTPUT_DIR/${RUN_NAME}/checkpoints}"
 # this or NUM_SPECULATIVE_STEPS first.
 export SEQ_LENGTH="${SEQ_LENGTH:-16384}"
 export PREPROCESS_SEQ_LENGTH="${PREPROCESS_SEQ_LENGTH:-16384}"
+
+# MTP only needs the verifier's last hidden state, but generating it through the
+# 122B VLM is still the slow part. Cache by default so epoch 2+ and restarts reuse
+# hs_*.safetensors instead of asking vLLM to re-encode every multimodal prompt.
+export ON_MISSING="${ON_MISSING:-generate}"
+export ON_GENERATE="${ON_GENERATE:-cache}"
 
 # Tracking: the base 122B launcher defaults LOGGER=wandb pointing at the A800
 # intranet wandb (10.155.156.175), which THIS PAI box can't reach (wandb.init
@@ -75,7 +83,9 @@ echo "  logger:        $LOGGER   (tensorboard logdir: $LOG_DIR)"
 echo "  run_name:      $RUN_NAME"
 echo "  client_model:  $MODEL"
 echo "  distill_jsonl: $DISTILLED_ALLAVA_JSONL"
+echo "  rows/max_samples: $CLIENT_DISTILL_ROWS/$MAX_SAMPLES"
 echo "  save_path:     $SAVE_PATH"
+echo "  hidden_states: on_missing=$ON_MISSING on_generate=$ON_GENERATE"
 echo "  (verifier TP=${VLLM_TP:-4} GPUs ${VLLM_GPUS:-0,1,2,3} + trainer GPUs ${TRAIN_GPUS:-4,5,6,7})"
 
 exec bash "$SCRIPT_DIR/nohup_mtp_122b_allava_distilled.sh"

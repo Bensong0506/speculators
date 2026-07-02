@@ -98,6 +98,8 @@ PREPROCESS_SEQ_LENGTH="${PREPROCESS_SEQ_LENGTH:-3584}"  # Conservative filter
                                                         # before vLLM expands MM
                                                         # inputs into prompt tokens.
 FORCE_PREPROCESS="${FORCE_PREPROCESS:-0}"  # set 1 to rebuild cached arrow data
+HIDDEN_STATES_PATH="${HIDDEN_STATES_PATH:-}"  # default computed from preprocess fingerprint below
+VLLM_HIDDEN_STATES_PATH="${VLLM_HIDDEN_STATES_PATH:-}"  # default /tmp/speculators_hidden_states_$RUN_NAME
 EPOCHS="${EPOCHS:-5}"
 LR="${LR:-3e-4}"
 CHECKPOINT_FREQ="${CHECKPOINT_FREQ:-5}"  # save every N epochs
@@ -400,6 +402,22 @@ keys = ("model", "data", "max_samples", "seq_length", "trust_remote_code")
 print(json.dumps(dict(zip(keys, sys.argv[1:])), sort_keys=True, indent=2))
 PY
 )
+PREPROCESS_CACHE_KEY=$(printf '%s\n' "$CURRENT_PREPROCESS_FINGERPRINT" | python3 -c 'import hashlib, sys; print(hashlib.sha1(sys.stdin.buffer.read()).hexdigest()[:12])')
+RUN_NAME_SAFE="${RUN_NAME//\//_}"
+if [ -z "$HIDDEN_STATES_PATH" ]; then
+    HIDDEN_STATES_PATH="$OUTPUT_DIR/hidden_states_${PREPROCESS_CACHE_KEY}"
+fi
+if [ -z "$VLLM_HIDDEN_STATES_PATH" ]; then
+    VLLM_HIDDEN_STATES_PATH="/tmp/speculators_hidden_states_${RUN_NAME_SAFE}"
+fi
+mkdir -p "$VLLM_HIDDEN_STATES_PATH"
+if [ "${ON_GENERATE:-delete}" = "cache" ]; then
+    mkdir -p "$HIDDEN_STATES_PATH"
+fi
+echo "    preprocess cache key: $PREPROCESS_CACHE_KEY"
+echo "    hidden states cache: on_missing=${ON_MISSING:-generate} on_generate=${ON_GENERATE:-delete}"
+echo "    train hidden states path: $HIDDEN_STATES_PATH"
+echo "    vLLM tmp hidden states path: $VLLM_HIDDEN_STATES_PATH"
 EXISTING_ARROW="$(find "$OUTPUT_DIR" -maxdepth 1 -name '*.arrow' -print -quit 2>/dev/null || true)"
 PREPARE_DATA_ARGS=(
     --model "$MODEL"
@@ -474,6 +492,7 @@ GEN_MAX_MODEL_LEN="${GEN_MAX_MODEL_LEN:-$((SEQ_LENGTH + 2048))}"
 echo "    gen vLLM max-model-len: $GEN_MAX_MODEL_LEN (training stays at $SEQ_LENGTH)"
 echo "    vLLM parallelism: TP=$VLLM_TP x DP=$VLLM_DP on GPUs [$VLLM_GPUS], mem_util=$GEN_GPU_MEM_UTIL"
 CUDA_VISIBLE_DEVICES="$VLLM_GPUS" python3 scripts/launch_vllm.py "$MODEL" \
+    --hidden-states-path "$VLLM_HIDDEN_STATES_PATH" \
     --target-layer-ids $TARGET_LAYER_IDS \
     -- --tensor-parallel-size "$VLLM_TP" \
        --data-parallel-size "$VLLM_DP" \
@@ -510,6 +529,7 @@ CUDA_VISIBLE_DEVICES="$TRAIN_GPUS" torchrun \
     scripts/train.py \
     --verifier-name-or-path "$MODEL" \
     --data-path "$OUTPUT_DIR" \
+    --hidden-states-path "$HIDDEN_STATES_PATH" \
     --vllm-endpoint "http://localhost:${VLLM_PORT}/v1" \
     --save-path "$SAVE_PATH" \
     "${VOCAB_FLAG[@]}" \

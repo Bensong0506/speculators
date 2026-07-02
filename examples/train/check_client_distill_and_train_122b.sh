@@ -14,6 +14,7 @@
 #   CHECK_ONLY=1 bash examples/train/check_client_distill_and_train_122b.sh
 #   DETACH=0 CHECK_ONLY=1 bash examples/train/check_client_distill_and_train_122b.sh
 #   EXPECTED_ROWS=8137 CHECK_IMAGES=0 bash examples/train/check_client_distill_and_train_122b.sh
+#   ON_GENERATE=delete bash examples/train/check_client_distill_and_train_122b.sh  # save disk, slower restarts/epochs
 
 set -euo pipefail
 
@@ -53,10 +54,14 @@ export EPOCHS="${EPOCHS:-10}"
 export LR="${LR:-3e-5}"
 export NUM_SPECULATIVE_STEPS="${NUM_SPECULATIVE_STEPS:-3}"
 export STEP_WEIGHT_BETA="${STEP_WEIGHT_BETA:-0.6}"
+export ON_MISSING="${ON_MISSING:-generate}"
+export ON_GENERATE="${ON_GENERATE:-cache}"
 
 [ -d "$CLIENT_MODEL" ] || { echo "[fatal] CLIENT_MODEL not found: $CLIENT_MODEL"; exit 1; }
 [ -s "$CLIENT_DISTILL_JSONL" ] || { echo "[fatal] CLIENT_DISTILL_JSONL missing/empty: $CLIENT_DISTILL_JSONL"; exit 1; }
 [ -d "$CLIENT_IMAGE_ROOT" ] || { echo "[fatal] CLIENT_IMAGE_ROOT not found: $CLIENT_IMAGE_ROOT"; exit 1; }
+CLIENT_DISTILL_ROWS="$(wc -l < "$CLIENT_DISTILL_JSONL" | tr -d '[:space:]')"
+export MAX_SAMPLES="${MAX_SAMPLES:-$CLIENT_DISTILL_ROWS}"
 
 if [ "$SKIP_CHECK" = "1" ]; then
     echo "SKIP_CHECK=1 -> skipping data validation, going straight to training."
@@ -260,5 +265,6 @@ echo "  CLIENT_MODEL=$CLIENT_MODEL"
 echo "  CLIENT_DISTILL_JSONL=$CLIENT_DISTILL_JSONL"
 echo "  CLIENT_IMAGE_ROOT=$CLIENT_IMAGE_ROOT"
 echo "  EPOCHS=$EPOCHS LR=$LR NUM_SPECULATIVE_STEPS=$NUM_SPECULATIVE_STEPS STEP_WEIGHT_BETA=$STEP_WEIGHT_BETA"
+echo "  MAX_SAMPLES=$MAX_SAMPLES ON_MISSING=$ON_MISSING ON_GENERATE=$ON_GENERATE"
 
 exec bash examples/train/nohup_mtp_client_122b.sh
