@@ -1,65 +1,19 @@
-[rank1]: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 3.00 GiB. GPU 1 has a total capacity of 79.32 GiB of which 811.00 MiB is free. Process 273194 has 78.52 GiB memory in use. Of the allocated memory 74.91 GiB is allocated by PyTorch, and 2.69 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)
-[rank3]: Traceback (most recent call last):
-[rank3]:   File "/data/wenxuan/speculators/scripts/train.py", line 954, in <module>
-[rank3]:     main(args)
-[rank3]:   File "/data/wenxuan/speculators/scripts/train.py", line 576, in main
-[rank3]:     trainer.run_training()
-[rank3]:   File "/data/wenxuan/speculators/src/speculators/train/graceful_shutdown.py", line 118, in wrapper
-[rank3]:     return fn(self, *args, **kwargs)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/data/wenxuan/speculators/src/speculators/train/trainer.py", line 360, in run_training
-[rank3]:     self.train_epoch(epoch)
-[rank3]:   File "/data/wenxuan/speculators/src/speculators/train/trainer.py", line 213, in train_epoch
-[rank3]:     _draft_tokens, loss, metrics = self.model(
-[rank3]:                                    ^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
-[rank3]:     return self._call_impl(*args, **kwargs)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1885, in _call_impl
-[rank3]:     return inner()
-[rank3]:            ^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1833, in inner
-[rank3]:     result = forward_call(*args, **kwargs)
-[rank3]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/eval_frame.py", line 1024, in compile_wrapper
-[rank3]:     return fn(*args, **kwargs)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/data/wenxuan/speculators/src/speculators/models/mtp/core.py", line 194, in forward
-[rank3]:     mtp_output = self.mtp_layers[0](
-[rank3]:                  ^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/transformers/modeling_layers.py", line 93, in __call__
-[rank3]:     return super().__call__(*args, **kwargs)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
-[rank3]:     return self._call_impl(*args, **kwargs)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1885, in _call_impl
-[rank3]:     return inner()
-[rank3]:            ^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1812, in inner
-[rank3]:     args_kwargs_result = hook(self, args, kwargs)  # type: ignore[misc]
-[rank3]:                          ^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/fsdp/_fully_shard/_fsdp_state.py", line 64, in fsdp_hook_wrapper
-[rank3]:     return torch._dynamo.disable(
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/eval_frame.py", line 1263, in _fn
-[rank3]:     return fn(*args, **kwargs)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/fsdp/_fully_shard/_fsdp_state.py", line 268, in _pre_forward
-[rank3]:     args, kwargs = self._fsdp_param_group.pre_forward(module, args, kwargs)
-[rank3]:                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/fsdp/_fully_shard/_fsdp_param_group.py", line 449, in pre_forward
-[rank3]:     self.unshard(self.unshard_async_op)
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/fsdp/_fully_shard/_fsdp_param_group.py", line 339, in unshard
-[rank3]:     self._all_gather_result = foreach_all_gather(
-[rank3]:                               ^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/_contextlib.py", line 124, in decorate_context
-[rank3]:     return func(*args, **kwargs)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/fsdp/_fully_shard/_fsdp_collectives.py", line 263, in foreach_all_gather
-[rank3]:     all_gather_output = all_gather_comm.allocate(
-[rank3]:                         ^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/fsdp/_fully_shard/_fsdp_collectives.py", line 59, in allocate
-[rank3]:     return torch.empty(*size, dtype=dtype, device=device)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 4.70 GiB. GPU 3 has a total capacity of 79.32 GiB of which 4.52 GiB is free. Process 273196 has 74.79 GiB memory in use. Of the allocated memory 70.04 GiB is allocated by PyTorch, and 3.83 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/n
+cd /home/wenxuan/speculators
+pip install -e . --no-deps --no-build-isolation   # 或 export PYTHONPATH=$PWD/src:$PYTHONPATH
+pytest tests/unit/models/test_dspark_metrics.py \
+       tests/unit/models/test_dspark_markov_heads.py \
+       tests/unit/models/test_dspark_scheduler.py \
+       tests/unit/models/test_dspark_calibration.py -v
+
+
+cd /home/wenxuan/speculators
+MARKOV_HEAD_TYPE=rnn \
+  CE_TARGET=ground_truth \
+  LOGGER=wandb WANDB_BASE_URL=http://<你的wandb>:<port> WANDB_PROJECT=speculators \
+  SPECULATOR_TYPE=dspark \
+  FINETUNE_FROM=/home/models/Qwen3.5-9B-DFlash-spec \
+  RUN_NAME=dspark_rnn_smoke \
+  BLOCK_SIZE=8 MAX_ANCHORS=512 MAX_SAMPLES=5000 EPOCHS=1 LR_FT=1e-5 \
+  ALLAVA_INPUTS="..." ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V \
+  bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
+
