@@ -24,6 +24,8 @@ MODES
   --multimodal (default): keep images; each <image> becomes an {"type":"image","path":...}
       part (the verifier must be served with --allowed-local-media-path covering
       the image root and --limit-mm-per-prompt '{"image":N}', N>=max images/row).
+      Missing local image files are dropped by default so the remaining prompt
+      can still be distilled.
   --text-only: strip <image> tokens, drop images, distill TEXT ONLY.
       Useful only as a quick smoke path.
 
@@ -57,7 +59,19 @@ def _load_records(path: Path) -> Iterator[dict[str, Any]]:
                 yield json.loads(line)
 
 
-def _expand_content(content: str, images: deque[str], text_only: bool) -> list[dict] | str:
+def _local_image_missing(path: str) -> bool:
+    if "://" in path:
+        return False
+    return not Path(path).exists()
+
+
+def _expand_content(
+    content: str,
+    images: deque[str],
+    text_only: bool,
+    missing_image_policy: str,
+    dropped_missing_images: list[str],
+) -> list[dict] | str:
     """Turn a content string with <image> tokens into trainer content parts.
 
     text_only -> drop the tokens, return a plain string.
@@ -72,38 +86,59 @@ def _expand_content(content: str, images: deque[str], text_only: bool) -> list[d
     for i, seg in enumerate(segs):
         if i > 0:
             if not images:
-                # more <image> tokens than images: treat the rest as text
-                parts.append({"type": "text", "text": IMAGE_TOKEN})
+                if missing_image_policy == "skip":
+                    raise ValueError("more <image> tokens than image paths")
+                dropped_missing_images.append("<missing image path>")
             else:
-                parts.append({"type": "image", "path": images.popleft()})
+                image_path = images.popleft()
+                if _local_image_missing(image_path):
+                    if missing_image_policy == "skip":
+                        raise ValueError(f"missing image file: {image_path}")
+                    dropped_missing_images.append(image_path)
+                else:
+                    parts.append({"type": "image", "path": image_path})
         seg = seg.strip()
         if seg:
             parts.append({"type": "text", "text": seg})
     return parts
 
 
-def _build_prompt(record: dict, text_only: bool) -> tuple[list[dict] | None, str | None]:
+def _build_prompt(
+    record: dict,
+    text_only: bool,
+    missing_image_policy: str,
+) -> tuple[list[dict] | None, str | None, list[str]]:
     """Keep system + user turns up to (and including) the last user turn; drop
     the assistant answer(s). Returns (prompt_turns, skip_reason)."""
     messages = record.get("messages") or []
     images = deque(record.get("images") or [])
     n_img_tokens = sum(str(m.get("content", "")).count(IMAGE_TOKEN) for m in messages)
     if not text_only and n_img_tokens != len(images):
-        return None, f"image/token mismatch: {len(images)} images vs {n_img_tokens} <image>"
+        return None, f"image/token mismatch: {len(images)} images vs {n_img_tokens} <image>", []
 
     # index of the last user turn — we generate a fresh answer after it
     last_user = max((i for i, m in enumerate(messages) if m.get("role") == "user"), default=-1)
     if last_user < 0:
-        return None, "no user turn"
+        return None, "no user turn", []
 
     prompt: list[dict] = []
+    dropped_missing_images: list[str] = []
     for m in messages[: last_user + 1]:
         role = m.get("role")
         if role not in ("system", "user"):
             continue
-        content = _expand_content(str(m.get("content", "")), images, text_only)
+        try:
+            content = _expand_content(
+                str(m.get("content", "")),
+                images,
+                text_only,
+                missing_image_policy,
+                dropped_missing_images,
+            )
+        except ValueError as exc:
+            return None, str(exc), []
         prompt.append({"role": role, "content": content})
-    return prompt, None
+    return prompt, None, dropped_missing_images
 
 
 def _to_openai(turn: dict) -> dict:
@@ -171,6 +206,10 @@ def main() -> None:
     ap.add_argument("--top-p", type=float, default=1.0)
     ap.add_argument("--request-timeout", type=float, default=600.0)
     ap.add_argument("--concurrency", type=int, default=8)
+    ap.add_argument("--missing-image-policy", choices=("drop", "skip"), default="drop",
+                    help="for multimodal rows with missing local images: drop the missing image part or skip the row")
+    ap.add_argument("--allow-partial", action="store_true",
+                    help="allow exiting successfully with fewer than --max-samples rows")
     ap.add_argument("--resume", action="store_true")
     mode = ap.add_mutually_exclusive_group()
     mode.add_argument("--text-only", dest="text_only", action="store_true",
@@ -205,18 +244,37 @@ def main() -> None:
     print(f"  out_jsonl:   {args.out_jsonl}")
     print(f"  max_samples: {args.max_samples}  skip: {args.skip_samples}  resume rows: {existing}")
     print(f"  max_tokens:  {args.max_tokens}  temperature: {args.temperature}  concurrency: {args.concurrency}")
+    print(f"  missing_image_policy: {args.missing_image_policy}  allow_partial: {args.allow_partial}")
+
+    stats = {
+        "skips": 0,
+        "skip_reasons": {},
+        "rows_with_missing_images_dropped": 0,
+        "missing_images_dropped": 0,
+        "missing_image_examples": [],
+    }
 
     def _prompts() -> Iterator[list[dict]]:
         seen = 0          # valid prompts produced before skip/resume filters
         emitted = 0
         skipped_existing = 0
-        skips = 0
         for src in args.inputs:
             for rec in _load_records(Path(src)):
-                prompt, reason = _build_prompt(rec, args.text_only)
+                prompt, reason, dropped_missing_images = _build_prompt(
+                    rec, args.text_only, args.missing_image_policy
+                )
                 if prompt is None:
-                    skips += 1
+                    stats["skips"] += 1
+                    stats["skip_reasons"][reason or "unknown"] = (
+                        stats["skip_reasons"].get(reason or "unknown", 0) + 1
+                    )
                     continue
+                if dropped_missing_images:
+                    stats["rows_with_missing_images_dropped"] += 1
+                    stats["missing_images_dropped"] += len(dropped_missing_images)
+                    for path in dropped_missing_images:
+                        if len(stats["missing_image_examples"]) < 10:
+                            stats["missing_image_examples"].append(path)
                 if seen < args.skip_samples:
                     seen += 1
                     continue
@@ -228,8 +286,6 @@ def main() -> None:
                 emitted += 1
                 if emitted >= args.max_samples - existing:
                     return
-        if skips:
-            print(f"[warn] skipped {skips} records (no user turn / image-token mismatch)")
 
     def _generate(prompt: list[dict]) -> str:
         resp = client.chat.completions.create(
@@ -262,8 +318,23 @@ def main() -> None:
             if written >= args.max_samples:
                 break
 
+    if stats["missing_images_dropped"]:
+        print(
+            "[warn] dropped "
+            f"{stats['missing_images_dropped']} missing image part(s) from "
+            f"{stats['rows_with_missing_images_dropped']} row(s)"
+        )
+        print(f"[warn] missing image examples: {stats['missing_image_examples']}")
+    if stats["skips"]:
+        print(f"[warn] skipped {stats['skips']} records: {stats['skip_reasons']}")
     if written == existing:
         raise SystemExit("No distilled samples were written.")
+    if written < args.max_samples and not args.allow_partial:
+        raise SystemExit(
+            f"[fatal] only wrote {written}/{args.max_samples} rows. "
+            "Do not train on this partial file; fix the warnings above and rerun, "
+            "or pass --allow-partial explicitly."
+        )
     print(f"Done. Wrote {written} rows -> {args.out_jsonl}")
 
 

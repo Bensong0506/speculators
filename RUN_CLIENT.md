@@ -62,6 +62,16 @@ MODE=multimodal IMAGE_MEDIA_ROOT=/mnt/tidal-alsh01 LIMIT_IMAGES=20 \
   MAX_SAMPLES=8137 bash examples/train/distill_client_122b.sh
 ```
 
+If a previous multimodal run ended with fewer than 8137 rows because vLLM could
+not load some image files, do not resume that partial file. Re-run from scratch:
+```bash
+RESUME=0 MAX_SAMPLES=8137 bash examples/train/distill_client_122b.sh
+```
+Missing local image files are dropped by default
+(`MISSING_IMAGE_POLICY=drop`), so the row still distills with the remaining text
+and any existing images. Set `MISSING_IMAGE_POLICY=skip` only if you prefer to
+drop the whole row.
+
 Text-only smoke path:
 ```bash
 MODE=text MAX_SAMPLES=50 bash examples/train/distill_client_122b.sh

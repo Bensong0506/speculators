@@ -48,10 +48,22 @@ HUAWEI_ROOT="${HUAWEI_ROOT:-$(cd "$(dirname "$CLIENT_TRAIN_JSONL")" && pwd)}"
 WORK_DIR="${WORK_DIR:-$HUAWEI_ROOT}"
 SOURCE_COPY="${SOURCE_COPY:-$WORK_DIR/train_source_copy.jsonl}"
 OUT_JSONL="${OUT_JSONL:-$WORK_DIR/client_122b_distill_${MODE}_${MAX_SAMPLES}.jsonl}"
+RESUME="${RESUME:-1}"
+ALLOW_PARTIAL_RESUME="${ALLOW_PARTIAL_RESUME:-0}"
 
 [ -d "$CLIENT_MODEL" ] || { echo "[fatal] CLIENT_MODEL not found: $CLIENT_MODEL"; exit 1; }
 [ -s "$CLIENT_TRAIN_JSONL" ] || { echo "[fatal] CLIENT_TRAIN_JSONL not found: $CLIENT_TRAIN_JSONL"; exit 1; }
 mkdir -p "$WORK_DIR" "$(dirname "$OUT_JSONL")"
+
+if [ "$RESUME" = "1" ] && [ "$ALLOW_PARTIAL_RESUME" != "1" ] && [ -f "$OUT_JSONL" ]; then
+    EXISTING_ROWS="$(awk 'NF { c++ } END { print c + 0 }' "$OUT_JSONL")"
+    if [ "$EXISTING_ROWS" -gt 0 ] && [ "$EXISTING_ROWS" -lt "$MAX_SAMPLES" ]; then
+        echo "[fatal] partial output exists: $OUT_JSONL has $EXISTING_ROWS/$MAX_SAMPLES rows"
+        echo "        Previous multimodal runs skipped failed requests, so count-based resume may misalign data."
+        echo "        Delete the file or rerun with RESUME=0 to overwrite from scratch."
+        exit 1
+    fi
+fi
 
 # --- self-detach: survive SSH drops (the box loses connection ~every 5 min).
 #     Re-exec under nohup so serve+distill keep running; DETACH=0 stays foreground.
@@ -116,7 +128,8 @@ MAX_NUM_BATCHED_TOKENS="${MAX_NUM_BATCHED_TOKENS:-$((MAX_MODEL_LEN + MAX_NUM_SEQ
 MAX_TOKENS="${MAX_TOKENS:-600}"            # client wants ~600-token distilled answers
 TEMPERATURE="${TEMPERATURE:-0}"            # greedy: learn the verifier's argmax continuations
 CONCURRENCY="${CONCURRENCY:-16}"
-RESUME="${RESUME:-1}"
+MISSING_IMAGE_POLICY="${MISSING_IMAGE_POLICY:-drop}"  # drop missing image parts instead of vLLM 400
+ALLOW_PARTIAL_DISTILL="${ALLOW_PARTIAL_DISTILL:-0}"
 
 LOG_DIR="${LOG_DIR:-$WORK_DIR/logs}"
 SERVER_LOG="${SERVER_LOG:-$LOG_DIR/distill_client_122b_${STAMP}_vllm.log}"
@@ -197,14 +210,17 @@ DISTILL=(
     --max-tokens "$MAX_TOKENS"
     --temperature "$TEMPERATURE"
     --concurrency "$CONCURRENCY"
+    --missing-image-policy "$MISSING_IMAGE_POLICY"
     "$MODE_FLAG"
 )
 [ "$RESUME" = "1" ] && DISTILL+=(--resume)
+[ "$ALLOW_PARTIAL_DISTILL" = "1" ] && DISTILL+=(--allow-partial)
 
 echo "=== Distilling client prompts ($MODE) ==="
 echo "  out_jsonl: $OUT_JSONL"
 echo "  max_samples: $MAX_SAMPLES skip=$SKIP_SAMPLES resume=$RESUME"
 echo "  max_tokens: $MAX_TOKENS temperature=$TEMPERATURE concurrency=$CONCURRENCY"
+echo "  missing_image_policy: $MISSING_IMAGE_POLICY allow_partial=$ALLOW_PARTIAL_DISTILL"
 printf '[cmd]'; printf ' %q' "${DISTILL[@]}"; echo
 "${DISTILL[@]}"
 
