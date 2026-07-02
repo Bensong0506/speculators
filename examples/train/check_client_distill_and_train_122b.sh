@@ -29,6 +29,7 @@ MIN_IMAGE_ROWS="${MIN_IMAGE_ROWS:-1}"
 REQUIRE_ALL_ROWS_WITH_IMAGES="${REQUIRE_ALL_ROWS_WITH_IMAGES:-0}"
 CHECK_IMAGES="${CHECK_IMAGES:-1}"
 CHECK_ONLY="${CHECK_ONLY:-0}"
+SKIP_CHECK="${SKIP_CHECK:-0}"   # 1 = skip data validation, train directly
 DETACH="${DETACH:-1}"
 STAMP="$(date +%Y%m%d_%H%M%S)"
 NOHUP_LOG_DIR="${NOHUP_LOG_DIR:-$REPO_ROOT/run_logs}"
@@ -53,15 +54,18 @@ export LR="${LR:-3e-5}"
 export NUM_SPECULATIVE_STEPS="${NUM_SPECULATIVE_STEPS:-3}"
 export STEP_WEIGHT_BETA="${STEP_WEIGHT_BETA:-0.6}"
 
+[ -d "$CLIENT_MODEL" ] || { echo "[fatal] CLIENT_MODEL not found: $CLIENT_MODEL"; exit 1; }
+[ -s "$CLIENT_DISTILL_JSONL" ] || { echo "[fatal] CLIENT_DISTILL_JSONL missing/empty: $CLIENT_DISTILL_JSONL"; exit 1; }
+[ -d "$CLIENT_IMAGE_ROOT" ] || { echo "[fatal] CLIENT_IMAGE_ROOT not found: $CLIENT_IMAGE_ROOT"; exit 1; }
+
+if [ "$SKIP_CHECK" = "1" ]; then
+    echo "SKIP_CHECK=1 -> skipping data validation, going straight to training."
+else
 echo "=== Check client distill data ==="
 echo "  jsonl:        $CLIENT_DISTILL_JSONL"
 echo "  expected:     $EXPECTED_ROWS rows"
 echo "  image_root:   $CLIENT_IMAGE_ROOT"
 echo "  check_images: $CHECK_IMAGES"
-
-[ -d "$CLIENT_MODEL" ] || { echo "[fatal] CLIENT_MODEL not found: $CLIENT_MODEL"; exit 1; }
-[ -s "$CLIENT_DISTILL_JSONL" ] || { echo "[fatal] CLIENT_DISTILL_JSONL missing/empty: $CLIENT_DISTILL_JSONL"; exit 1; }
-[ -d "$CLIENT_IMAGE_ROOT" ] || { echo "[fatal] CLIENT_IMAGE_ROOT not found: $CLIENT_IMAGE_ROOT"; exit 1; }
 
 python3 - "$CLIENT_DISTILL_JSONL" "$EXPECTED_ROWS" "$CLIENT_IMAGE_ROOT" "$MIN_IMAGE_ROWS" "$REQUIRE_ALL_ROWS_WITH_IMAGES" "$CHECK_IMAGES" <<'PY'
 import json
@@ -243,6 +247,7 @@ if errors:
 
 print("Validation passed.")
 PY
+fi
 
 if [ "$CHECK_ONLY" = "1" ]; then
     echo "CHECK_ONLY=1 -> not starting training."
