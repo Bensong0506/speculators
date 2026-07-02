@@ -35,7 +35,7 @@ set -euo pipefail
 
 # --- 1) Verifier (target) multimodal model --------------------------------
 # Local path on the A800 box (or HF id). Must be a VLM, e.g. your Qwen3.5-9B.
-MODEL="${MODEL:-/data/wenxuan/Qwen3.5-9B}"
+MODEL="${MODEL:-/home/wenxuan/Qwen3.5-9B}"
 
 # Some VLM processors/configs need remote code. Set to 1 if loading fails
 # with "trust_remote_code" errors; harmless to leave on for Qwen-VL.
@@ -112,6 +112,10 @@ VALIDATE_INITIAL="${VALIDATE_INITIAL:-0}" # set 1 to run true step-0 validation 
 LOGGER="${LOGGER:-tensorboard}"
 RUN_NAME="${RUN_NAME:-dflash_qwen3.5_9b_mm}"
 LOG_DIR="${LOG_DIR:-./train_logs}"
+# Internal self-hosted W&B (same host all our launchers use). Only takes effect
+# when LOGGER=wandb; auth = persisted `wandb login` or WANDB_API_KEY on the box.
+export WANDB_BASE_URL="${WANDB_BASE_URL:-http://10.155.156.175:38080}"
+export WANDB_PROJECT="${WANDB_PROJECT:-speculators}"
 LOG_TO_FILE="${LOG_TO_FILE:-1}"
 RUN_LOG_DIR="${RUN_LOG_DIR:-./run_logs}"
 RUN_LOG_NAME="${RUN_NAME//\//_}"

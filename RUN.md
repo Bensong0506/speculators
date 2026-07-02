@@ -4,8 +4,8 @@ Single source of truth for running this on the intranet. `git pull`, then copy a
 block and run it. The assistant keeps this file in sync with every script change.
 
 Paths assume the proven layout — override the env vars if yours differ:
-- target model:      `/home/models/Qwen3.5-9B`
-- open-source draft: `/home/models/Qwen3.5-9B-DFlash`  (warm-start base)
+- target model:      `/home/wenxuan/Qwen3.5-9B`
+- open-source draft: `/home/wenxuan/Qwen3.5-9B-DFlash`  (warm-start base)
 - repo clone:        `/home/wenxuan/speculators`
 - ALLaVA-4V:         `/home/wenxuan/ALLaVA-4V`  (LAION images extracted; VFLAN has none → LAION jsons only)
 - MMStar:            `/home/wenxuan/mmstar/...`  (smoke test only)
@@ -78,7 +78,7 @@ If you only have the raw z-lab DFlash checkpoint, convert it once first:
 ```bash
 cd /home/wenxuan/speculators
 bash examples/train/convert_zlab_dflash.sh
-# expected output: /home/models/Qwen3.5-9B-DFlash-spec
+# expected output: /home/wenxuan/Qwen3.5-9B-DFlash-spec
 ```
 
 ### 0c. Smoke run DSpark on ALLaVA
@@ -90,11 +90,11 @@ Log to wandb (`LOGGER=wandb`). Log in once first — see
 ```bash
 cd /home/wenxuan/speculators
 
-WANDB_BASE_URL=http://<your-wandb-host>:<port> \
+WANDB_BASE_URL=http://10.155.156.175:38080 \
   WANDB_PROJECT=speculators \
   LOGGER=wandb \
   SPECULATOR_TYPE=dspark \
-  FINETUNE_FROM=/home/models/Qwen3.5-9B-DFlash-spec \
+  FINETUNE_FROM=/home/wenxuan/Qwen3.5-9B-DFlash-spec \
   OUTPUT_DIR=./output/dspark_qwen3.5_9b_mm \
   SAVE_PATH=./output/dspark_qwen3.5_9b_mm/checkpoints \
   RUN_NAME=dspark_qwen3.5_9b_mm_smoke \
@@ -136,11 +136,11 @@ for the first comparison because it maps cleanly to DSpark `gamma=7`.
 ```bash
 cd /home/wenxuan/speculators
 
-WANDB_BASE_URL=http://<your-wandb-host>:<port> \
+WANDB_BASE_URL=http://10.155.156.175:38080 \
   WANDB_PROJECT=speculators \
   LOGGER=wandb \
   SPECULATOR_TYPE=dspark \
-  FINETUNE_FROM=/home/models/Qwen3.5-9B-DFlash-spec \
+  FINETUNE_FROM=/home/wenxuan/Qwen3.5-9B-DFlash-spec \
   OUTPUT_DIR=./output/dspark_qwen3.5_9b_mm_100k \
   SAVE_PATH=./output/dspark_qwen3.5_9b_mm_100k/checkpoints \
   RUN_NAME=dspark_qwen3.5_9b_mm_100k \
@@ -183,7 +183,7 @@ acceptance; `gated` is in between. Swap it in via env:
 
 ```bash
 MARKOV_HEAD_TYPE=rnn \
-  SPECULATOR_TYPE=dspark FINETUNE_FROM=/home/models/Qwen3.5-9B-DFlash-spec \
+  SPECULATOR_TYPE=dspark FINETUNE_FROM=/home/wenxuan/Qwen3.5-9B-DFlash-spec \
   RUN_NAME=dspark_qwen3.5_9b_mm_rnn ... \
   bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
 ```
@@ -261,7 +261,7 @@ uses a lower LR plus a separate `..._ft` dir). vLLM still appends the verifier's
 final text layer for `verifier_last_hidden_states`. Step 0
 auto-converts ALLaVA → a conversations jsonl (`scripts/llava_to_jsonl.py`).
 ```bash
-FINETUNE_FROM=/home/models/Qwen3.5-9B-DFlash \
+FINETUNE_FROM=/home/wenxuan/Qwen3.5-9B-DFlash \
   ALLAVA_INPUTS="/home/wenxuan/ALLaVA-4V/allava_laion/ALLaVA-Caption-LAION-4V.json /home/wenxuan/ALLaVA-4V/allava_laion/ALLaVA-Instruct-LAION-4V.json" \
   ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V \
   MAX_SAMPLES=100000 EPOCHS=2 \
@@ -296,8 +296,8 @@ checkpoint isn't speculators-format, so `FINETUNE_FROM` on it only copies the
 recipe and trains from scratch. Convert it once, then point `FINETUNE_FROM` at the
 converted dir (weights then load):
 ```bash
-bash examples/train/convert_zlab_dflash.sh        # -> /home/models/Qwen3.5-9B-DFlash-spec
-# then in 1b's command use:  FINETUNE_FROM=/home/models/Qwen3.5-9B-DFlash-spec
+bash examples/train/convert_zlab_dflash.sh        # -> /home/wenxuan/Qwen3.5-9B-DFlash-spec
+# then in 1b's command use:  FINETUNE_FROM=/home/wenxuan/Qwen3.5-9B-DFlash-spec
 ```
 
 ### 1c. Detached longer ALLaVA run
@@ -455,9 +455,9 @@ bash examples/train/view_tensorboard.sh
 Install/login once, then add `LOGGER=wandb` to the training command:
 ```bash
 python3 -m pip install wandb
-wandb login --host http://<internal-wandb-host>:<port>
+wandb login --host http://10.155.156.175:38080
 
-WANDB_BASE_URL=http://<internal-wandb-host>:<port> \
+WANDB_BASE_URL=http://10.155.156.175:38080 \
   WANDB_PROJECT=speculators \
   LOGGER=wandb \
   bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
@@ -488,7 +488,7 @@ Full launcher (modes baseline/mtp/dflash, multimodal flags):
 ```bash
 cd /home/wenxuan/speculators
 RUN_MODE=dflash DFLASH_SPEC=5 \
-  MODEL_PATH=/home/models/Qwen3.5-9B \
+  MODEL_PATH=/home/wenxuan/Qwen3.5-9B \
   DFLASH_DRAFT_PATH="$(pwd)/output/dflash_qwen3.5_9b_mm/checkpoints/checkpoint_best" \
   CUDA_VISIBLE_DEVICES=0 \
   MM_MEDIA_DIR=/home/wenxuan/multimodel_test \
@@ -505,9 +505,9 @@ reuse the same launcher:
 
 ```bash
 export HF_ENDPOINT=https://hf-mirror.com    # intranet mirror
-huggingface-cli download z-lab/Qwen3.5-9B-DFlash --local-dir /home/models/Qwen3.5-9B-DFlash
+huggingface-cli download z-lab/Qwen3.5-9B-DFlash --local-dir /home/wenxuan/Qwen3.5-9B-DFlash
 RUN_MODE=dflash DFLASH_SPEC=15 \
-  DFLASH_DRAFT_PATH=/home/models/Qwen3.5-9B-DFlash \
+  DFLASH_DRAFT_PATH=/home/wenxuan/Qwen3.5-9B-DFlash \
   CUDA_VISIBLE_DEVICES=0 \
   bash examples/serve/run_qwen35_9b_gpu.sh
 ```
