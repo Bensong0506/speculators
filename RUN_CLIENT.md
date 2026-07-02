@@ -82,6 +82,15 @@ cat data/client/distill_partA.jsonl data/client/distill_partB.jsonl > data/clien
 Extracts + fine-tunes `CLIENT_MODEL`'s native mtp.* head (verifier vLLM TP=4 on GPUs
 0–3, trainer on GPUs 4–7). Smoke-test first:
 
+Check the distilled data and start training in one command:
+```bash
+bash examples/train/check_client_distill_and_train_122b.sh
+```
+
+This validates `client_122b_distill_multimodal_8137.jsonl` first: row count,
+conversation schema, non-empty assistant answers, multimodal image parts, and
+local image paths. Use `CHECK_ONLY=1` to validate without starting training.
+
 ```bash
 # smoke (validates TP layout + MTP extraction on the SFT'd model)
 MAX_SAMPLES=50 EPOCHS=1 VALIDATE_INITIAL=0 \
