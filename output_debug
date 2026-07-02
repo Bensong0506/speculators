@@ -1,3 +1,6 @@
+export CLIENT_MODEL=/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/qwen3.5-vl-122B
+export CLIENT_DISTILL_JSONL=/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/client_122b_distill_multimodal_8137.jsonl
+
 CLIENT_DISTILL_JSONL=$CLIENT_DISTILL_JSONL \
   EPOCHS=10 LR=3e-5 NUM_SPECULATIVE_STEPS=3 STEP_WEIGHT_BETA=0.6 \
   bash examples/train/nohup_mtp_client_122b.sh
