@@ -1,17 +1,49 @@
-cd /home/wenxuan/speculators
-git checkout codex/dspark-migration && git pull --ff-only origin codex/dspark-migration
-
-# wandb 一次性登录(或设 WANDB_API_KEY)
-wandb login --host http://10.155.156.175:38080
-
-MARKOV_HEAD_TYPE=rnn \
-  CE_TARGET=ground_truth \
-  LOGGER=wandb \
-  SPECULATOR_TYPE=dspark \
-  FINETUNE_FROM=/home/wenxuan/Qwen3.5-9B-DFlash-spec \
-  RUN_NAME=dspark_rnn_allava \
-  BLOCK_SIZE=8 MAX_ANCHORS=512 \
-  MAX_SAMPLES=100000 EPOCHS=2 LR_FT=1e-5 \
-  ALLAVA_INPUTS="/home/wenxuan/ALLaVA-4V/allava_laion/ALLaVA-Caption-LAION-4V.json /home/wenxuan/ALLaVA-4V/allava_laion/ALLaVA-Instruct-LAION-4V.json" \
-  ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V \
-  bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
+TRTLLM', 'TRITON', 'BATCHED_TRITON', 'FlashInfer CUTLASS'].
+(Worker_DP0 pid=347859) INFO 07-02 03:30:53 [cuda.py:378] Using FLASH_ATTN attention backend out of potential backends: ['FLASH_ATTN', 'FLASHINFER', 'TRITON_ATTN', 'FLEX_ATTENTION'].
+(Worker_DP0 pid=347859) INFO 07-02 03:30:53 [flash_attn.py:636] Using FlashAttention version 2
+(Worker_DP0 pid=347859) INFO 07-02 03:30:53 [weight_utils.py:922] Filesystem type for checkpoints: XFS. Checkpoint size: 232.99 GiB. Available RAM: 960.05 GiB.
+(Worker_DP0 pid=347859) INFO 07-02 03:30:53 [weight_utils.py:945] Auto-prefetch is disabled because the filesystem (XFS) is not a recognized network FS (NFS/Lustre). If you want to force prefetching, start vLLM with --safetensors-load-strategy=prefetch.
+(Worker_DP0 pid=347859) INFO 07-02 03:34:51 [default_loader.py:397] Loading weights took 237.47 seconds
+(Worker_DP0 pid=347859) INFO 07-02 03:34:51 [all2all_utils.py:133] Detected DP deployment with no --enable-expert-parallel. Falling back to AllGather+ReduceScatter dispatch/combine.
+(Worker_DP0 pid=347859) INFO 07-02 03:34:51 [unquantized.py:341] Using MoEPrepareAndFinalizeNaiveDPEPModular
+(Worker_DP0 pid=347859) INFO 07-02 03:34:51 [gpu_model_runner.py:5061] Loading drafter model...
+(Worker_DP1 pid=347862) INFO 07-02 03:34:51 [gpu_model_runner.py:5217] Using auxiliary layers from speculative config: (1, 8, 15, 22, 29, 48)
+(Worker_DP0 pid=347859) INFO 07-02 03:34:51 [default_loader.py:397] Loading weights took 2917020.80 seconds
+(Worker_DP3 pid=347861) INFO 07-02 03:34:51 [gpu_model_runner.py:5217] Using auxiliary layers from speculative config: (1, 8, 15, 22, 29, 48)
+(Worker_DP2 pid=347860) INFO 07-02 03:34:51 [gpu_model_runner.py:5217] Using auxiliary layers from speculative config: (1, 8, 15, 22, 29, 48)
+(Worker_DP0 pid=347859) INFO 07-02 03:34:51 [gpu_model_runner.py:5217] Using auxiliary layers from speculative config: (1, 8, 15, 22, 29, 48)
+(Worker_DP1 pid=347862) INFO 07-02 03:34:51 [interface.py:649] Setting attention block size to 2096 tokens to ensure that attention page size is >= mamba page size.
+(Worker_DP0 pid=347859) INFO 07-02 03:34:51 [gpu_model_runner.py:5132] Model loading took 66.47 GiB memory and 237.865200 seconds
+(Worker_DP0 pid=347859) INFO 07-02 03:34:51 [interface.py:649] Setting attention block size to 2096 tokens to ensure that attention page size is >= mamba page size.
+(Worker_DP2 pid=347860) INFO 07-02 03:34:51 [interface.py:649] Setting attention block size to 2096 tokens to ensure that attention page size is >= mamba page size.
+(Worker_DP3 pid=347861) INFO 07-02 03:34:51 [interface.py:649] Setting attention block size to 2096 tokens to ensure that attention page size is >= mamba page size.
+(Worker_DP0 pid=347859) INFO 07-02 03:34:51 [gpu_model_runner.py:6136] Encoder cache will be initialized with a budget of 16384 tokens, and profiled with 1 image items of the maximum feature size.
+(Worker_DP0 pid=347859) INFO 07-02 03:34:54 [dp_utils.py:28] Using CPU all reduce to synchronize DP padding between ranks.
+(Worker_DP0 pid=347859) WARNING 07-02 03:34:58 [fused_moe.py:1073] Using default MoE config. Performance might be sub-optimal! Config file not found at /usr/local/lib/python3.12/dist-packages/vllm/model_executor/layers/fused_moe/configs/E=256,N=256,device_name=NVIDIA_A800-SXM4-80GB.json
+(Worker_DP0 pid=347859) INFO 07-02 03:35:00 [gpu_worker.py:466] Available KV cache memory: -8.86 GiB
+(EngineCore_DP0 pid=346220) ERROR 07-02 03:35:00 [core.py:1165] EngineCore failed to start.
+(EngineCore_DP0 pid=346220) ERROR 07-02 03:35:00 [core.py:1165] Traceback (most recent call last):
+(EngineCore_DP0 pid=346220) ERROR 07-02 03:35:00 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 1131, in run_engine_core
+(EngineCore_DP0 pid=346220) ERROR 07-02 03:35:00 [core.py:1165]     engine_core = DPEngineCoreProc(*args, **kwargs)
+(EngineCore_DP0 pid=346220) ERROR 07-02 03:35:00 [core.py:1165]                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP0 pid=346220) ERROR 07-02 03:35:00 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 1689, in __init__
+(EngineCore_DP0 pid=346220) ERROR 07-02 03:35:00 [core.py:1165]     super().__init__(
+(EngineCore_DP0 pid=346220) ERROR 07-02 03:35:00 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore_DP0 pid=346220) ERROR 07-02 03:35:00 [core.py:1165]     return func(*args, **kwargs)
+(EngineCore_DP0 pid=346220) ERROR 07-02 03:35:00 [core.py:1165]            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP0 pid=346220) ERROR 07-02 03:35:00 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 905, in __init__
+(EngineCore_DP0 pid=346220) ERROR 07-02 03:35:00 [core.py:1165]     super().__init__(
+(EngineCore_DP0 pid=346220) ERROR 07-02 03:35:00 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 131, in __init__
+(EngineCore_DP0 pid=346220) ERROR 07-02 03:35:00 [core.py:1165]     kv_cache_config = self._initialize_kv_caches(vllm_config)
+(EngineCore_DP0 pid=346220) ERROR 07-02 03:35:00 [core.py:1165]                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP0 pid=346220) ERROR 07-02 03:35:00 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore_DP0 pid=346220) ERROR 07-02 03:35:00 [core.py:1165]     return func(*args, **kwargs)
+(EngineCore_DP0 pid=346220) ERROR 07-02 03:35:00 [core.py:1165]            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP0 pid=346220) ERROR 07-02 03:35:00 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 264, in _initialize_kv_caches
+(EngineCore_DP0 pid=346220) ERROR 07-02 03:35:00 [core.py:1165]     kv_cache_configs = get_kv_cache_configs(
+(EngineCore_DP0 pid=346220) ERROR 07-02 03:35:00 [core.py:1165]                        ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore_DP0 pid=346220) ERROR 07-02 03:35:00 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/core/kv_cache_utils.py", line 2038, in get_kv_cache_configs
+(EngineCore_DP0 pid=346220) ERROR 07-02 03:35:00 [core.py:1165]     _check_enough_kv_cache_memory(
+(EngineCore_DP0 pid=346220) ERROR 07-02 03:35:00 [core.py:1165]   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/core/kv_cache_utils.py", line 698, in _check_enough_kv_cache_memory
+(EngineCore_DP0 pid=346220) ERROR 07-02 03:35:00 [core.py:1165]     raise ValueError(
+(EngineCore_DP0 pid=346220) ERROR 07-02 03:35:00 [core.py:1165] ValueError: No available memory for the cache blocks. Try increasing `gpu_memory_utilization` when initializing the engine (this flag also controls CPU memory reservation on the CPU backend, despite its name). See https://docs.vllm.ai/en/latest/configuration/conserving_memory/ for more details.
