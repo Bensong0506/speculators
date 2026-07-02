@@ -1,13 +1,5 @@
-步骤	命令	行为
-安装	nohup bash install/setup_vllm022.sh > ~/setup_vllm022.log 2>&1 &	你手动 nohup(已给)
-STEP 1 蒸馏	MAX_SAMPLES=8137 bash examples/train/distill_client_122b.sh	自动 detach,打印 tail -f
-STEP 2 训练	bash examples/train/nohup_mtp_client_122b.sh	本来就内部 nohup
-STEP 3 测试	MTP_CKPT=... bash examples/evaluate/test_mtp_client_122b.sh	自动 detach,打印 tail -f
-
-conda activate vllm022
-git -C /mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/speculators pull
-
-COMPLETE_MISSING=1 MAX_SAMPLES=8137 \
-  OUT_JSONL=/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/client_122b_distill_multimodal_8137.jsonl \
-  bash examples/train/distill_client_122b.sh
-# 自动 detach,打印 tail -f 那行
+CLIENT_DISTILL_JSONL=$CLIENT_DISTILL_JSONL \
+  EPOCHS=10 LR=3e-5 NUM_SPECULATIVE_STEPS=3 STEP_WEIGHT_BETA=0.6 \
+  bash examples/train/nohup_mtp_client_122b.sh
+# -> output/mtp_client_122b/<run>/checkpoints/checkpoint_best
+tail -f run_logs/mtp_client_122b_*.nohup.log
