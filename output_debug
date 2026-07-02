@@ -1,19 +1,17 @@
 cd /home/wenxuan/speculators
-pip install -e . --no-deps --no-build-isolation   # 或 export PYTHONPATH=$PWD/src:$PYTHONPATH
-pytest tests/unit/models/test_dspark_metrics.py \
-       tests/unit/models/test_dspark_markov_heads.py \
-       tests/unit/models/test_dspark_scheduler.py \
-       tests/unit/models/test_dspark_calibration.py -v
+git checkout codex/dspark-migration && git pull --ff-only origin codex/dspark-migration
 
+# wandb 一次性登录(或设 WANDB_API_KEY)
+wandb login --host http://10.155.156.175:38080
 
-cd /home/wenxuan/speculators
 MARKOV_HEAD_TYPE=rnn \
   CE_TARGET=ground_truth \
-  LOGGER=wandb WANDB_BASE_URL=http://<你的wandb>:<port> WANDB_PROJECT=speculators \
+  LOGGER=wandb \
   SPECULATOR_TYPE=dspark \
-  FINETUNE_FROM=/home/models/Qwen3.5-9B-DFlash-spec \
-  RUN_NAME=dspark_rnn_smoke \
-  BLOCK_SIZE=8 MAX_ANCHORS=512 MAX_SAMPLES=5000 EPOCHS=1 LR_FT=1e-5 \
-  ALLAVA_INPUTS="..." ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V \
+  FINETUNE_FROM=/home/wenxuan/Qwen3.5-9B-DFlash-spec \
+  RUN_NAME=dspark_rnn_allava \
+  BLOCK_SIZE=8 MAX_ANCHORS=512 \
+  MAX_SAMPLES=100000 EPOCHS=2 LR_FT=1e-5 \
+  ALLAVA_INPUTS="/home/wenxuan/ALLaVA-4V/allava_laion/ALLaVA-Caption-LAION-4V.json /home/wenxuan/ALLaVA-4V/allava_laion/ALLaVA-Instruct-LAION-4V.json" \
+  ALLAVA_IMAGE_ROOT=/home/wenxuan/ALLaVA-4V \
   bash examples/train/dflash_qwen3.5_9b_multimodal_online.sh
-
