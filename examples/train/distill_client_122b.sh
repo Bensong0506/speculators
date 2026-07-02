@@ -50,12 +50,23 @@ SOURCE_COPY="${SOURCE_COPY:-$WORK_DIR/train_source_copy.jsonl}"
 OUT_JSONL="${OUT_JSONL:-$WORK_DIR/client_122b_distill_${MODE}_${MAX_SAMPLES}.jsonl}"
 RESUME="${RESUME:-1}"
 ALLOW_PARTIAL_RESUME="${ALLOW_PARTIAL_RESUME:-0}"
+# COMPLETE_MISSING=1: fill the gaps of an existing OUT_JSONL — distill ONLY the
+# input records not already present (matched by prompt-text key) and APPEND them.
+# Use this to top up a prior run that skipped rows (e.g. images that were
+# inaccessible before permissions were fixed). It never redoes/reorders existing
+# rows, so count-based resume misalignment does not apply.
+COMPLETE_MISSING="${COMPLETE_MISSING:-0}"
 
 [ -d "$CLIENT_MODEL" ] || { echo "[fatal] CLIENT_MODEL not found: $CLIENT_MODEL"; exit 1; }
 [ -s "$CLIENT_TRAIN_JSONL" ] || { echo "[fatal] CLIENT_TRAIN_JSONL not found: $CLIENT_TRAIN_JSONL"; exit 1; }
 mkdir -p "$WORK_DIR" "$(dirname "$OUT_JSONL")"
 
-if [ "$RESUME" = "1" ] && [ "$ALLOW_PARTIAL_RESUME" != "1" ] && [ -f "$OUT_JSONL" ]; then
+if [ "$COMPLETE_MISSING" = "1" ]; then
+    [ -f "$OUT_JSONL" ] || { echo "[fatal] COMPLETE_MISSING=1 but $OUT_JSONL does not exist (nothing to complete)"; exit 1; }
+    echo "COMPLETE_MISSING=1 -> will append only the inputs missing from $OUT_JSONL (existing rows kept as-is)"
+fi
+
+if [ "$COMPLETE_MISSING" != "1" ] && [ "$RESUME" = "1" ] && [ "$ALLOW_PARTIAL_RESUME" != "1" ] && [ -f "$OUT_JSONL" ]; then
     EXISTING_ROWS="$(awk 'NF { c++ } END { print c + 0 }' "$OUT_JSONL")"
     if [ "$EXISTING_ROWS" -gt 0 ] && [ "$EXISTING_ROWS" -lt "$MAX_SAMPLES" ]; then
         echo "[fatal] partial output exists: $OUT_JSONL has $EXISTING_ROWS/$MAX_SAMPLES rows"
@@ -215,6 +226,7 @@ DISTILL=(
 )
 [ "$RESUME" = "1" ] && DISTILL+=(--resume)
 [ "$ALLOW_PARTIAL_DISTILL" = "1" ] && DISTILL+=(--allow-partial)
+[ "$COMPLETE_MISSING" = "1" ] && DISTILL+=(--complete-missing)
 
 echo "=== Distilling client prompts ($MODE) ==="
 echo "  out_jsonl: $OUT_JSONL"

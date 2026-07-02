@@ -42,6 +42,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import hashlib
+import re
 import time
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
@@ -57,6 +59,45 @@ def _load_records(path: Path) -> Iterator[dict[str, Any]]:
             line = line.strip()
             if line:
                 yield json.loads(line)
+
+
+def _prompt_key(turns: list[dict]) -> str:
+    """Stable content key for a prompt, computed identically from an input-built
+    prompt or an already-written output row. Keys on the system+user TEXT only
+    (images and <image> tokens ignored), so a row keys the same whether or not its
+    images were present/dropped — which is exactly what lets us tell which inputs
+    are already distilled vs. still missing."""
+    chunks: list[str] = []
+    for t in turns:
+        if t.get("role") not in ("system", "user"):
+            continue
+        c = t.get("content", "")
+        if isinstance(c, list):
+            text = " ".join(
+                p.get("text", "") for p in c if isinstance(p, dict) and p.get("type") == "text"
+            )
+        else:
+            text = str(c)
+        chunks.append(text)
+    canon = re.sub(r"\s+", " ", " ".join(chunks).replace(IMAGE_TOKEN, "")).strip()
+    return hashlib.sha1(canon.encode("utf-8")).hexdigest()
+
+
+def _load_done_keys(path: Path) -> set[str]:
+    keys: set[str] = set()
+    if not path.exists():
+        return keys
+    with path.open(encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                row = json.loads(line)
+            except Exception:  # noqa: BLE001
+                continue
+            keys.add(_prompt_key(row.get("conversations") or row.get("messages") or []))
+    return keys
 
 
 def _local_image_missing(path: str) -> bool:
@@ -210,6 +251,11 @@ def main() -> None:
                     help="for multimodal rows with missing local images: drop the missing image part or skip the row")
     ap.add_argument("--allow-partial", action="store_true",
                     help="allow exiting successfully with fewer than --max-samples rows")
+    ap.add_argument("--complete-missing", action="store_true",
+                    help="APPEND only the input records not already present in --out-jsonl "
+                         "(matched by prompt-text key). Use to fill gaps left by a prior run "
+                         "that skipped rows (e.g. images that were inaccessible before). Does "
+                         "NOT redo or reorder existing rows; implies --allow-partial.")
     ap.add_argument("--resume", action="store_true")
     mode = ap.add_mutually_exclusive_group()
     mode.add_argument("--text-only", dest="text_only", action="store_true",
@@ -229,8 +275,15 @@ def main() -> None:
     import openai  # noqa: PLC0415
 
     args.out_jsonl.parent.mkdir(parents=True, exist_ok=True)
-    existing = _count_existing(args.out_jsonl) if args.resume else 0
-    if existing >= args.max_samples:
+    append_mode = args.resume or args.complete_missing
+    existing = _count_existing(args.out_jsonl) if append_mode else 0
+    allow_partial = args.allow_partial or args.complete_missing
+    done_keys: set[str] = set()
+    if args.complete_missing:
+        done_keys = _load_done_keys(args.out_jsonl)
+        print(f"[complete-missing] {len(done_keys)} rows already present in {args.out_jsonl}; "
+              "will only distill+append the inputs not yet there.")
+    elif existing >= args.max_samples:
         print(f"Already have {existing} rows in {args.out_jsonl}; nothing to do.")
         return
 
@@ -279,12 +332,18 @@ def main() -> None:
                     seen += 1
                     continue
                 seen += 1
-                if skipped_existing < existing:
+                if args.complete_missing:
+                    # skip inputs already distilled (by prompt-text key), not by count
+                    if _prompt_key(prompt) in done_keys:
+                        continue
+                elif skipped_existing < existing:
                     skipped_existing += 1
                     continue
                 yield prompt
                 emitted += 1
-                if emitted >= args.max_samples - existing:
+                # complete-missing fills ALL gaps (don't cap by a count budget);
+                # the normal path caps at the requested new-row count.
+                if not args.complete_missing and emitted >= args.max_samples - existing:
                     return
 
     def _generate(prompt: list[dict]) -> str:
@@ -300,7 +359,7 @@ def main() -> None:
 
     written = existing
     started = time.perf_counter()
-    with args.out_jsonl.open("a" if args.resume else "w", encoding="utf-8") as out:
+    with args.out_jsonl.open("a" if append_mode else "w", encoding="utf-8") as out:
         for prompt, result in _bounded_parallel_map(_generate, _prompts(), args.concurrency):
             if isinstance(result, Exception):
                 print(f"[warn] request failed at output row {written + 1}: {result}")
@@ -328,8 +387,11 @@ def main() -> None:
     if stats["skips"]:
         print(f"[warn] skipped {stats['skips']} records: {stats['skip_reasons']}")
     if written == existing:
+        if args.complete_missing:
+            print(f"Nothing missing: all inputs already present in {args.out_jsonl} ({existing} rows).")
+            return
         raise SystemExit("No distilled samples were written.")
-    if written < args.max_samples and not args.allow_partial:
+    if written < args.max_samples and not allow_partial:
         raise SystemExit(
             f"[fatal] only wrote {written}/{args.max_samples} rows. "
             "Do not train on this partial file; fix the warnings above and rerun, "

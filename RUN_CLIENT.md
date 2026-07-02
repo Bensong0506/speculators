@@ -63,10 +63,20 @@ MODE=multimodal IMAGE_MEDIA_ROOT=/mnt/tidal-alsh01 LIMIT_IMAGES=20 \
 ```
 
 If a previous multimodal run ended with fewer than 8137 rows because vLLM could
-not load some image files, do not resume that partial file. Re-run from scratch:
+not load some image files (e.g. image permissions weren't granted yet), **fill only
+the gaps** without redoing the rows you already have — `COMPLETE_MISSING=1` distills
+ONLY the inputs not already present (matched by prompt-text key) and appends them:
 ```bash
-RESUME=0 MAX_SAMPLES=8137 bash examples/train/distill_client_122b.sh
+COMPLETE_MISSING=1 MAX_SAMPLES=8137 \
+  OUT_JSONL=/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/client_122b_distill_multimodal_8137.jsonl \
+  bash examples/train/distill_client_122b.sh
+# reads the existing file, re-runs the ~missing rows now that images are readable,
+# appends them; existing rows are kept as-is (no reorder, no redo).
 ```
+(The key ignores images/`<image>`, so a row matches whether or not its images were
+present — that's what lets it tell done vs. still-missing.) Alternatively, re-run
+everything from scratch: `RESUME=0 MAX_SAMPLES=8137 bash examples/train/distill_client_122b.sh`.
+
 Missing local image files are dropped by default
 (`MISSING_IMAGE_POLICY=drop`), so the row still distills with the remaining text
 and any existing images. Set `MISSING_IMAGE_POLICY=skip` only if you prefer to
