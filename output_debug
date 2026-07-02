@@ -4,15 +4,20 @@ STEP 1 蒸馏	MAX_SAMPLES=8137 bash examples/train/distill_client_122b.sh	自动
 STEP 2 训练	bash examples/train/nohup_mtp_client_122b.sh	本来就内部 nohup
 STEP 3 测试	MTP_CKPT=... bash examples/evaluate/test_mtp_client_122b.sh	自动 detach,打印 tail -f
 
-MAX_SAMPLES=8137 bash examples/train/distill_client_122b.sh
-
-[warn] request failed at output row 6931: Error code: 400 - {'error': {'message': "Load image failed: file:///mnt/tidal-alsh01/usr/liujun04/code/summaryrender/data/images/2026-06-16/fd669653c1a2756b8bd1b81b05c66285.jpg, [Errno 2] No such file or directory: '/mnt/tidal-alsh01/usr/liujun04/code/summaryrender/data/images/2026-06-16/fd669653c1a2756b8bd1b81b05c66285.jpg'", 'type': 'BadRequestError', 'param': None, 'code': 400}}
-[warn] request failed at output row 6938: Error code: 400 - {'error': {'message': "Load image failed: file:///mnt/tidal-alsh01/usr/liujun04/code/summaryrender/data/images/2026-06-15/71df68b379731a959022bcab7626175d.jpg, [Errno 2] No such file or directory: '/mnt/tidal-alsh01/usr/liujun04/code/summaryrender/data/images/2026-06-15/71df68b379731a959022bcab7626175d.jpg'", 'type': 'BadRequestError', 'param': None, 'code': 400}}
-[warn] request failed at output row 6946: Error code: 400 - {'error': {'message': "Load image failed: file:///mnt/tidal-alsh01/usr/liujun04/code/summaryrender/data/images/2026-06-16/fd0046d0cef0680d94b5378837e493af.jpg, [Errno 2] No such file or directory: '/mnt/tidal-alsh01/usr/liujun04/code/summaryrender/data/images/2026-06-16/fd0046d0cef0680d94b5378837e493af.jpg'", 'type': 'BadRequestError', 'param': None, 'code': 400}}
-[6950/8137] rate=0.336 samples/s
-Done. Wrote 6954 rows -> /mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/client_122b_distill_multimodal_8137.jsonl
-
-Distilled data ready: /mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/client_122b_distill_multimodal_8137.jsonl
-Next (STEP 2):
-  CLIENT_MODEL=/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/qwen3.5-vl-122B CLIENT_DISTILL_JSONL=/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/client_122b_distill_multimodal_8137.jsonl \
-    bash examples/train/nohup_mtp_client_122b.sh
+先只检查这份 6954 行数据：
+EXPECTED_ROWS=6954 CHECK_ONLY=1 \
+CLIENT_DISTILL_JSONL=/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/client_122b_distill_multimodal_8137.jsonl \
+bash examples/train/check_client_distill_and_train_122b.sh
+如果检查过了，先跑一个很小的 STEP 2 smoke，把链路打通：
+EXPECTED_ROWS=6954 \
+CLIENT_DISTILL_JSONL=/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/client_122b_distill_multimodal_8137.jsonl \
+MAX_SAMPLES=50 EPOCHS=1 VALIDATE_INITIAL=0 \
+bash examples/train/check_client_distill_and_train_122b.sh
+它会启动 detached 训练，并打印类似：
+Started PID ...
+Follow log: tail -f run_logs/mtp_client_122b_*.nohup.log
+确认 smoke 没炸、能保存 checkpoint 后，再用这份 6954 行跑一个临时完整训练：
+EXPECTED_ROWS=6954 \
+CLIENT_DISTILL_JSONL=/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/client_122b_distill_multimodal_8137.jsonl \
+MAX_SAMPLES=6954 EPOCHS=10 LR=3e-5 NUM_SPECULATIVE_STEPS=3 STEP_WEIGHT_BETA=0.6 \
+bash examples/train/check_client_distill_and_train_122b.sh
