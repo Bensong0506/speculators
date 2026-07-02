@@ -4,20 +4,10 @@ STEP 1 蒸馏	MAX_SAMPLES=8137 bash examples/train/distill_client_122b.sh	自动
 STEP 2 训练	bash examples/train/nohup_mtp_client_122b.sh	本来就内部 nohup
 STEP 3 测试	MTP_CKPT=... bash examples/evaluate/test_mtp_client_122b.sh	自动 detach,打印 tail -f
 
-先只检查这份 6954 行数据：
-EXPECTED_ROWS=6954 CHECK_ONLY=1 \
-CLIENT_DISTILL_JSONL=/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/client_122b_distill_multimodal_8137.jsonl \
-bash examples/train/check_client_distill_and_train_122b.sh
-如果检查过了，先跑一个很小的 STEP 2 smoke，把链路打通：
-EXPECTED_ROWS=6954 \
-CLIENT_DISTILL_JSONL=/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/client_122b_distill_multimodal_8137.jsonl \
-MAX_SAMPLES=50 EPOCHS=1 VALIDATE_INITIAL=0 \
-bash examples/train/check_client_distill_and_train_122b.sh
-它会启动 detached 训练，并打印类似：
-Started PID ...
-Follow log: tail -f run_logs/mtp_client_122b_*.nohup.log
-确认 smoke 没炸、能保存 checkpoint 后，再用这份 6954 行跑一个临时完整训练：
-EXPECTED_ROWS=6954 \
-CLIENT_DISTILL_JSONL=/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/client_122b_distill_multimodal_8137.jsonl \
-MAX_SAMPLES=6954 EPOCHS=10 LR=3e-5 NUM_SPECULATIVE_STEPS=3 STEP_WEIGHT_BETA=0.6 \
-bash examples/train/check_client_distill_and_train_122b.sh
+conda activate vllm022
+git -C /mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/speculators pull
+
+COMPLETE_MISSING=1 MAX_SAMPLES=8137 \
+  OUT_JSONL=/mnt/tidal-alsh01/dataset/pai/zhaofei4/huawei/client_122b_distill_multimodal_8137.jsonl \
+  bash examples/train/distill_client_122b.sh
+# 自动 detach,打印 tail -f 那行
