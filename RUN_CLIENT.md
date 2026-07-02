@@ -99,19 +99,20 @@ bash examples/train/check_client_distill_and_train_122b.sh
 
 This validates `client_122b_distill_multimodal_8137.jsonl` first: row count,
 conversation schema, non-empty assistant answers, multimodal image parts, and
-local image paths. Use `CHECK_ONLY=1` to validate without starting training.
+local image paths. It auto-detaches under `nohup` and prints a `tail -f ...` line.
+Use `CHECK_ONLY=1` to validate without starting training, or `DETACH=0` to keep it
+in the foreground.
 
 ```bash
 # smoke (validates TP layout + MTP extraction on the SFT'd model)
 MAX_SAMPLES=50 EPOCHS=1 VALIDATE_INITIAL=0 \
   CLIENT_DISTILL_JSONL=data/client/client_122b_distill_multimodal_8137.jsonl \
-  bash examples/train/nohup_mtp_client_122b.sh
-tail -f run_logs/mtp_client_122b_*.nohup.log
+  bash examples/train/check_client_distill_and_train_122b.sh
 
 # full run
 CLIENT_DISTILL_JSONL=data/client/client_122b_distill_multimodal_8137.jsonl \
   EPOCHS=10 LR=3e-5 NUM_SPECULATIVE_STEPS=3 STEP_WEIGHT_BETA=0.6 \
-  bash examples/train/nohup_mtp_client_122b.sh
+  bash examples/train/check_client_distill_and_train_122b.sh
 # -> output/mtp_client_122b/<run>/checkpoints/checkpoint_best
 ```
 

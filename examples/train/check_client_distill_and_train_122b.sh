@@ -12,6 +12,7 @@
 #
 # Useful overrides:
 #   CHECK_ONLY=1 bash examples/train/check_client_distill_and_train_122b.sh
+#   DETACH=0 CHECK_ONLY=1 bash examples/train/check_client_distill_and_train_122b.sh
 #   EXPECTED_ROWS=8137 CHECK_IMAGES=0 bash examples/train/check_client_distill_and_train_122b.sh
 
 set -euo pipefail
@@ -28,6 +29,20 @@ MIN_IMAGE_ROWS="${MIN_IMAGE_ROWS:-1}"
 REQUIRE_ALL_ROWS_WITH_IMAGES="${REQUIRE_ALL_ROWS_WITH_IMAGES:-0}"
 CHECK_IMAGES="${CHECK_IMAGES:-1}"
 CHECK_ONLY="${CHECK_ONLY:-0}"
+DETACH="${DETACH:-1}"
+STAMP="$(date +%Y%m%d_%H%M%S)"
+NOHUP_LOG_DIR="${NOHUP_LOG_DIR:-$REPO_ROOT/run_logs}"
+NOHUP_LOG="${NOHUP_LOG:-$NOHUP_LOG_DIR/check_client_distill_and_train_122b_${STAMP}.nohup.log}"
+
+if [ "$DETACH" = "1" ] && [ -z "${_DETACHED:-}" ]; then
+    mkdir -p "$NOHUP_LOG_DIR"
+    echo "Detaching data check/training launcher (survives disconnect). Follow with:"
+    echo "  tail -f $NOHUP_LOG"
+    _DETACHED=1 nohup bash "$0" "$@" > "$NOHUP_LOG" 2>&1 &
+    echo "  PID $!   (stop: kill $!)"
+    echo "$!" > "${NOHUP_LOG%.log}.pid"
+    exit 0
+fi
 
 # Training defaults for the real run. Override normally via env if needed.
 export CLIENT_MODEL
